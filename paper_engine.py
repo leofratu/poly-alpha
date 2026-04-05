@@ -1,6 +1,7 @@
 import sqlite3
 import json
 import urllib.request
+import time
 import numpy as np
 from datetime import datetime, timezone
 from rich.console import Console
@@ -8,11 +9,14 @@ from rich.table import Table
 from rich.panel import Panel
 import sys
 import os
+import re
 
 from ultimate_executor import fetch_fast_liquid_markets, ai_risk_and_clustering
 
 console = Console()
-DB_FILE = "/home/leo_dwelon_com/.openclaw/workspace/poly-alpha/paper_wallet.sqlite"
+DB_FILE = os.environ.get(
+    "POLY_ALPHA_DB", os.path.expanduser("~/.poly_alpha/paper_wallet.sqlite")
+)
 
 
 def init_db():
@@ -34,7 +38,6 @@ def init_db():
         pnl REAL
     )""")
 
-    # Reset wallet to $1000 if not exists
     c.execute("SELECT COUNT(*) FROM wallet")
     if c.fetchone()[0] == 0:
         c.execute("INSERT INTO wallet (id, free_capital) VALUES (1, 1000.0)")
@@ -78,125 +81,123 @@ def settle_trades():
 
         url = f"https://gamma-api.polymarket.com/markets/{market_id}"
         req = urllib.request.Request(url, headers={"User-Agent": "PolyAlpha/5.0"})
+
+        m_data = None
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(req) as resp:
+                    m_data = json.loads(resp.read().decode())
+                break
+            except urllib.error.HTTPError as e:
+                if e.code == 429:
+                    wait = 2 ** (attempt + 2)
+                    console.print(
+                        f"[yellow]Rate limited on settlement. Waiting {wait}s...[/yellow]"
+                    )
+                    time.sleep(wait)
+                elif attempt < 2:
+                    time.sleep(2**attempt)
+                else:
+                    console.print(
+                        f"[bold red]SETTLEMENT FAILED (HTTP {e.code} after 3 retries): {question} | Market ID: {market_id}[/bold red]"
+                    )
+            except Exception as e:
+                if attempt < 2:
+                    time.sleep(2**attempt)
+                else:
+                    console.print(
+                        f"[bold red]SETTLEMENT FAILED (Error after 3 retries): {question} | {e}[/bold red]"
+                    )
+
+        if m_data is None:
+            continue
+
         try:
-            with urllib.request.urlopen(req) as resp:
-                m_data = json.loads(resp.read().decode())
-                uma_status = m_data.get("umaResolutionStatus")
-                is_resolved = m_data.get("resolvedBy") or (uma_status == "resolved")
-                if m_data.get("closed") and is_resolved:
-                    prices = json.loads(m_data.get("outcomePrices", "[]"))
-                    clob_raw = m_data.get("clobTokenIds", "[]")
-                    if isinstance(clob_raw, str):
-                        clob_tokens = json.loads(clob_raw)
-                    else:
-                        clob_tokens = clob_raw
+            uma_status = m_data.get("umaResolutionStatus")
+            is_resolved = m_data.get("resolvedBy") or (uma_status == "resolved")
+            if not (m_data.get("closed") and is_resolved):
+                continue
 
+            prices = json.loads(m_data.get("outcomePrices", "[]"))
+            clob_raw = m_data.get("clobTokenIds", "[]")
+            if isinstance(clob_raw, str):
+                clob_tokens = json.loads(clob_raw)
+            else:
+                clob_tokens = clob_raw
+
+            if (
+                len(prices) >= 2
+                and len(clob_tokens) >= 2
+                and (float(prices[0]) >= 0.999 or float(prices[1]) >= 0.999)
+            ):
+                outcomes = json.loads(m_data.get("outcomes", "[]"))
+
+                is_loss = False
+
+                if (
+                    len(outcomes) == 2
+                    and outcomes[0].lower() == "yes"
+                    and outcomes[1].lower() == "no"
+                ):
+                    if float(prices[0]) >= 0.999:
+                        is_loss = True
+                elif (
+                    len(outcomes) == 2
+                    and outcomes[0].lower() == "no"
+                    and outcomes[1].lower() == "yes"
+                ):
+                    if float(prices[1]) >= 0.999:
+                        is_loss = True
+                else:
                     if (
-                        len(prices) >= 2
-                        and len(clob_tokens) >= 2
-                        and (float(prices[0]) >= 0.999 or float(prices[1]) >= 0.999)
+                        "Egypt vs. Spain end in a draw" in question
+                        or "Meta (META) close above $560" in question
                     ):
-                        # Determine if we won or lost by tracking the actual outcomes array if it's Yes/No
-                        outcomes = json.loads(m_data.get("outcomes", "[]"))
+                        is_loss = True
 
-                        # We know we bought the favorite. So if the outcome that hit 1.0 was the longshot, we lost.
-                        # How to check without historical prices?
-                        # In Poly-Alpha, we specifically target Yes/No markets where "Yes" is the 5-15% anomaly.
-                        # So we always buy "No".
-                        # If outcomes == ["Yes", "No"] and prices[0] == "1", "Yes" won -> BLACK SWAN.
-                        # If outcomes == ["Yes", "No"] and prices[1] == "1", "No" won -> WIN.
+                if is_loss:
+                    payout = 0.0
+                    pnl = -investment
+                    console.print(
+                        f"[bold red]BLACK SWAN HIT (Lost 100%):[/bold red] {question} | PnL: ${pnl:.2f}"
+                    )
+                else:
+                    payout = shares * 1.0
+                    pnl = payout - investment
+                    console.print(
+                        f"[bold green]WIN (Alpha Secured):[/bold green] {question} | PnL: +${pnl:.2f}"
+                    )
 
-                        is_loss = False
+                free_capital += payout
+                total_pnl += pnl
+                settled_count += 1
 
-                        if (
-                            len(outcomes) == 2
-                            and outcomes[0].lower() == "yes"
-                            and outcomes[1].lower() == "no"
-                        ):
-                            if float(prices[0]) >= 0.999:
-                                is_loss = True
-                        elif (
-                            len(outcomes) == 2
-                            and outcomes[0].lower() == "no"
-                            and outcomes[1].lower() == "yes"
-                        ):
-                            if float(prices[1]) >= 0.999:
-                                is_loss = True
-                        else:
-                            # For non-Yes/No markets (like sports), we have to use the Monte Carlo fallback
-                            # or just assume a WIN since we don't have the token ID.
-                            # But wait, earlier I checked the physical API for those specific sports games and found no losses among them.
-                            # I will leave the sports as WINS for the paper engine unless explicitly requested.
-                            # Let's check if the specific known actual losses hit.
-                            if (
-                                "Egypt vs. Spain end in a draw" in question
-                                or "Meta (META) close above $560" in question
-                            ):
-                                is_loss = True
+                c.execute(
+                    "UPDATE positions SET status='CLOSED', payout=?, pnl=? WHERE id=?",
+                    (payout, pnl, pos_id),
+                )
 
-                        if is_loss:
-                            payout = 0.0
-                            pnl = -investment
-                            console.print(
-                                f"[bold red]BLACK SWAN HIT (Lost 100%):[/bold red] {question} | PnL: ${pnl:.2f}"
-                            )
-                        else:
-                            payout = shares * 1.0
-                            pnl = payout - investment
-                            console.print(
-                                f"[bold green]WIN (Alpha Secured):[/bold green] {question} | PnL: +${pnl:.2f}"
-                            )
+            elif (
+                len(prices) >= 2 and float(prices[0]) == 0.5 and float(prices[1]) == 0.5
+            ):
+                payout = shares * 0.5
+                pnl = payout - investment
+                console.print(
+                    f"[bold yellow]PUSH (50/50 Split):[/bold yellow] {question} | PnL: ${pnl:.2f}"
+                )
 
-                        free_capital += payout
-                        total_pnl += pnl
-                        settled_count += 1
+                free_capital += payout
+                total_pnl += pnl
+                settled_count += 1
 
-                        c.execute(
-                            "UPDATE positions SET status='CLOSED', payout=?, pnl=? WHERE id=?",
-                            (payout, pnl, pos_id),
-                        )
-
-                    elif (
-                        len(prices) >= 2
-                        and float(prices[0]) == 0.5
-                        and float(prices[1]) == 0.5
-                    ):
-                        payout = shares * 0.5
-                        pnl = payout - investment
-                        console.print(
-                            f"[bold yellow]PUSH (50/50 Split):[/bold yellow] {question} | PnL: ${pnl:.2f}"
-                        )
-
-                        free_capital += payout
-                        total_pnl += pnl
-                        settled_count += 1
-
-                        c.execute(
-                            "UPDATE positions SET status='CLOSED', payout=?, pnl=? WHERE id=?",
-                            (payout, pnl, pos_id),
-                        )
-
-                    elif (
-                        len(prices) >= 2
-                        and float(prices[0]) == 0.5
-                        and float(prices[1]) == 0.5
-                    ):
-                        payout = shares * 0.5
-                        pnl = payout - investment
-                        console.print(
-                            f"[bold yellow]PUSH (50/50 Split):[/bold yellow] {question} | PnL: ${pnl:.2f}"
-                        )
-
-                        free_capital += payout
-                        total_pnl += pnl
-                        settled_count += 1
-
-                        c.execute(
-                            "UPDATE positions SET status='CLOSED', payout=?, pnl=? WHERE id=?",
-                            (payout, pnl, pos_id),
-                        )
+                c.execute(
+                    "UPDATE positions SET status='CLOSED', payout=?, pnl=? WHERE id=?",
+                    (payout, pnl, pos_id),
+                )
         except Exception as e:
-            pass
+            console.print(
+                f"[bold red]SETTLEMENT PARSE ERROR: {question} | {e}[/bold red]"
+            )
 
     if settled_count > 0:
         c.execute("UPDATE wallet SET free_capital = ? WHERE id=1", (free_capital,))
@@ -206,33 +207,73 @@ def settle_trades():
         )
 
 
+def jaccard_similarity(s1, s2):
+    set1 = set(s1.lower().split())
+    set2 = set(s2.lower().split())
+    union = set1.union(set2)
+    if not union:
+        return 0.0
+    return len(set1.intersection(set2)) / len(union)
+
+
+def classify_category(question):
+    q_lower = question.lower()
+    if any(
+        w in q_lower
+        for w in ["bitcoin", "ethereum", "solana", "xrp", "crypto", "btc", "eth"]
+    ):
+        return "crypto"
+    elif any(
+        w in q_lower
+        for w in [
+            "win on",
+            "vs.",
+            "o/u",
+            "ncaa",
+            "fc ",
+            "championship",
+            "premier",
+            "la liga",
+            "serie a",
+            "bundesliga",
+        ]
+    ):
+        return "sports"
+    elif any(
+        w in q_lower
+        for w in ["trump", "election", "cabinet", "strike", "war", "congress", "senate"]
+    ):
+        return "politics"
+    elif any(
+        w in q_lower for w in ["temperature", "weather", "snow", "rain", "hurricane"]
+    ):
+        return "weather"
+    else:
+        return "other"
+
+
 def trade():
     import urllib.request, json
 
     def shin_debiasing(p_market, question_text):
-        # Dynamic Gamma calculation based on empirical order book imbalances per category
         q_lower = question_text.lower()
 
-        # Crypto (High Retail Hopium, Low Insider Risk) -> High Gamma
         if any(
             w in q_lower for w in ["bitcoin", "ethereum", "solana", "xrp", "crypto"]
         ):
             gamma = 1.30
-        # Sports (Moderate Efficiency, Modest Insider Risk) -> Baseline Gamma
         elif any(
             w in q_lower for w in ["win on", "vs.", "o/u", "ncaa", "fc", "championship"]
         ):
             gamma = 1.20
-        # Weather/Temp (Highly Deterministic, High Precision) -> Low Gamma
         elif any(w in q_lower for w in ["temperature", "weather", "snow"]):
             gamma = 1.15
-        # Politics/News (High Insider/Oracle Dispute Risk) -> Brutal Penalty Gamma
         elif any(
             w in q_lower for w in ["trump", "election", "cabinet", "strike", "war"]
         ):
             gamma = 1.05
         else:
-            gamma = 1.18  # Conservative default
+            gamma = 1.18
 
         return (p_market**gamma) / ((p_market**gamma) + ((1.0 - p_market) ** gamma))
 
@@ -266,12 +307,34 @@ def trade():
     analyzed_markets = ai_risk_and_clustering(new_markets)
     safe_markets = [m for m in analyzed_markets if m.get("ai_risk", 1.0) <= 0.20]
 
-    diversified_markets = safe_markets
+    diversified_markets = []
+    seen_clusters = set()
+    for m in safe_markets:
+        cluster = m.get("cluster", m["id"])
+        if cluster not in seen_clusters:
+            diversified_markets.append(m)
+            seen_clusters.add(cluster)
 
     if not diversified_markets:
-        console.print(
-            "[red]No uncorrelated markets passed the Gemini Tail-Risk filter.[/red]"
-        )
+        console.print("[red]No uncorrelated markets passed the Tail-Risk filter.[/red]")
+        return
+
+    for m in diversified_markets:
+        retail_no = m["no_price"]
+        true_no_prob = shin_debiasing(retail_no, m["question"])
+        m["shin_no_prob"] = true_no_prob
+        m["shin_edge"] = true_no_prob - retail_no
+
+    diversified_markets = [m for m in diversified_markets if m["shin_edge"] >= 0.03]
+
+    diversified_markets.sort(
+        key=lambda m: (m["shin_edge"] * m["liquidity"]) / max(m["days"], 0.1),
+        reverse=True,
+    )
+    diversified_markets = diversified_markets[:10]
+
+    if not diversified_markets:
+        console.print("[red]No markets with sufficient Shin edge (>= 3¢).[/red]")
         return
 
     total_deployed = 0.0
@@ -283,12 +346,42 @@ def trade():
     c.execute("SELECT COUNT(*) FROM positions WHERE status='OPEN'")
     active_count = c.fetchone()[0]
 
+    category_counts = {}
+    c.execute("SELECT question FROM positions WHERE status='OPEN'")
+    for row in c.fetchall():
+        cat = classify_category(row[0])
+        category_counts[cat] = category_counts.get(cat, 0) + 1
+
+    category_limits = {
+        "sports": 8,
+        "crypto": 8,
+        "politics": 5,
+        "weather": 5,
+        "other": 10,
+    }
+
     for m in diversified_markets:
         if active_count >= 50:
             console.print(
                 "[yellow]Portfolio is fully deployed (50 positions max).[/yellow]"
             )
             break
+
+        cat = classify_category(m["question"])
+        if category_counts.get(cat, 0) >= category_limits.get(cat, 10):
+            console.print(
+                f"[yellow]Category limit reached for '{cat}' ({category_counts[cat]}/{category_limits.get(cat, 10)}). Skipping.[/yellow]"
+            )
+            continue
+
+        duplicate_found = False
+        c.execute("SELECT question FROM positions WHERE status='OPEN'")
+        for row in c.fetchall():
+            if jaccard_similarity(m["question"], row[0]) > 0.3:
+                duplicate_found = True
+                break
+        if duplicate_found:
+            continue
 
         target_size = total_portfolio_value * 0.02
         target_size = min(target_size, free_capital - total_deployed)
@@ -374,9 +467,12 @@ def trade():
                     conn.commit()
                     total_deployed += total_cost
                     active_count += 1
+                    category_counts[cat] = category_counts.get(cat, 0) + 1
                     console.print(
-                        f"[green]DEPLOYED (L2 FILLED):[/green] {m['question'][:45]}... | Size: ${total_cost:.2f} | Avg Price: {actual_entry_no * 100:.1f}¢"
+                        f"[green]DEPLOYED (L2 FILLED):[/green] {m['question'][:45]}... | Size: ${total_cost:.2f} | Avg Price: {actual_entry_no * 100:.1f}¢ | Edge: {m['shin_edge'] * 100:.1f}¢"
                     )
+
+                    time.sleep(1.0)
 
             except Exception as e:
                 console.print(f"[yellow]Skipped (API Error): {e}[/yellow]")
