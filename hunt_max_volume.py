@@ -31,7 +31,7 @@ def fetch_active_lotto_markets(limit=3000):
                 
             try:
                 target_date = dateutil.parser.isoparse(end_date_str).astimezone(timezone.utc)
-            except:
+            except Exception:
                 continue
                 
             now = datetime.now(timezone.utc)

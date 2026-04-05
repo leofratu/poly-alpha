@@ -45,7 +45,7 @@ for event in events:
                     "date": date_str,
                     "yes_price": yes_price
                 })
-            except:
+            except Exception:
                 pass
 
 # Group by exact same date

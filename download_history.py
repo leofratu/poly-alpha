@@ -71,7 +71,7 @@ def process_and_save():
                         tokens = json.loads(m.get("outcomePrices", "[]"))
                         yes_price = float(tokens[0]) if len(tokens) > 0 else 0.0
                         no_price = 1.0 - yes_price
-                    except:
+                    except Exception:
                         yes_price, no_price = 0.0, 0.0
                         
                     batch_markets.append((

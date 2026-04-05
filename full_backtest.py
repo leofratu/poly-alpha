@@ -57,7 +57,7 @@ def analyze_full_history(capital_per_trade=1000.0, num_trades_per_cycle=50):
                 "lifespan": lifespan,
                 "yes_won": yes_won
             })
-        except:
+        except Exception:
             pass
             
     total_samples = len(historical_trades)

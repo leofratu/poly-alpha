@@ -40,7 +40,7 @@ def fetch_historical_resolved_markets(limit=5000):
                 if lifespan_days <= 0:
                     lifespan_days = (closed_date - created_date).total_seconds() / 86400.0
                 
-            except:
+            except Exception:
                 continue
                 
             # Filter 1: Short Term Markets (< 14 days lifespan)

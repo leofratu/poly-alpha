@@ -61,7 +61,7 @@ def fetch_l2_markets(limit=2000):
                 target_date = dateutil.parser.isoparse(end_date_str).astimezone(
                     timezone.utc
                 )
-            except:
+            except (ValueError, TypeError, KeyError):
                 continue
 
             now = datetime.now(timezone.utc)

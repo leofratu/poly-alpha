@@ -43,13 +43,13 @@ def fetch_fast_liquid_markets():
                             target_date = dateutil.parser.isoparse(
                                 end_date_str
                             ).astimezone(timezone.utc)
-                        except:
+                        except (ValueError, TypeError):
                             continue
 
                         days = (target_date - now).total_seconds() / 86400.0
 
-                        # Constraints: 0 to 5 days (widened from 3 for better deal flow)
-                        if days < 0 or days > 5.0:
+                        # Constraints: 0 to 1 day (ultra-fast capital velocity)
+                        if days < 0 or days > 1.0:
                             continue
 
                         q_lower = q.lower()
@@ -100,11 +100,11 @@ def fetch_fast_liquid_markets():
                             volume = float(m.get("volume", 0))
                             liquidity = float(m.get("liquidity", volume * 0.05))
 
-                            # 5-15% retail bias, and at least $600 liquidity (3x typical position size)
+                            # 5-15% retail bias, and at least $250 liquidity
                             if (
                                 yes_price >= 0.05
                                 and yes_price <= 0.15
-                                and liquidity > 600
+                                and liquidity > 250
                             ):
                                 markets_data.append(
                                     {
@@ -116,7 +116,7 @@ def fetch_fast_liquid_markets():
                                         "liquidity": liquidity,
                                     }
                                 )
-                        except:
+                        except (ValueError, TypeError, KeyError):
                             pass
                 offset += limit
         except Exception as e:

@@ -53,7 +53,7 @@ def fetch_l2_liquidity(limit=1000):
                 target_date = dateutil.parser.isoparse(end_date_str).astimezone(
                     timezone.utc
                 )
-            except:
+            except (ValueError, TypeError):
                 continue
 
             now = datetime.now(timezone.utc)
@@ -108,6 +108,7 @@ def fetch_l2_liquidity(limit=1000):
                             "liquidity": liquidity,
                             "safe_kelly": safe_kelly,
                             "roi": b,
+                            "ev": p * b - q_loss,
                         }
                     )
             except Exception:
@@ -158,7 +159,7 @@ def size_portfolio(total_portfolio_usd=100000.0):
             continue
 
         total_allocated += actual_allocation
-        expected_profit += actual_allocation * (p * b - q_loss)
+        expected_profit += actual_allocation * m["ev"]
 
         table.add_row(
             m["question"][:45] + "...",

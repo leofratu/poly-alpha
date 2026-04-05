@@ -48,7 +48,7 @@ def exhaustive_scan():
                 
             try:
                 target_date = dateutil.parser.isoparse(end_date_str).astimezone(timezone.utc)
-            except: continue
+            except Exception: continue
                 
             days = (target_date - now).total_seconds() / 86400.0
             
@@ -93,7 +93,7 @@ def exhaustive_scan():
                         "yes": yes_price,
                         "liq": liquidity
                     })
-            except: pass
+            except Exception: pass
             
     valid_markets.sort(key=lambda x: x["days"])
     

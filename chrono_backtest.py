@@ -39,7 +39,7 @@ def run_6_month_simulation(starting_capital=1000.0):
                     "closed": closed,
                     "yes_won": yes_won
                 })
-        except:
+        except Exception:
             pass
             
     if not markets:
