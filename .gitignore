@@ -1,0 +1,8 @@
+__pycache__/
+.venv/
+*.sqlite
+*.csv
+*.json
+.ruff_cache/
+poly_cache.sqlite
+paper_wallet.sqlite
