@@ -1,17 +1,29 @@
-import sqlite3
+"""
+POLY-ALPHA FINAL OPTIMIZED STRATEGY
+- 100 trades per cycle
+- 0.5% position size ($5/trade from $1000)
+- 50% capital deployed, 50% black swan reserve
+- First 30% lifecycle only (where edge exists per paper)
+- Minimal dedup (only >80% Jaccard correlation removed)
+- Cycle duration: 7 days (when ~50% of positions resolve)
+- Cycles per month: ~4.3
+"""
+
 import json
 import urllib.request
 import urllib.error
 import time
 import ssl
 import re
+import sqlite3
+import os
+import sys
 import numpy as np
 from datetime import datetime, timezone
+from collections import defaultdict
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-import sys
-import os
 
 console = Console()
 
@@ -23,33 +35,21 @@ DB_FILE = os.environ.get(
     "POLY_ALPHA_DB", os.path.expanduser("~/.poly_alpha/paper_wallet.sqlite")
 )
 
-# AGGRESSIVE EARLY LIFECYCLE STRATEGY
-# Based on Reichenbach & Walther (2025) — 124M trades
-# Edge exists ONLY in first 20-30% of lifecycle
-# We enter early, exit before resolution
-
+# ============================================================
+# FINAL STRATEGY PARAMETERS
+# ============================================================
 MIN_YES_PRICE = 0.01
-MAX_YES_PRICE = 0.25
-MIN_LIQUIDITY = 50
-MIN_VOLUME = 20
+MAX_YES_PRICE = 0.30
+MIN_LIQUIDITY = 20
+MIN_VOLUME = 10
 MAX_DAYS = 30.0
 MIN_DAYS = 0.1
-MAX_LIFECYCLE_PCT = 0.30  # First 30% of lifecycle ONLY
-MIN_SHIN_EDGE = 0.005
-MAX_VOL_LIQ_RATIO = 15.0
-POSITION_SIZE_PCT = 0.02
-MAX_POSITIONS = 50
-MAX_PORTFOLIO_DEPLOY = 0.60
-JACCARD_THRESHOLD = 0.3
-
-CATEGORY_LIMITS = {
-    "politics": 30,
-    "crypto": 30,
-    "sports": 25,
-    "weather": 30,
-    "esports": 20,
-    "other": 30,
-}
+MAX_LIFECYCLE_PCT = 0.30  # First 30% ONLY
+MIN_SHIN_EDGE = 0.003
+POSITION_SIZE = 5.0  # $5 per trade (0.5% of $1000)
+MAX_POSITIONS = 100  # 100 trades per cycle
+MAX_PORTFOLIO_DEPLOY = 0.50  # 50% deployed, 50% reserve
+JACCARD_THRESHOLD = 0.80  # Only remove highly correlated
 
 SHIN_GAMMA = {
     "politics": 1.05,
@@ -213,40 +213,6 @@ def jaccard_similarity(s1, s2):
     return len(set1.intersection(set2)) / len(union)
 
 
-def get_date_bucket(m):
-    """Group markets by approximate date bucket."""
-    days = m["days"]
-    if days <= 1:
-        return "today"
-    elif days <= 3:
-        return "1-3d"
-    elif days <= 7:
-        return "3-7d"
-    elif days <= 14:
-        return "7-14d"
-    else:
-        return "14-21d"
-
-
-def get_topic_bucket(m):
-    """Extract main topic from question for dedup."""
-    q = m["question"].lower()
-    if "elon musk" in q or "tweet" in q or "post" in q:
-        return "elon_tweets"
-    elif "earthquake" in q or "magnitude" in q:
-        return "earthquakes"
-    elif "temperature" in q or "highest temp" in q:
-        return "weather_temp"
-    elif "bitcoin" in q or "btc" in q or "crypto" in q:
-        return "crypto"
-    elif "trump" in q or "election" in q:
-        return "politics"
-    elif "win on" in q or "vs." in q:
-        return "sports"
-    else:
-        return "other"
-
-
 def api_request(url, retries=3):
     for attempt in range(retries):
         try:
@@ -295,6 +261,151 @@ def fetch_all_active_markets():
             break
 
     return all_markets
+
+
+def scan_final_strategy_markets(all_markets):
+    """Find ALL markets with positive Shin edge in first 30% lifecycle."""
+    now = datetime.now(timezone.utc)
+    all_with_edge = []
+    rejected = {}
+
+    for m in all_markets:
+        try:
+            question = m.get("question", "")
+            q_lower = question.lower()
+
+            if LONG_TERM_PATTERNS.search(q_lower):
+                rejected["long_term_league"] = rejected.get("long_term_league", 0) + 1
+                continue
+
+            end_date_str = m.get("endDate")
+            created_str = m.get("createdAt")
+            if not end_date_str:
+                rejected["no_end_date"] = rejected.get("no_end_date", 0) + 1
+                continue
+
+            try:
+                end_date = datetime.fromisoformat(end_date_str.replace("Z", "+00:00"))
+            except Exception:
+                rejected["parse_error"] = rejected.get("parse_error", 0) + 1
+                continue
+
+            days_remaining = (end_date - now).total_seconds() / 86400.0
+            if days_remaining < MIN_DAYS or days_remaining > MAX_DAYS:
+                rejected["outside_time_window"] = (
+                    rejected.get("outside_time_window", 0) + 1
+                )
+                continue
+
+            # Estimate lifecycle stage
+            if created_str:
+                try:
+                    created = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
+                    total_duration = (end_date - created).total_seconds() / 86400.0
+                    pct_elapsed = (
+                        1.0 - (days_remaining / total_duration)
+                        if total_duration > 0
+                        else 1.0
+                    )
+                except Exception:
+                    pct_elapsed = 0.5
+            else:
+                pct_elapsed = 0.0 if days_remaining > 10 else 0.5
+
+            # FIRST 30% LIFECYCLE ONLY
+            if pct_elapsed > MAX_LIFECYCLE_PCT:
+                rejected["not_early_lifecycle"] = (
+                    rejected.get("not_early_lifecycle", 0) + 1
+                )
+                continue
+
+            tokens = json.loads(m.get("outcomePrices", "[]"))
+            if len(tokens) < 2:
+                rejected["no_prices"] = rejected.get("no_prices", 0) + 1
+                continue
+
+            outcomes = json.loads(m.get("outcomes", "[]"))
+            if len(outcomes) != 2:
+                rejected["not_binary"] = rejected.get("not_binary", 0) + 1
+                continue
+
+            yes_price = float(tokens[0])
+            no_price = 1.0 - yes_price
+
+            if yes_price < MIN_YES_PRICE or yes_price > MAX_YES_PRICE:
+                rejected["outside_price_bracket"] = (
+                    rejected.get("outside_price_bracket", 0) + 1
+                )
+                continue
+
+            volume = float(m.get("volume", 0))
+            liquidity = float(m.get("liquidity", volume * 0.05))
+            if volume < MIN_VOLUME:
+                rejected["low_volume"] = rejected.get("low_volume", 0) + 1
+                continue
+            if liquidity < MIN_LIQUIDITY:
+                rejected["low_liquidity"] = rejected.get("low_liquidity", 0) + 1
+                continue
+
+            category = classify_category(question)
+            shin_no = shin_debiasing(no_price, category)
+            shin_edge = shin_no - no_price
+
+            if shin_edge < MIN_SHIN_EDGE:
+                rejected["low_shin_edge"] = rejected.get("low_shin_edge", 0) + 1
+                continue
+
+            all_with_edge.append(
+                {
+                    "id": m.get("id", ""),
+                    "question": question,
+                    "category": category,
+                    "yes_price": yes_price,
+                    "no_price": no_price,
+                    "liquidity": liquidity,
+                    "volume": volume,
+                    "days": days_remaining,
+                    "pct_elapsed": pct_elapsed * 100,
+                    "shin_no": shin_no,
+                    "shin_edge": shin_edge,
+                }
+            )
+
+        except Exception:
+            rejected["parse_error"] = rejected.get("parse_error", 0) + 1
+            continue
+
+    console.print(f"\n[bold]Rejection Breakdown:[/bold]")
+    for reason, count in sorted(rejected.items(), key=lambda x: -x[1]):
+        if count > 0:
+            console.print(f"  [yellow]{reason}:[/yellow] {count:,}")
+
+    console.print(
+        f"\n[bold green]TOTAL MARKETS WITH EDGE (first 30% lifecycle): {len(all_with_edge)}[/bold green]"
+    )
+
+    if not all_with_edge:
+        return []
+
+    # Sort by edge (highest first)
+    all_with_edge.sort(key=lambda x: -x["shin_edge"])
+
+    # Minimal dedup: only remove >80% Jaccard correlation
+    diversified = []
+    for m in all_with_edge:
+        dup = False
+        for e in diversified:
+            if jaccard_similarity(m["question"], e["question"]) > JACCARD_THRESHOLD:
+                dup = True
+                break
+        if not dup:
+            diversified.append(m)
+
+    console.print(
+        f"[bold green]After minimal dedup (>80% Jaccard): {len(diversified)}[/bold green]"
+    )
+
+    return diversified
 
 
 def init_db():
@@ -478,198 +589,25 @@ def settle_trades():
         )
 
 
-def scan_aggressive_early_markets(all_markets):
-    """Find markets in EARLY lifecycle with real volume/liquidity."""
-    now = datetime.now(timezone.utc)
-    early_markets = []
-    rejected = {}
-
-    for m in all_markets:
-        try:
-            question = m.get("question", "")
-            q_lower = question.lower()
-
-            if LONG_TERM_PATTERNS.search(q_lower):
-                rejected["long_term_league"] = rejected.get("long_term_league", 0) + 1
-                continue
-
-            end_date_str = m.get("endDate")
-            created_str = m.get("createdAt")
-            if not end_date_str:
-                rejected["no_end_date"] = rejected.get("no_end_date", 0) + 1
-                continue
-
-            try:
-                end_date = datetime.fromisoformat(end_date_str.replace("Z", "+00:00"))
-            except Exception:
-                rejected["parse_error"] = rejected.get("parse_error", 0) + 1
-                continue
-
-            days_remaining = (end_date - now).total_seconds() / 86400.0
-            if days_remaining < MIN_DAYS or days_remaining > MAX_DAYS:
-                rejected["outside_time_window"] = (
-                    rejected.get("outside_time_window", 0) + 1
-                )
-                continue
-
-            # Estimate lifecycle stage
-            if created_str:
-                try:
-                    created = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
-                    total_duration = (end_date - created).total_seconds() / 86400.0
-                    pct_elapsed = (
-                        1.0 - (days_remaining / total_duration)
-                        if total_duration > 0
-                        else 1.0
-                    )
-                except Exception:
-                    pct_elapsed = 0.5
-            else:
-                pct_elapsed = 0.0 if days_remaining > 7 else 0.5
-
-            # EARLY LIFECYCLE FILTER: first 30%
-            if pct_elapsed > MAX_LIFECYCLE_PCT:
-                rejected["not_early_lifecycle"] = (
-                    rejected.get("not_early_lifecycle", 0) + 1
-                )
-                continue
-
-            tokens = json.loads(m.get("outcomePrices", "[]"))
-            if len(tokens) < 2:
-                rejected["no_prices"] = rejected.get("no_prices", 0) + 1
-                continue
-
-            outcomes = json.loads(m.get("outcomes", "[]"))
-            if len(outcomes) != 2:
-                rejected["not_binary"] = rejected.get("not_binary", 0) + 1
-                continue
-
-            yes_price = float(tokens[0])
-            no_price = 1.0 - yes_price
-
-            if yes_price < MIN_YES_PRICE or yes_price > MAX_YES_PRICE:
-                rejected["outside_price_bracket"] = (
-                    rejected.get("outside_price_bracket", 0) + 1
-                )
-                continue
-
-            volume = float(m.get("volume", 0))
-            liquidity = float(m.get("liquidity", volume * 0.05))
-            if volume < MIN_VOLUME:
-                rejected["low_volume"] = rejected.get("low_volume", 0) + 1
-                continue
-            if liquidity < MIN_LIQUIDITY:
-                rejected["low_liquidity"] = rejected.get("low_liquidity", 0) + 1
-                continue
-
-            vol_24h = float(m.get("volume24hr", 0) or 0)
-            if liquidity > 0 and (vol_24h / liquidity) > MAX_VOL_LIQ_RATIO:
-                rejected["hft_spike"] = rejected.get("hft_spike", 0) + 1
-                continue
-
-            category = classify_category(question)
-            shin_no = shin_debiasing(no_price, category)
-            shin_edge = shin_no - no_price
-
-            if shin_edge < MIN_SHIN_EDGE:
-                rejected["low_shin_edge"] = rejected.get("low_shin_edge", 0) + 1
-                continue
-
-            # Confidence: (edge × volume) / days — prioritizes high-volume, high-edge, short-duration
-            confidence = (shin_edge * volume) / max(days_remaining, 0.1)
-
-            early_markets.append(
-                {
-                    "id": m.get("id", ""),
-                    "question": question,
-                    "category": category,
-                    "yes_price": yes_price,
-                    "no_price": no_price,
-                    "liquidity": liquidity,
-                    "volume": volume,
-                    "days": days_remaining,
-                    "pct_elapsed": pct_elapsed * 100,
-                    "shin_no": shin_no,
-                    "shin_edge": shin_edge,
-                    "confidence": confidence,
-                }
-            )
-
-        except Exception:
-            rejected["parse_error"] = rejected.get("parse_error", 0) + 1
-            continue
-
-    console.print(f"\n[bold]Rejection Breakdown:[/bold]")
-    for reason, count in sorted(rejected.items(), key=lambda x: -x[1]):
-        if count > 0:
-            console.print(f"  [yellow]{reason}:[/yellow] {count:,}")
-
-    console.print(
-        f"\n[bold green]AGGRESSIVE EARLY LIFECYCLE MARKETS FOUND: {len(early_markets)}[/bold green]"
-    )
-
-    if not early_markets:
-        return []
-
-    # Sort by confidence
-    early_markets.sort(key=lambda x: -x["confidence"])
-
-    # Smart dedup: category + date bucket + topic bucket
-    diversified = []
-    category_counts = {}
-    seen_buckets = set()
-    for m in early_markets:
-        cat = m["category"]
-        if category_counts.get(cat, 0) >= CATEGORY_LIMITS.get(cat, 10):
-            continue
-
-        # Smart bucket dedup
-        date_bucket = get_date_bucket(m)
-        topic_bucket = get_topic_bucket(m)
-        bucket_key = (cat, date_bucket, topic_bucket)
-
-        if bucket_key in seen_buckets:
-            continue
-
-        # Also check Jaccard for remaining correlation
-        dup = False
-        for e in diversified:
-            if jaccard_similarity(m["question"], e["question"]) > JACCARD_THRESHOLD:
-                dup = True
-                break
-        if not dup:
-            diversified.append(m)
-            category_counts[cat] = category_counts.get(cat, 0) + 1
-            seen_buckets.add(bucket_key)
-
-    console.print(
-        f"[bold green]After dedup + category limits: {len(diversified)}[/bold green]"
-    )
-
-    return diversified
-
-
 def trade():
     console.print(
         Panel(
-            "[bold green]AGGRESSIVE EARLY LIFECYCLE STRATEGY[/bold green]\n"
-            "[white]Entering markets in first 30% of lifecycle with real volume.[/white]\n"
-            "[white]Based on Reichenbach & Walther (2025) — 124M trades.[/white]"
+            "[bold green]POLY-ALPHA FINAL STRATEGY[/bold green]\n"
+            "[white]100 trades/cycle | 0.5% position size | First 30% lifecycle[/white]\n"
+            "[white]50% deployed, 50% reserve | 7-day cycle | ~4.3 cycles/month[/white]"
         )
     )
 
     all_markets = fetch_all_active_markets()
     console.print(f"\n[green]Total scanned: {len(all_markets):,} markets[/green]")
 
-    candidates = scan_aggressive_early_markets(all_markets)
+    candidates = scan_final_strategy_markets(all_markets)
     if not candidates:
-        console.print("[red]No early lifecycle markets found.[/red]")
+        console.print("[red]No markets found.[/red]")
         return
 
-    # Show opportunities
-    console.print(
-        f"\n[bold cyan]Aggressive Early Lifecycle Alpha Opportunities:[/bold cyan]"
-    )
+    # Show top opportunities
+    console.print(f"\n[bold cyan]Top 20 Alpha Opportunities:[/bold cyan]")
     t = Table(show_header=True, header_style="bold green")
     t.add_column("#", style="cyan")
     t.add_column("Cat", style="magenta")
@@ -677,7 +615,6 @@ def trade():
     t.add_column("Yes", justify="right", style="red")
     t.add_column("No", justify="right", style="green")
     t.add_column("Edge", justify="right", style="blue")
-    t.add_column("Volume", justify="right", style="yellow")
     t.add_column("Days", justify="right")
     t.add_column("Elapsed", justify="right")
 
@@ -690,21 +627,18 @@ def trade():
         "other": "bold white",
     }
 
-    for i, m in enumerate(candidates[:25]):
+    for i, m in enumerate(candidates[:20]):
         t.add_row(
             str(i + 1),
             f"[{cat_colors.get(m['category'], 'white')}]{m['category']}[/{cat_colors.get(m['category'], 'white')}]",
-            m["question"][:45],
+            m["question"][:50],
             f"{m['yes_price'] * 100:.1f}¢",
             f"{m['no_price'] * 100:.1f}¢",
             f"+{m['shin_edge'] * 100:.1f}¢",
-            f"${m['volume']:,.0f}",
             f"{m['days']:.1f}",
             f"{m['pct_elapsed']:.0f}%",
         )
     console.print(t)
-    if len(candidates) > 25:
-        console.print(f"  ...and {len(candidates) - 25} more")
 
     # Execute trades
     free_capital = get_wallet()
@@ -716,33 +650,20 @@ def trade():
     c = conn.cursor()
     c.execute("SELECT market_id FROM positions WHERE status='OPEN'")
     active_ids = set(r[0] for r in c.fetchall())
-    c.execute("SELECT SUM(investment) FROM positions WHERE status='OPEN'")
-    res = c.fetchone()
-    locked_capital = res[0] if res and res[0] else 0.0
-    total_portfolio_value = free_capital + locked_capital
     c.execute("SELECT COUNT(*) FROM positions WHERE status='OPEN'")
     active_count = c.fetchone()[0]
 
-    category_counts = {}
-    c.execute("SELECT question FROM positions WHERE status='OPEN'")
-    for row in c.fetchall():
-        cat = classify_category(row[0])
-        category_counts[cat] = category_counts.get(cat, 0) + 1
-
     total_deployed = 0.0
+    deployed_count = 0
 
-    for m in candidates:
+    for m in candidates[:MAX_POSITIONS]:
         if active_count >= MAX_POSITIONS:
             console.print(
-                "[yellow]Portfolio fully deployed (50 positions max).[/yellow]"
+                "[yellow]Portfolio fully deployed (100 positions max).[/yellow]"
             )
             break
 
         if m["id"] in active_ids:
-            continue
-
-        cat = m["category"]
-        if category_counts.get(cat, 0) >= CATEGORY_LIMITS.get(cat, 10):
             continue
 
         # Correlation check
@@ -755,11 +676,14 @@ def trade():
         if dup:
             continue
 
-        target_size = total_portfolio_value * POSITION_SIZE_PCT
-        target_size = min(target_size, free_capital - total_deployed)
+        # Check capital
+        if total_deployed + POSITION_SIZE > free_capital * MAX_PORTFOLIO_DEPLOY:
+            console.print(
+                "[yellow]Capital deployment limit reached (50% max).[/yellow]"
+            )
+            break
 
-        if target_size < 19.5:
-            continue
+        target_size = POSITION_SIZE
 
         # L2 walk
         market_id = m["id"]
@@ -802,7 +726,6 @@ def trade():
                     price = float(ask["price"])
                     size = float(ask["size"])
 
-                    # Allow up to 3% slippage from current price
                     if price > retail_no * 1.03:
                         break
 
@@ -815,36 +738,26 @@ def trade():
                     if total_cost >= target_size * 0.99:
                         break
 
-                # If CLOB book is thin, try entering at market price with smaller size
+                # Handle thin books
                 if total_cost < target_size * 0.50:
-                    # Try smaller position
                     if len(asks) > 0:
-                        # Take the best ask even if it's above our threshold
                         best_ask = float(asks[0]["price"])
                         best_size = float(asks[0]["size"])
-                        if best_ask <= retail_no * 1.05:  # Max 5% slippage
-                            # Enter at best ask with available size
+                        if best_ask <= retail_no * 1.05:
                             total_cost = best_ask * min(
                                 best_size, target_size / best_ask
                             )
                             total_shares = min(best_size, target_size / best_ask)
-                            if total_cost < 10:  # Minimum $10 position
-                                console.print(
-                                    f"[yellow]SKIPPED (Too thin):[/yellow] {m['question'][:45]}... | Max at best ask: ${total_cost:.2f}"
-                                )
+                            if total_cost < 3:
                                 continue
                         else:
-                            console.print(
-                                f"[yellow]SKIPPED (Wide spread):[/yellow] {m['question'][:45]}... | Best ask: {best_ask * 100:.1f}¢ vs market {retail_no * 100:.1f}¢"
-                            )
                             continue
                     else:
-                        console.print(
-                            f"[yellow]SKIPPED (Empty book):[/yellow] {m['question'][:45]}..."
-                        )
                         continue
 
-                actual_entry_no = total_cost / total_shares
+                actual_entry_no = (
+                    total_cost / total_shares if total_shares > 0 else retail_no
+                )
 
                 c.execute(
                     """INSERT INTO positions (market_id, question, entry_time, entry_no_price, investment, shares, status, payout, pnl)
@@ -865,21 +778,23 @@ def trade():
                 conn.commit()
                 total_deployed += total_cost
                 active_count += 1
-                category_counts[cat] = category_counts.get(cat, 0) + 1
+                deployed_count += 1
                 console.print(
-                    f"[green]DEPLOYED (EARLY LIFECYCLE):[/green] {m['question'][:45]}... | Size: ${total_cost:.2f} | No: {actual_entry_no * 100:.1f}¢ | Edge: {m['shin_edge'] * 100:.1f}¢ | Elapsed: {m['pct_elapsed']:.0f}%"
+                    f"[green]DEPLOYED #{deployed_count}:[/green] {m['question'][:45]}... | Size: ${total_cost:.2f} | No: {actual_entry_no * 100:.1f}¢ | Edge: +{m['shin_edge'] * 100:.1f}¢"
                 )
 
-                time.sleep(1.0)
+                time.sleep(0.5)
 
         except Exception as e:
-            console.print(f"[yellow]Skipped (API Error): {e}[/yellow]")
+            console.print(f"[yellow]Skipped: {e}[/yellow]")
             continue
 
     if total_deployed > 0:
         console.print(
-            f"[bold green]Successfully locked ${total_deployed:,.2f} into early lifecycle favorites.[/bold green]"
+            f"\n[bold green]Successfully deployed ${total_deployed:.2f} into {deployed_count} early lifecycle favorites.[/bold green]"
         )
+    else:
+        console.print("[yellow]No new positions deployed.[/yellow]")
 
     conn.close()
 
@@ -909,7 +824,7 @@ def status():
     )
     table.add_row("Free Capital (Dry Powder)", f"${free_capital:,.2f}")
     table.add_row("Locked Margin (Active Trades)", f"${locked_capital:,.2f}")
-    table.add_row("Active Positions", f"{len(open_positions)}")
+    table.add_row("Active Positions", f"{len(open_positions)}/100")
     table.add_row(
         "Realized PnL (All Time)",
         f"{'+' if realized_pnl >= 0 else ''}${realized_pnl:,.2f}",
@@ -925,12 +840,14 @@ def status():
         pos_table.add_column("Investment", justify="right", style="red")
         pos_table.add_column("Shares (Max Payout)", justify="right", style="green")
 
-        for p in open_positions:
+        for p in open_positions[:20]:
             pos_table.add_row(
                 p[3][:50] + "...", f"{p[4] * 100:.1f}¢", f"${p[1]:.2f}", f"{p[2]:.2f}"
             )
-        console.print("\n[bold]Active Order Book:[/bold]")
+        console.print("\n[bold]Active Order Book (top 20):[/bold]")
         console.print(pos_table)
+        if len(open_positions) > 20:
+            console.print(f"  ...and {len(open_positions) - 20} more")
 
     conn.close()
 
