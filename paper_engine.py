@@ -28,14 +28,14 @@ DB_FILE = os.environ.get(
 # Edge exists ONLY in first 20-30% of lifecycle
 # We enter early, exit before resolution
 
-MIN_YES_PRICE = 0.03
-MAX_YES_PRICE = 0.17
-MIN_LIQUIDITY = 200
+MIN_YES_PRICE = 0.02
+MAX_YES_PRICE = 0.20
+MIN_LIQUIDITY = 100
 MIN_VOLUME = 50
-MAX_DAYS = 14.0
+MAX_DAYS = 30.0
 MIN_DAYS = 0.1
-MAX_LIFECYCLE_PCT = 0.30  # First 30% of lifecycle
-MIN_SHIN_EDGE = 0.015
+MAX_LIFECYCLE_PCT = 0.30  # First 30% of lifecycle ONLY
+MIN_SHIN_EDGE = 0.01
 MAX_VOL_LIQ_RATIO = 15.0
 POSITION_SIZE_PCT = 0.02
 MAX_POSITIONS = 50
