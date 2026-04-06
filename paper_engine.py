@@ -1,7 +1,9 @@
 import sqlite3
 import json
 import urllib.request
+import urllib.error
 import time
+import ssl
 import numpy as np
 from datetime import datetime, timezone
 from rich.console import Console
@@ -11,12 +13,247 @@ import sys
 import os
 import re
 
-from ultimate_executor import fetch_fast_liquid_markets, ai_risk_and_clustering
-
 console = Console()
+
+ssl_ctx = ssl.create_default_context()
+ssl_ctx.check_hostname = False
+ssl_ctx.verify_mode = ssl.CERT_NONE
+
 DB_FILE = os.environ.get(
     "POLY_ALPHA_DB", os.path.expanduser("~/.poly_alpha/paper_wallet.sqlite")
 )
+
+MIN_YES_PRICE = 0.05
+MAX_YES_PRICE = 0.15
+MIN_LIQUIDITY = 250
+MAX_DAYS = 30.0
+MIN_DAYS = 0.1
+MIN_SHIN_EDGE = 0.02
+MAX_VOL_LIQ_RATIO = 15.0
+POSITION_SIZE_PCT = 0.02
+MAX_POSITIONS = 50
+MAX_PORTFOLIO_DEPLOY = 0.60
+JACCARD_THRESHOLD = 0.3
+
+CATEGORY_LIMITS = {
+    "politics": 15,
+    "crypto": 15,
+    "sports": 10,
+    "weather": 10,
+    "esports": 8,
+    "other": 10,
+}
+
+SHIN_GAMMA = {
+    "politics": 1.05,
+    "crypto": 1.30,
+    "weather": 1.15,
+    "esports": 1.18,
+    "sports": 1.20,
+    "other": 1.18,
+}
+
+LONG_TERM_PATTERNS = re.compile(
+    r"(win the|finish in|relegated|champion|championship|finals|"
+    r"premier league|la liga|serie a|bundesliga)",
+    re.IGNORECASE,
+)
+
+
+def classify_category(question):
+    q = question.lower()
+    if any(
+        w in q
+        for w in [
+            "trump",
+            "election",
+            "cabinet",
+            "strike",
+            "war",
+            "congress",
+            "senate",
+            "president",
+            "prime minister",
+            "governor",
+            "mayor",
+            "parliament",
+            "vote",
+            "referendum",
+            "impeach",
+            "sanction",
+            "tariff",
+            "policy",
+            "recognize",
+            "leader of",
+            "out as",
+            "resign",
+            "coup",
+            "military",
+            "invade",
+            "conflict",
+            "ceasefire",
+            "treaty",
+            "diplomatic",
+            "strait of hormuz",
+            "iran",
+            "israel",
+            "russia",
+            "ukraine",
+            "china",
+            "taiwan",
+            "venezuela",
+            "macron",
+            "putin",
+            "white house",
+            "balance of power",
+            "fidesz",
+        ]
+    ):
+        return "politics"
+    if any(
+        w in q
+        for w in [
+            "bitcoin",
+            "ethereum",
+            "solana",
+            "xrp",
+            "crypto",
+            "btc",
+            "eth",
+            "market cap",
+            "dip to",
+            "reach $",
+            "ipo",
+            "kraken",
+            "microstrategy",
+            "sec",
+            "etf",
+            "blockchain",
+            "defi",
+            "token",
+            "fdv",
+            "bnb",
+            "hyperliquid",
+            "palantir",
+        ]
+    ):
+        return "crypto"
+    if any(
+        w in q
+        for w in [
+            "temperature",
+            "weather",
+            "snow",
+            "rain",
+            "hurricane",
+            "highest temperature",
+            "lowest temperature",
+        ]
+    ):
+        return "weather"
+    if any(
+        w in q
+        for w in [
+            "lol",
+            "valorant",
+            "league of legends",
+            "counter-strike",
+            "csgo",
+            "dota",
+            "overwatch",
+            "esports",
+            "game 2",
+            "game 3",
+            "map ",
+            "first blood",
+            "total kills",
+            "honor of kings",
+            "quadra",
+            "penta",
+        ]
+    ):
+        return "esports"
+    if any(
+        w in q
+        for w in [
+            "win on",
+            "vs.",
+            "o/u",
+            "ncaa",
+            "fc ",
+            "championship",
+            "premier",
+            "la liga",
+            "serie a",
+            "bundesliga",
+        ]
+    ):
+        return "sports"
+    return "other"
+
+
+def shin_debiasing(p_market, category="other"):
+    gamma = SHIN_GAMMA.get(category, 1.18)
+    return (p_market**gamma) / ((p_market**gamma) + ((1.0 - p_market) ** gamma))
+
+
+def jaccard_similarity(s1, s2):
+    set1 = set(s1.lower().split())
+    set2 = set(s2.lower().split())
+    union = set1.union(set2)
+    if not union:
+        return 0.0
+    return len(set1.intersection(set2)) / len(union)
+
+
+def api_request(url, retries=3):
+    for attempt in range(retries):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "PolyAlpha/15.0"})
+            with urllib.request.urlopen(req, timeout=30, context=ssl_ctx) as resp:
+                return json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                wait = 2 ** (attempt + 2)
+                console.print(f"[yellow]Rate limited. Waiting {wait}s...[/yellow]")
+                time.sleep(wait)
+            elif attempt < retries - 1:
+                time.sleep(2**attempt)
+            else:
+                raise
+        except Exception:
+            if attempt < retries - 1:
+                time.sleep(2**attempt)
+            else:
+                raise
+
+
+def fetch_all_active_markets():
+    console.print("[cyan]Scanning ALL active Polymarket markets...[/cyan]")
+    all_markets = []
+    offset = 0
+    total_events = 0
+
+    while True:
+        url = f"https://gamma-api.polymarket.com/events?closed=false&active=true&limit=1000&offset={offset}"
+        try:
+            events = api_request(url)
+            if not events:
+                break
+            for event in events:
+                for m in event.get("markets", []):
+                    all_markets.append(m)
+            total_events += len(events)
+            console.print(
+                f"  {total_events:,} events ({len(all_markets):,} markets)..."
+            )
+            offset += 1000
+            time.sleep(0.2)
+        except Exception as e:
+            console.print(f"[yellow]Fetch error at offset {offset}: {e}[/yellow]")
+            break
+
+    return all_markets
 
 
 def init_db():
@@ -53,13 +290,6 @@ def get_wallet():
     return c.fetchone()[0]
 
 
-def update_wallet(new_balance):
-    conn = sqlite3.connect(DB_FILE, timeout=10)
-    c = conn.cursor()
-    c.execute("UPDATE wallet SET free_capital = ? WHERE id=1", (new_balance,))
-    conn.commit()
-
-
 def settle_trades():
     conn = sqlite3.connect(DB_FILE, timeout=10)
     c = conn.cursor()
@@ -85,7 +315,7 @@ def settle_trades():
         m_data = None
         for attempt in range(3):
             try:
-                with urllib.request.urlopen(req) as resp:
+                with urllib.request.urlopen(req, timeout=15, context=ssl_ctx) as resp:
                     m_data = json.loads(resp.read().decode())
                 break
             except urllib.error.HTTPError as e:
@@ -99,7 +329,7 @@ def settle_trades():
                     time.sleep(2**attempt)
                 else:
                     console.print(
-                        f"[bold red]SETTLEMENT FAILED (HTTP {e.code} after 3 retries): {question} | Market ID: {market_id}[/bold red]"
+                        f"[bold red]SETTLEMENT FAILED (HTTP {e.code} after 3 retries): {question}[/bold red]"
                     )
             except Exception as e:
                 if attempt < 2:
@@ -207,142 +437,228 @@ def settle_trades():
         )
 
 
-def jaccard_similarity(s1, s2):
-    set1 = set(s1.lower().split())
-    set2 = set(s2.lower().split())
-    union = set1.union(set2)
-    if not union:
-        return 0.0
-    return len(set1.intersection(set2)) / len(union)
+def scan_early_lifecycle_markets(all_markets):
+    """Find markets in EARLY lifecycle (first 20%) with Yes 5-15¢."""
+    now = datetime.now(timezone.utc)
+    early_markets = []
+    rejected = {}
 
+    for m in all_markets:
+        try:
+            question = m.get("question", "")
+            q_lower = question.lower()
 
-def classify_category(question):
-    q_lower = question.lower()
-    if any(
-        w in q_lower
-        for w in ["bitcoin", "ethereum", "solana", "xrp", "crypto", "btc", "eth"]
-    ):
-        return "crypto"
-    elif any(
-        w in q_lower
-        for w in [
-            "win on",
-            "vs.",
-            "o/u",
-            "ncaa",
-            "fc ",
-            "championship",
-            "premier",
-            "la liga",
-            "serie a",
-            "bundesliga",
-        ]
-    ):
-        return "sports"
-    elif any(
-        w in q_lower
-        for w in ["trump", "election", "cabinet", "strike", "war", "congress", "senate"]
-    ):
-        return "politics"
-    elif any(
-        w in q_lower for w in ["temperature", "weather", "snow", "rain", "hurricane"]
-    ):
-        return "weather"
-    else:
-        return "other"
+            if LONG_TERM_PATTERNS.search(q_lower):
+                rejected["long_term_league"] = rejected.get("long_term_league", 0) + 1
+                continue
+
+            end_date_str = m.get("endDate")
+            created_str = m.get("createdAt")
+            if not end_date_str:
+                rejected["no_end_date"] = rejected.get("no_end_date", 0) + 1
+                continue
+
+            try:
+                end_date = datetime.fromisoformat(end_date_str.replace("Z", "+00:00"))
+            except Exception:
+                rejected["parse_error"] = rejected.get("parse_error", 0) + 1
+                continue
+
+            days_remaining = (end_date - now).total_seconds() / 86400.0
+            if days_remaining < MIN_DAYS or days_remaining > MAX_DAYS:
+                rejected["outside_time_window"] = (
+                    rejected.get("outside_time_window", 0) + 1
+                )
+                continue
+
+            # Estimate lifecycle stage
+            if created_str:
+                try:
+                    created = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
+                    total_duration = (end_date - created).total_seconds() / 86400.0
+                    pct_elapsed = (
+                        1.0 - (days_remaining / total_duration)
+                        if total_duration > 0
+                        else 1.0
+                    )
+                except Exception:
+                    pct_elapsed = 0.5
+            else:
+                pct_elapsed = 0.0 if days_remaining > 14 else 0.5
+
+            # EARLY LIFECYCLE FILTER: must be in first 20%
+            if pct_elapsed > 0.20:
+                rejected["not_early_lifecycle"] = (
+                    rejected.get("not_early_lifecycle", 0) + 1
+                )
+                continue
+
+            tokens = json.loads(m.get("outcomePrices", "[]"))
+            if len(tokens) < 2:
+                rejected["no_prices"] = rejected.get("no_prices", 0) + 1
+                continue
+
+            outcomes = json.loads(m.get("outcomes", "[]"))
+            if len(outcomes) != 2:
+                rejected["not_binary"] = rejected.get("not_binary", 0) + 1
+                continue
+
+            yes_price = float(tokens[0])
+            no_price = 1.0 - yes_price
+
+            if yes_price < MIN_YES_PRICE or yes_price > MAX_YES_PRICE:
+                rejected["outside_price_bracket"] = (
+                    rejected.get("outside_price_bracket", 0) + 1
+                )
+                continue
+
+            volume = float(m.get("volume", 0))
+            liquidity = float(m.get("liquidity", volume * 0.05))
+            if liquidity < MIN_LIQUIDITY:
+                rejected["low_liquidity"] = rejected.get("low_liquidity", 0) + 1
+                continue
+
+            vol_24h = float(m.get("volume24hr", 0) or 0)
+            if liquidity > 0 and (vol_24h / liquidity) > MAX_VOL_LIQ_RATIO:
+                rejected["hft_spike"] = rejected.get("hft_spike", 0) + 1
+                continue
+
+            category = classify_category(question)
+            shin_no = shin_debiasing(no_price, category)
+            shin_edge = shin_no - no_price
+
+            if shin_edge < MIN_SHIN_EDGE:
+                rejected["low_shin_edge"] = rejected.get("low_shin_edge", 0) + 1
+                continue
+
+            confidence = (shin_edge * liquidity) / max(days_remaining, 0.1)
+
+            early_markets.append(
+                {
+                    "id": m.get("id", ""),
+                    "question": question,
+                    "category": category,
+                    "yes_price": yes_price,
+                    "no_price": no_price,
+                    "liquidity": liquidity,
+                    "days": days_remaining,
+                    "pct_elapsed": pct_elapsed * 100,
+                    "shin_no": shin_no,
+                    "shin_edge": shin_edge,
+                    "confidence": confidence,
+                }
+            )
+
+        except Exception:
+            rejected["parse_error"] = rejected.get("parse_error", 0) + 1
+            continue
+
+    console.print(f"\n[bold]Rejection Breakdown:[/bold]")
+    for reason, count in sorted(rejected.items(), key=lambda x: -x[1]):
+        if count > 0:
+            console.print(f"  [yellow]{reason}:[/yellow] {count:,}")
+
+    console.print(
+        f"\n[bold green]EARLY LIFECYCLE MARKETS FOUND: {len(early_markets)}[/bold green]"
+    )
+
+    if not early_markets:
+        return []
+
+    early_markets.sort(key=lambda x: -x["confidence"])
+
+    # Correlation dedup + category limits
+    diversified = []
+    category_counts = {}
+    for m in early_markets:
+        cat = m["category"]
+        if category_counts.get(cat, 0) >= CATEGORY_LIMITS.get(cat, 10):
+            continue
+
+        dup = False
+        for e in diversified:
+            if jaccard_similarity(m["question"], e["question"]) > JACCARD_THRESHOLD:
+                dup = True
+                break
+        if not dup:
+            diversified.append(m)
+            category_counts[cat] = category_counts.get(cat, 0) + 1
+
+    console.print(
+        f"[bold green]After dedup + category limits: {len(diversified)}[/bold green]"
+    )
+
+    return diversified
 
 
 def trade():
-    import urllib.request, json
+    console.print(
+        Panel(
+            "[bold green]EARLY LIFECYCLE STRATEGY[/bold green]\n"
+            "[white]Only entering markets in first 20% of lifecycle.[/white]\n"
+            "[white]Based on Reichenbach & Walther (2025) — 124M trades.[/white]"
+        )
+    )
 
-    def shin_debiasing(p_market, question_text):
-        q_lower = question_text.lower()
+    all_markets = fetch_all_active_markets()
+    console.print(f"\n[green]Total scanned: {len(all_markets):,} markets[/green]")
 
-        if any(
-            w in q_lower for w in ["bitcoin", "ethereum", "solana", "xrp", "crypto"]
-        ):
-            gamma = 1.30
-        elif any(
-            w in q_lower for w in ["win on", "vs.", "o/u", "ncaa", "fc", "championship"]
-        ):
-            gamma = 1.20
-        elif any(w in q_lower for w in ["temperature", "weather", "snow"]):
-            gamma = 1.15
-        elif any(
-            w in q_lower for w in ["trump", "election", "cabinet", "strike", "war"]
-        ):
-            gamma = 1.05
-        else:
-            gamma = 1.18
+    candidates = scan_early_lifecycle_markets(all_markets)
+    if not candidates:
+        console.print("[red]No early lifecycle markets found.[/red]")
+        return
 
-        return (p_market**gamma) / ((p_market**gamma) + ((1.0 - p_market) ** gamma))
+    console.print(f"\n[bold cyan]Early Lifecycle Alpha Opportunities:[/bold cyan]")
+    t = Table(show_header=True, header_style="bold green")
+    t.add_column("#", style="cyan")
+    t.add_column("Cat", style="magenta")
+    t.add_column("Question", style="white")
+    t.add_column("Yes", justify="right", style="red")
+    t.add_column("No", justify="right", style="green")
+    t.add_column("Edge", justify="right", style="blue")
+    t.add_column("Liq", justify="right", style="yellow")
+    t.add_column("Days", justify="right")
+    t.add_column("Elapsed", justify="right")
 
+    cat_colors = {
+        "politics": "bold red",
+        "crypto": "bold yellow",
+        "weather": "bold cyan",
+        "esports": "bold magenta",
+        "sports": "bold white",
+        "other": "bold white",
+    }
+
+    for i, m in enumerate(candidates[:20]):
+        t.add_row(
+            str(i + 1),
+            f"[{cat_colors.get(m['category'], 'white')}]{m['category']}[/{cat_colors.get(m['category'], 'white')}]",
+            m["question"][:45],
+            f"{m['yes_price'] * 100:.1f}¢",
+            f"{m['no_price'] * 100:.1f}¢",
+            f"+{m['shin_edge'] * 100:.1f}¢",
+            f"${m['liquidity']:,.0f}",
+            f"{m['days']:.1f}",
+            f"{m['pct_elapsed']:.0f}%",
+        )
+    console.print(t)
+    if len(candidates) > 20:
+        console.print(f"  ...and {len(candidates) - 20} more")
+
+    # Execute trades
     free_capital = get_wallet()
     if free_capital < 10.0:
         console.print("[red]Insufficient free capital to trade.[/red]")
         return
 
-    console.print(
-        f"[cyan]Hunting for Alpha... Available Free Capital: ${free_capital:,.2f}[/cyan]"
-    )
-
-    raw_markets = fetch_fast_liquid_markets()
-    if not raw_markets:
-        return
-    raw_markets.sort(key=lambda x: x["liquidity"], reverse=True)
-    raw_markets = raw_markets[:1000]
-
     conn = sqlite3.connect(DB_FILE, timeout=10)
     c = conn.cursor()
     c.execute("SELECT market_id FROM positions WHERE status='OPEN'")
-    active_ids = [r[0] for r in c.fetchall()]
-
-    new_markets = [m for m in raw_markets if m["id"] not in active_ids]
-    if not new_markets:
-        console.print(
-            "[yellow]No new safe markets available. Portfolio is fully deployed.[/yellow]"
-        )
-        return
-
-    analyzed_markets = ai_risk_and_clustering(new_markets)
-    safe_markets = [m for m in analyzed_markets if m.get("ai_risk", 1.0) <= 0.20]
-
-    diversified_markets = []
-    seen_clusters = set()
-    for m in safe_markets:
-        cluster = m.get("cluster", m["id"])
-        if cluster not in seen_clusters:
-            diversified_markets.append(m)
-            seen_clusters.add(cluster)
-
-    if not diversified_markets:
-        console.print("[red]No uncorrelated markets passed the Tail-Risk filter.[/red]")
-        return
-
-    for m in diversified_markets:
-        retail_no = m["no_price"]
-        true_no_prob = shin_debiasing(retail_no, m["question"])
-        m["shin_no_prob"] = true_no_prob
-        m["shin_edge"] = true_no_prob - retail_no
-
-    diversified_markets = [m for m in diversified_markets if m["shin_edge"] >= 0.03]
-
-    diversified_markets.sort(
-        key=lambda m: (m["shin_edge"] * m["liquidity"]) / max(m["days"], 0.1),
-        reverse=True,
-    )
-    diversified_markets = diversified_markets[:10]
-
-    if not diversified_markets:
-        console.print("[red]No markets with sufficient Shin edge (>= 3¢).[/red]")
-        return
-
-    total_deployed = 0.0
+    active_ids = set(r[0] for r in c.fetchall())
     c.execute("SELECT SUM(investment) FROM positions WHERE status='OPEN'")
     res = c.fetchone()
     locked_capital = res[0] if res and res[0] else 0.0
     total_portfolio_value = free_capital + locked_capital
-
     c.execute("SELECT COUNT(*) FROM positions WHERE status='OPEN'")
     active_count = c.fetchone()[0]
 
@@ -352,136 +668,135 @@ def trade():
         cat = classify_category(row[0])
         category_counts[cat] = category_counts.get(cat, 0) + 1
 
-    category_limits = {
-        "sports": 8,
-        "crypto": 8,
-        "politics": 5,
-        "weather": 5,
-        "other": 10,
-    }
+    total_deployed = 0.0
 
-    for m in diversified_markets:
-        if active_count >= 50:
+    for m in candidates:
+        if active_count >= MAX_POSITIONS:
             console.print(
-                "[yellow]Portfolio is fully deployed (50 positions max).[/yellow]"
+                "[yellow]Portfolio fully deployed (50 positions max).[/yellow]"
             )
             break
 
-        cat = classify_category(m["question"])
-        if category_counts.get(cat, 0) >= category_limits.get(cat, 10):
-            console.print(
-                f"[yellow]Category limit reached for '{cat}' ({category_counts[cat]}/{category_limits.get(cat, 10)}). Skipping.[/yellow]"
-            )
+        if m["id"] in active_ids:
             continue
 
-        duplicate_found = False
+        cat = m["category"]
+        if category_counts.get(cat, 0) >= CATEGORY_LIMITS.get(cat, 10):
+            continue
+
+        # Correlation check
+        dup = False
         c.execute("SELECT question FROM positions WHERE status='OPEN'")
         for row in c.fetchall():
-            if jaccard_similarity(m["question"], row[0]) > 0.3:
-                duplicate_found = True
+            if jaccard_similarity(m["question"], row[0]) > JACCARD_THRESHOLD:
+                dup = True
                 break
-        if duplicate_found:
+        if dup:
             continue
 
-        target_size = total_portfolio_value * 0.02
+        target_size = total_portfolio_value * POSITION_SIZE_PCT
         target_size = min(target_size, free_capital - total_deployed)
 
-        if target_size >= 19.5:
-            market_id = m["id"]
+        if target_size < 19.5:
+            continue
 
-            url = f"https://gamma-api.polymarket.com/markets/{market_id}"
-            req = urllib.request.Request(url, headers={"User-Agent": "PolyAlpha/1.0"})
-            try:
-                with urllib.request.urlopen(req) as resp:
-                    m_data = json.loads(resp.read().decode())
-                    prices = json.loads(m_data.get("outcomePrices", "[]"))
-                    clob_raw = m_data.get("clobTokenIds", "[]")
-                    if isinstance(clob_raw, str):
-                        clob_tokens = json.loads(clob_raw)
-                    else:
-                        clob_tokens = clob_raw
+        # L2 walk
+        market_id = m["id"]
+        url = f"https://gamma-api.polymarket.com/markets/{market_id}"
+        req = urllib.request.Request(url, headers={"User-Agent": "PolyAlpha/1.0"})
+        try:
+            with urllib.request.urlopen(req, timeout=15, context=ssl_ctx) as resp:
+                m_data = json.loads(resp.read().decode())
+                prices = json.loads(m_data.get("outcomePrices", "[]"))
+                clob_raw = m_data.get("clobTokenIds", "[]")
+                if isinstance(clob_raw, str):
+                    clob_tokens = json.loads(clob_raw)
+                else:
+                    clob_tokens = clob_raw
 
-                    if len(prices) < 2 or len(clob_tokens) < 2:
-                        continue
+                if len(prices) < 2 or len(clob_tokens) < 2:
+                    continue
 
-                    idx = 0 if float(prices[0]) > float(prices[1]) else 1
-                    token_id = clob_tokens[idx]
-                    retail_no = float(prices[idx])
+                idx = 0 if float(prices[0]) > float(prices[1]) else 1
+                token_id = clob_tokens[idx]
+                retail_no = float(prices[idx])
+                true_no_prob = shin_debiasing(retail_no, m["question"])
 
-                    true_no_prob = shin_debiasing(retail_no, m["question"])
+                clob_url = f"https://clob.polymarket.com/book?token_id={token_id}"
+                clob_req = urllib.request.Request(
+                    clob_url, headers={"User-Agent": "PolyAlpha/1.0"}
+                )
+                with urllib.request.urlopen(
+                    clob_req, timeout=15, context=ssl_ctx
+                ) as clob_resp:
+                    ob_data = json.loads(clob_resp.read().decode())
 
-                    clob_url = f"https://clob.polymarket.com/book?token_id={token_id}"
-                    clob_req = urllib.request.Request(
-                        clob_url, headers={"User-Agent": "PolyAlpha/1.0"}
-                    )
-                    with urllib.request.urlopen(clob_req) as clob_resp:
-                        ob_data = json.loads(clob_resp.read().decode())
+                asks = ob_data.get("asks", [])
+                asks.sort(key=lambda x: float(x["price"]))
 
-                    asks = ob_data.get("asks", [])
-                    asks.sort(key=lambda x: float(x["price"]))
+                total_cost = 0.0
+                total_shares = 0.0
 
-                    total_cost = 0.0
-                    total_shares = 0.0
+                for ask in asks:
+                    price = float(ask["price"])
+                    size = float(ask["size"])
 
-                    for ask in asks:
-                        price = float(ask["price"])
-                        size = float(ask["size"])
+                    if price >= true_no_prob:
+                        break
 
-                        if price >= true_no_prob:
-                            break
+                    capital_needed = target_size - total_cost
+                    max_shares = capital_needed / price
+                    shares_to_buy = min(size, max_shares)
+                    total_cost += shares_to_buy * price
+                    total_shares += shares_to_buy
 
-                        capital_needed = target_size - total_cost
-                        max_shares_we_can_buy_here = capital_needed / price
+                    if total_cost >= target_size * 0.99:
+                        break
 
-                        shares_to_buy = min(size, max_shares_we_can_buy_here)
-                        total_cost += shares_to_buy * price
-                        total_shares += shares_to_buy
-
-                        if total_cost >= target_size * 0.99:
-                            break
-
-                    if total_cost < target_size * 0.95:
-                        console.print(
-                            f"[red]REJECTED (L2 Liquidity):[/red] {m['question'][:45]}... | Max Safe L2 Depth: ${total_cost:.2f}"
-                        )
-                        continue
-
-                    actual_entry_no = total_cost / total_shares
-
-                    c.execute(
-                        """INSERT INTO positions (market_id, question, entry_time, entry_no_price, investment, shares, status, payout, pnl)
-                                 VALUES (?, ?, ?, ?, ?, ?, 'OPEN', 0.0, 0.0)""",
-                        (
-                            m["id"],
-                            m["question"],
-                            datetime.now(timezone.utc).timestamp(),
-                            actual_entry_no,
-                            total_cost,
-                            total_shares,
-                        ),
-                    )
-                    free_capital -= total_cost
-                    c.execute(
-                        "UPDATE wallet SET free_capital = ? WHERE id=1", (free_capital,)
-                    )
-                    conn.commit()
-                    total_deployed += total_cost
-                    active_count += 1
-                    category_counts[cat] = category_counts.get(cat, 0) + 1
+                if total_cost < target_size * 0.95:
                     console.print(
-                        f"[green]DEPLOYED (L2 FILLED):[/green] {m['question'][:45]}... | Size: ${total_cost:.2f} | Avg Price: {actual_entry_no * 100:.1f}¢ | Edge: {m['shin_edge'] * 100:.1f}¢"
+                        f"[red]REJECTED (L2 Liquidity):[/red] {m['question'][:45]}... | Max Safe L2 Depth: ${total_cost:.2f}"
                     )
+                    continue
 
-                    time.sleep(1.0)
+                actual_entry_no = total_cost / total_shares
 
-            except Exception as e:
-                console.print(f"[yellow]Skipped (API Error): {e}[/yellow]")
-                continue
+                c.execute(
+                    """INSERT INTO positions (market_id, question, entry_time, entry_no_price, investment, shares, status, payout, pnl)
+                     VALUES (?, ?, ?, ?, ?, ?, 'OPEN', 0.0, 0.0)""",
+                    (
+                        m["id"],
+                        m["question"],
+                        datetime.now(timezone.utc).timestamp(),
+                        actual_entry_no,
+                        total_cost,
+                        total_shares,
+                    ),
+                )
+                free_capital -= total_cost
+                c.execute(
+                    "UPDATE wallet SET free_capital = ? WHERE id=1", (free_capital,)
+                )
+                conn.commit()
+                total_deployed += total_cost
+                active_count += 1
+                category_counts[cat] = category_counts.get(cat, 0) + 1
+                console.print(
+                    f"[green]DEPLOYED (EARLY LIFECYCLE):[/green] {m['question'][:45]}... | Size: ${total_cost:.2f} | No: {actual_entry_no * 100:.1f}¢ | Edge: {m['shin_edge'] * 100:.1f}¢ | Elapsed: {m['pct_elapsed']:.0f}%"
+                )
+
+                time.sleep(1.0)
+
+        except Exception as e:
+            console.print(f"[yellow]Skipped (API Error): {e}[/yellow]")
+            continue
 
     if total_deployed > 0:
         console.print(
-            f"[bold green]Successfully locked ${total_deployed:,.2f} into true L2-verified favorites.[/bold green]"
+            f"[bold green]Successfully locked ${total_deployed:,.2f} into early lifecycle favorites.[/bold green]"
         )
+
+    conn.close()
 
 
 def status():
@@ -531,6 +846,8 @@ def status():
             )
         console.print("\n[bold]Active Order Book:[/bold]")
         console.print(pos_table)
+
+    conn.close()
 
 
 if __name__ == "__main__":
