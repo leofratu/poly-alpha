@@ -802,7 +802,8 @@ def trade():
                     price = float(ask["price"])
                     size = float(ask["size"])
 
-                    if price >= true_no_prob:
+                    # Allow up to 3% slippage from current price
+                    if price > retail_no * 1.03:
                         break
 
                     capital_needed = target_size - total_cost
@@ -814,11 +815,34 @@ def trade():
                     if total_cost >= target_size * 0.99:
                         break
 
-                if total_cost < target_size * 0.95:
-                    console.print(
-                        f"[red]REJECTED (L2 Liquidity):[/red] {m['question'][:45]}... | Max Safe L2 Depth: ${total_cost:.2f}"
-                    )
-                    continue
+                # If CLOB book is thin, try entering at market price with smaller size
+                if total_cost < target_size * 0.50:
+                    # Try smaller position
+                    if len(asks) > 0:
+                        # Take the best ask even if it's above our threshold
+                        best_ask = float(asks[0]["price"])
+                        best_size = float(asks[0]["size"])
+                        if best_ask <= retail_no * 1.05:  # Max 5% slippage
+                            # Enter at best ask with available size
+                            total_cost = best_ask * min(
+                                best_size, target_size / best_ask
+                            )
+                            total_shares = min(best_size, target_size / best_ask)
+                            if total_cost < 10:  # Minimum $10 position
+                                console.print(
+                                    f"[yellow]SKIPPED (Too thin):[/yellow] {m['question'][:45]}... | Max at best ask: ${total_cost:.2f}"
+                                )
+                                continue
+                        else:
+                            console.print(
+                                f"[yellow]SKIPPED (Wide spread):[/yellow] {m['question'][:45]}... | Best ask: {best_ask * 100:.1f}¢ vs market {retail_no * 100:.1f}¢"
+                            )
+                            continue
+                    else:
+                        console.print(
+                            f"[yellow]SKIPPED (Empty book):[/yellow] {m['question'][:45]}..."
+                        )
+                        continue
 
                 actual_entry_no = total_cost / total_shares
 
