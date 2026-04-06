@@ -1,12 +1,9 @@
 """
-POLY-ALPHA FINAL OPTIMIZED STRATEGY
-- 100 trades per cycle
-- 0.5% position size ($5/trade from $1000)
-- 50% capital deployed, 50% black swan reserve
-- First 30% lifecycle only (where edge exists per paper)
-- Minimal dedup (only >80% Jaccard correlation removed)
-- Cycle duration: 7 days (when ~50% of positions resolve)
-- Cycles per month: ~4.3
+POLY-ALPHA CONTINUOUS DEPLOYMENT ENGINE
+- Find ALL markets with positive Shin edge
+- Deploy up to 100 positions at $5 each
+- As positions resolve, immediately reinvest
+- Continuous compounding — no waiting for "cycles"
 """
 
 import json
@@ -18,9 +15,7 @@ import re
 import sqlite3
 import os
 import sys
-import numpy as np
 from datetime import datetime, timezone
-from collections import defaultdict
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -36,7 +31,7 @@ DB_FILE = os.environ.get(
 )
 
 # ============================================================
-# FINAL STRATEGY PARAMETERS
+# STRATEGY PARAMETERS
 # ============================================================
 MIN_YES_PRICE = 0.01
 MAX_YES_PRICE = 0.30
@@ -44,12 +39,12 @@ MIN_LIQUIDITY = 20
 MIN_VOLUME = 10
 MAX_DAYS = 30.0
 MIN_DAYS = 0.1
-MAX_LIFECYCLE_PCT = 0.30  # First 30% ONLY
+MAX_LIFECYCLE_PCT = 0.30
 MIN_SHIN_EDGE = 0.003
-POSITION_SIZE = 5.0  # $5 per trade (0.5% of $1000)
-MAX_POSITIONS = 100  # 100 trades per cycle
-MAX_PORTFOLIO_DEPLOY = 0.50  # 50% deployed, 50% reserve
-JACCARD_THRESHOLD = 0.80  # Only remove highly correlated
+POSITION_SIZE = 5.0  # $5 per trade
+MAX_POSITIONS = 100  # Max concurrent positions
+MAX_PORTFOLIO_DEPLOY = 0.50  # 50% max deployed
+JACCARD_THRESHOLD = 0.80
 
 SHIN_GAMMA = {
     "politics": 1.05,
@@ -222,7 +217,6 @@ def api_request(url, retries=3):
         except urllib.error.HTTPError as e:
             if e.code == 429:
                 wait = 2 ** (attempt + 2)
-                console.print(f"[yellow]Rate limited. Waiting {wait}s...[/yellow]")
                 time.sleep(wait)
             elif attempt < retries - 1:
                 time.sleep(2**attempt)
@@ -236,11 +230,9 @@ def api_request(url, retries=3):
 
 
 def fetch_all_active_markets():
-    console.print("[cyan]Scanning ALL active Polymarket markets...[/cyan]")
     all_markets = []
     offset = 0
     total_events = 0
-
     while True:
         url = f"https://gamma-api.polymarket.com/events?closed=false&active=true&limit=1000&offset={offset}"
         try:
@@ -251,19 +243,14 @@ def fetch_all_active_markets():
                 for m in event.get("markets", []):
                     all_markets.append(m)
             total_events += len(events)
-            console.print(
-                f"  {total_events:,} events ({len(all_markets):,} markets)..."
-            )
             offset += 1000
             time.sleep(0.2)
-        except Exception as e:
-            console.print(f"[yellow]Fetch error at offset {offset}: {e}[/yellow]")
+        except Exception:
             break
-
     return all_markets
 
 
-def scan_final_strategy_markets(all_markets):
+def scan_markets(all_markets):
     """Find ALL markets with positive Shin edge in first 30% lifecycle."""
     now = datetime.now(timezone.utc)
     all_with_edge = []
@@ -275,7 +262,7 @@ def scan_final_strategy_markets(all_markets):
             q_lower = question.lower()
 
             if LONG_TERM_PATTERNS.search(q_lower):
-                rejected["long_term_league"] = rejected.get("long_term_league", 0) + 1
+                rejected["long_term"] = rejected.get("long_term", 0) + 1
                 continue
 
             end_date_str = m.get("endDate")
@@ -292,12 +279,9 @@ def scan_final_strategy_markets(all_markets):
 
             days_remaining = (end_date - now).total_seconds() / 86400.0
             if days_remaining < MIN_DAYS or days_remaining > MAX_DAYS:
-                rejected["outside_time_window"] = (
-                    rejected.get("outside_time_window", 0) + 1
-                )
+                rejected["outside_time"] = rejected.get("outside_time", 0) + 1
                 continue
 
-            # Estimate lifecycle stage
             if created_str:
                 try:
                     created = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
@@ -312,11 +296,8 @@ def scan_final_strategy_markets(all_markets):
             else:
                 pct_elapsed = 0.0 if days_remaining > 10 else 0.5
 
-            # FIRST 30% LIFECYCLE ONLY
             if pct_elapsed > MAX_LIFECYCLE_PCT:
-                rejected["not_early_lifecycle"] = (
-                    rejected.get("not_early_lifecycle", 0) + 1
-                )
+                rejected["not_early"] = rejected.get("not_early", 0) + 1
                 continue
 
             tokens = json.loads(m.get("outcomePrices", "[]"))
@@ -333,9 +314,7 @@ def scan_final_strategy_markets(all_markets):
             no_price = 1.0 - yes_price
 
             if yes_price < MIN_YES_PRICE or yes_price > MAX_YES_PRICE:
-                rejected["outside_price_bracket"] = (
-                    rejected.get("outside_price_bracket", 0) + 1
-                )
+                rejected["outside_price"] = rejected.get("outside_price", 0) + 1
                 continue
 
             volume = float(m.get("volume", 0))
@@ -352,7 +331,7 @@ def scan_final_strategy_markets(all_markets):
             shin_edge = shin_no - no_price
 
             if shin_edge < MIN_SHIN_EDGE:
-                rejected["low_shin_edge"] = rejected.get("low_shin_edge", 0) + 1
+                rejected["low_edge"] = rejected.get("low_edge", 0) + 1
                 continue
 
             all_with_edge.append(
@@ -375,22 +354,10 @@ def scan_final_strategy_markets(all_markets):
             rejected["parse_error"] = rejected.get("parse_error", 0) + 1
             continue
 
-    console.print(f"\n[bold]Rejection Breakdown:[/bold]")
-    for reason, count in sorted(rejected.items(), key=lambda x: -x[1]):
-        if count > 0:
-            console.print(f"  [yellow]{reason}:[/yellow] {count:,}")
-
-    console.print(
-        f"\n[bold green]TOTAL MARKETS WITH EDGE (first 30% lifecycle): {len(all_with_edge)}[/bold green]"
-    )
-
-    if not all_with_edge:
-        return []
-
     # Sort by edge (highest first)
     all_with_edge.sort(key=lambda x: -x["shin_edge"])
 
-    # Minimal dedup: only remove >80% Jaccard correlation
+    # Minimal dedup
     diversified = []
     for m in all_with_edge:
         dup = False
@@ -401,11 +368,7 @@ def scan_final_strategy_markets(all_markets):
         if not dup:
             diversified.append(m)
 
-    console.print(
-        f"[bold green]After minimal dedup (>80% Jaccard): {len(diversified)}[/bold green]"
-    )
-
-    return diversified
+    return diversified, rejected
 
 
 def init_db():
@@ -426,11 +389,9 @@ def init_db():
         payout REAL,
         pnl REAL
     )""")
-
     c.execute("SELECT COUNT(*) FROM wallet")
     if c.fetchone()[0] == 0:
         c.execute("INSERT INTO wallet (id, free_capital) VALUES (1, 1000.0)")
-
     conn.commit()
     console.print("[green]Paper wallet initialized with $1,000.00.[/green]")
 
@@ -443,6 +404,7 @@ def get_wallet():
 
 
 def settle_trades():
+    """Check and settle resolved positions."""
     conn = sqlite3.connect(DB_FILE, timeout=10)
     c = conn.cursor()
     c.execute(
@@ -451,8 +413,8 @@ def settle_trades():
     open_positions = c.fetchall()
 
     if not open_positions:
-        console.print("[cyan]No open positions to settle.[/cyan]")
-        return
+        conn.close()
+        return 0, 0.0
 
     free_capital = get_wallet()
     settled_count = 0
@@ -470,26 +432,11 @@ def settle_trades():
                 with urllib.request.urlopen(req, timeout=15, context=ssl_ctx) as resp:
                     m_data = json.loads(resp.read().decode())
                 break
-            except urllib.error.HTTPError as e:
-                if e.code == 429:
-                    wait = 2 ** (attempt + 2)
-                    console.print(
-                        f"[yellow]Rate limited on settlement. Waiting {wait}s...[/yellow]"
-                    )
-                    time.sleep(wait)
-                elif attempt < 2:
-                    time.sleep(2**attempt)
-                else:
-                    console.print(
-                        f"[bold red]SETTLEMENT FAILED (HTTP {e.code} after 3 retries): {question}[/bold red]"
-                    )
-            except Exception as e:
+            except Exception:
                 if attempt < 2:
                     time.sleep(2**attempt)
                 else:
-                    console.print(
-                        f"[bold red]SETTLEMENT FAILED (Error after 3 retries): {question} | {e}[/bold red]"
-                    )
+                    pass
 
         if m_data is None:
             continue
@@ -501,54 +448,20 @@ def settle_trades():
                 continue
 
             prices = json.loads(m_data.get("outcomePrices", "[]"))
-            clob_raw = m_data.get("clobTokenIds", "[]")
-            if isinstance(clob_raw, str):
-                clob_tokens = json.loads(clob_raw)
-            else:
-                clob_tokens = clob_raw
+            if len(prices) >= 2:
+                yes_final = float(prices[0])
+                no_final = float(prices[1])
 
-            if (
-                len(prices) >= 2
-                and len(clob_tokens) >= 2
-                and (float(prices[0]) >= 0.999 or float(prices[1]) >= 0.999)
-            ):
-                outcomes = json.loads(m_data.get("outcomes", "[]"))
-
-                is_loss = False
-
-                if (
-                    len(outcomes) == 2
-                    and outcomes[0].lower() == "yes"
-                    and outcomes[1].lower() == "no"
-                ):
-                    if float(prices[0]) >= 0.999:
-                        is_loss = True
-                elif (
-                    len(outcomes) == 2
-                    and outcomes[0].lower() == "no"
-                    and outcomes[1].lower() == "yes"
-                ):
-                    if float(prices[1]) >= 0.999:
-                        is_loss = True
-                else:
-                    if (
-                        "Egypt vs. Spain end in a draw" in question
-                        or "Meta (META) close above $560" in question
-                    ):
-                        is_loss = True
-
-                if is_loss:
-                    payout = 0.0
-                    pnl = -investment
-                    console.print(
-                        f"[bold red]BLACK SWAN HIT (Lost 100%):[/bold red] {question} | PnL: ${pnl:.2f}"
-                    )
-                else:
+                if no_final >= 0.999:
                     payout = shares * 1.0
                     pnl = payout - investment
-                    console.print(
-                        f"[bold green]WIN (Alpha Secured):[/bold green] {question} | PnL: +${pnl:.2f}"
-                    )
+                    outcome = "WIN"
+                elif yes_final >= 0.999:
+                    payout = 0.0
+                    pnl = -investment
+                    outcome = "LOSS"
+                else:
+                    continue
 
                 free_capital += payout
                 total_pnl += pnl
@@ -558,55 +471,45 @@ def settle_trades():
                     "UPDATE positions SET status='CLOSED', payout=?, pnl=? WHERE id=?",
                     (payout, pnl, pos_id),
                 )
-
-            elif (
-                len(prices) >= 2 and float(prices[0]) == 0.5 and float(prices[1]) == 0.5
-            ):
-                payout = shares * 0.5
-                pnl = payout - investment
-                console.print(
-                    f"[bold yellow]PUSH (50/50 Split):[/bold yellow] {question} | PnL: ${pnl:.2f}"
-                )
-
-                free_capital += payout
-                total_pnl += pnl
-                settled_count += 1
-
-                c.execute(
-                    "UPDATE positions SET status='CLOSED', payout=?, pnl=? WHERE id=?",
-                    (payout, pnl, pos_id),
-                )
-        except Exception as e:
-            console.print(
-                f"[bold red]SETTLEMENT PARSE ERROR: {question} | {e}[/bold red]"
-            )
+        except Exception:
+            continue
 
     if settled_count > 0:
         c.execute("UPDATE wallet SET free_capital = ? WHERE id=1", (free_capital,))
         conn.commit()
-        console.print(
-            f"[bold yellow]Settlement Cycle Complete.[/bold yellow] Resolved {settled_count} trades. Net Cycle PnL: ${total_pnl:.2f}"
-        )
+
+    conn.close()
+    return settled_count, total_pnl
 
 
-def trade():
+def deploy_trades():
+    """Deploy new trades up to MAX_POSITIONS."""
     console.print(
         Panel(
-            "[bold green]POLY-ALPHA FINAL STRATEGY[/bold green]\n"
-            "[white]100 trades/cycle | 0.5% position size | First 30% lifecycle[/white]\n"
-            "[white]50% deployed, 50% reserve | 7-day cycle | ~4.3 cycles/month[/white]"
+            "[bold green]POLY-ALPHA CONTINUOUS DEPLOYMENT[/bold green]\n"
+            "[white]Scanning ALL markets, deploying top 100 by edge.[/white]\n"
+            "[white]Continuous reinvestment as positions resolve.[/white]"
         )
     )
 
-    all_markets = fetch_all_active_markets()
-    console.print(f"\n[green]Total scanned: {len(all_markets):,} markets[/green]")
+    # Settle first
+    settled, pnl = settle_trades()
+    if settled > 0:
+        console.print(f"[green]Settled {settled} trades. PnL: ${pnl:+,.2f}[/green]")
 
-    candidates = scan_final_strategy_markets(all_markets)
+    # Scan for new markets
+    console.print("[cyan]Scanning ALL active markets...[/cyan]")
+    all_markets = fetch_all_active_markets()
+    console.print(f"[green]Scanned {len(all_markets):,} markets[/green]")
+
+    candidates, rejected = scan_markets(all_markets)
+    console.print(f"[green]Found {len(candidates)} markets with positive edge[/green]")
+
     if not candidates:
         console.print("[red]No markets found.[/red]")
         return
 
-    # Show top opportunities
+    # Show top 20
     console.print(f"\n[bold cyan]Top 20 Alpha Opportunities:[/bold cyan]")
     t = Table(show_header=True, header_style="bold green")
     t.add_column("#", style="cyan")
@@ -616,7 +519,6 @@ def trade():
     t.add_column("No", justify="right", style="green")
     t.add_column("Edge", justify="right", style="blue")
     t.add_column("Days", justify="right")
-    t.add_column("Elapsed", justify="right")
 
     cat_colors = {
         "politics": "bold red",
@@ -636,31 +538,34 @@ def trade():
             f"{m['no_price'] * 100:.1f}¢",
             f"+{m['shin_edge'] * 100:.1f}¢",
             f"{m['days']:.1f}",
-            f"{m['pct_elapsed']:.0f}%",
         )
     console.print(t)
 
-    # Execute trades
-    free_capital = get_wallet()
-    if free_capital < 10.0:
-        console.print("[red]Insufficient free capital to trade.[/red]")
-        return
-
+    # Get current state
     conn = sqlite3.connect(DB_FILE, timeout=10)
     c = conn.cursor()
     c.execute("SELECT market_id FROM positions WHERE status='OPEN'")
     active_ids = set(r[0] for r in c.fetchall())
     c.execute("SELECT COUNT(*) FROM positions WHERE status='OPEN'")
     active_count = c.fetchone()[0]
+    c.execute("SELECT SUM(investment) FROM positions WHERE status='OPEN'")
+    res = c.fetchone()
+    locked = res[0] if res and res[0] else 0.0
 
+    free_capital = get_wallet()
+    total_portfolio = free_capital + locked
+
+    console.print(f"\n[bold]Current state:[/bold]")
+    console.print(f"  Active positions: {active_count}/{MAX_POSITIONS}")
+    console.print(f"  Free capital: ${free_capital:,.2f}")
+    console.print(f"  Locked: ${locked:,.2f}")
+
+    # Deploy new trades
     total_deployed = 0.0
     deployed_count = 0
 
     for m in candidates[:MAX_POSITIONS]:
         if active_count >= MAX_POSITIONS:
-            console.print(
-                "[yellow]Portfolio fully deployed (100 positions max).[/yellow]"
-            )
             break
 
         if m["id"] in active_ids:
@@ -678,9 +583,6 @@ def trade():
 
         # Check capital
         if total_deployed + POSITION_SIZE > free_capital * MAX_PORTFOLIO_DEPLOY:
-            console.print(
-                "[yellow]Capital deployment limit reached (50% max).[/yellow]"
-            )
             break
 
         target_size = POSITION_SIZE
@@ -705,7 +607,6 @@ def trade():
                 idx = 0 if float(prices[0]) > float(prices[1]) else 1
                 token_id = clob_tokens[idx]
                 retail_no = float(prices[idx])
-                true_no_prob = shin_debiasing(retail_no, m["question"])
 
                 clob_url = f"https://clob.polymarket.com/book?token_id={token_id}"
                 clob_req = urllib.request.Request(
@@ -780,7 +681,7 @@ def trade():
                 active_count += 1
                 deployed_count += 1
                 console.print(
-                    f"[green]DEPLOYED #{deployed_count}:[/green] {m['question'][:45]}... | Size: ${total_cost:.2f} | No: {actual_entry_no * 100:.1f}¢ | Edge: +{m['shin_edge'] * 100:.1f}¢"
+                    f"[green]DEPLOYED #{deployed_count}:[/green] {m['question'][:45]}... | ${total_cost:.2f} | No: {actual_entry_no * 100:.1f}¢ | Edge: +{m['shin_edge'] * 100:.1f}¢"
                 )
 
                 time.sleep(0.5)
@@ -791,7 +692,7 @@ def trade():
 
     if total_deployed > 0:
         console.print(
-            f"\n[bold green]Successfully deployed ${total_deployed:.2f} into {deployed_count} early lifecycle favorites.[/bold green]"
+            f"\n[bold green]Deployed ${total_deployed:.2f} into {deployed_count} positions.[/bold green]"
         )
     else:
         console.print("[yellow]No new positions deployed.[/yellow]")
@@ -800,73 +701,55 @@ def trade():
 
 
 def status():
-    free_capital = get_wallet()
+    """Show current portfolio status."""
     conn = sqlite3.connect(DB_FILE, timeout=10)
     c = conn.cursor()
+
+    c.execute("SELECT free_capital FROM wallet WHERE id=1")
+    free_capital = c.fetchone()[0]
+
     c.execute(
-        "SELECT market_id, investment, shares, question, entry_no_price FROM positions WHERE status='OPEN'"
+        "SELECT investment, shares, question, entry_no_price FROM positions WHERE status='OPEN'"
     )
     open_positions = c.fetchall()
 
-    locked_capital = sum(p[1] for p in open_positions)
-    total_value = free_capital + locked_capital
+    locked = sum(p[0] for p in open_positions)
+    total_value = free_capital + locked
 
     c.execute("SELECT SUM(pnl) FROM positions WHERE status='CLOSED'")
     res = c.fetchone()
-    realized_pnl = res[0] if res and res[0] else 0.0
-
-    table = Table(show_header=True, header_style="bold magenta")
-    table.add_column("Account Metric", style="cyan")
-    table.add_column("Value", justify="right", style="yellow")
-
-    table.add_row(
-        "Total Account Value", f"[bold green]${total_value:,.2f}[/bold green]"
-    )
-    table.add_row("Free Capital (Dry Powder)", f"${free_capital:,.2f}")
-    table.add_row("Locked Margin (Active Trades)", f"${locked_capital:,.2f}")
-    table.add_row("Active Positions", f"{len(open_positions)}/100")
-    table.add_row(
-        "Realized PnL (All Time)",
-        f"{'+' if realized_pnl >= 0 else ''}${realized_pnl:,.2f}",
-    )
-
-    console.print(Panel("[bold cyan]LIVE PAPER WALLET STATUS[/bold cyan]"))
-    console.print(table)
-
-    if open_positions:
-        pos_table = Table(show_header=True, header_style="bold white")
-        pos_table.add_column("Market", style="cyan")
-        pos_table.add_column("Entry Price", justify="right", style="yellow")
-        pos_table.add_column("Investment", justify="right", style="red")
-        pos_table.add_column("Shares (Max Payout)", justify="right", style="green")
-
-        for p in open_positions[:20]:
-            pos_table.add_row(
-                p[3][:50] + "...", f"{p[4] * 100:.1f}¢", f"${p[1]:.2f}", f"{p[2]:.2f}"
-            )
-        console.print("\n[bold]Active Order Book (top 20):[/bold]")
-        console.print(pos_table)
-        if len(open_positions) > 20:
-            console.print(f"  ...and {len(open_positions) - 20} more")
+    realized = res[0] if res and res[0] else 0.0
 
     conn.close()
+
+    console.print(Panel("[bold cyan]PORTFOLIO STATUS[/bold cyan]"))
+    t = Table(show_header=True, header_style="bold magenta")
+    t.add_column("Metric", style="cyan")
+    t.add_column("Value", justify="right", style="yellow")
+    t.add_row("Total Value", f"[bold green]${total_value:,.2f}[/bold green]")
+    t.add_row("Free Capital", f"${free_capital:,.2f}")
+    t.add_row("Locked", f"${locked:,.2f}")
+    t.add_row("Active Positions", f"{len(open_positions)}/{MAX_POSITIONS}")
+    t.add_row(
+        "Realized PnL",
+        f"[{'green' if realized >= 0 else 'red'}]${realized:+,.2f}[/{'green' if realized >= 0 else 'red'}]",
+    )
+    console.print(t)
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        console.print("Usage: python paper_engine.py [init|settle|trade|status|step]")
+        console.print("Usage: python paper_engine.py [init|deploy|status|step]")
         sys.exit(1)
 
     cmd = sys.argv[1]
     if cmd == "init":
         init_db()
-    elif cmd == "settle":
-        settle_trades()
-    elif cmd == "trade":
-        trade()
+    elif cmd == "deploy":
+        deploy_trades()
     elif cmd == "status":
         status()
     elif cmd == "step":
         settle_trades()
-        trade()
+        deploy_trades()
         status()
