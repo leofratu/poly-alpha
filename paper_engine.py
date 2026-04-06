@@ -43,12 +43,12 @@ MAX_PORTFOLIO_DEPLOY = 0.60
 JACCARD_THRESHOLD = 0.3
 
 CATEGORY_LIMITS = {
-    "politics": 15,
-    "crypto": 15,
-    "sports": 10,
-    "weather": 15,
-    "esports": 8,
-    "other": 15,
+    "politics": 20,
+    "crypto": 20,
+    "sports": 15,
+    "weather": 20,
+    "esports": 10,
+    "other": 20,
 }
 
 SHIN_GAMMA = {
@@ -211,6 +211,40 @@ def jaccard_similarity(s1, s2):
     if not union:
         return 0.0
     return len(set1.intersection(set2)) / len(union)
+
+
+def get_date_bucket(m):
+    """Group markets by approximate date bucket."""
+    days = m["days"]
+    if days <= 1:
+        return "today"
+    elif days <= 3:
+        return "1-3d"
+    elif days <= 7:
+        return "3-7d"
+    elif days <= 14:
+        return "7-14d"
+    else:
+        return "14-21d"
+
+
+def get_topic_bucket(m):
+    """Extract main topic from question for dedup."""
+    q = m["question"].lower()
+    if "elon musk" in q or "tweet" in q or "post" in q:
+        return "elon_tweets"
+    elif "earthquake" in q or "magnitude" in q:
+        return "earthquakes"
+    elif "temperature" in q or "highest temp" in q:
+        return "weather_temp"
+    elif "bitcoin" in q or "btc" in q or "crypto" in q:
+        return "crypto"
+    elif "trump" in q or "election" in q:
+        return "politics"
+    elif "win on" in q or "vs." in q:
+        return "sports"
+    else:
+        return "other"
 
 
 def api_request(url, retries=3):
@@ -580,14 +614,24 @@ def scan_aggressive_early_markets(all_markets):
     # Sort by confidence
     early_markets.sort(key=lambda x: -x["confidence"])
 
-    # Correlation dedup + category limits
+    # Smart dedup: category + date bucket + topic bucket
     diversified = []
     category_counts = {}
+    seen_buckets = set()
     for m in early_markets:
         cat = m["category"]
         if category_counts.get(cat, 0) >= CATEGORY_LIMITS.get(cat, 10):
             continue
 
+        # Smart bucket dedup
+        date_bucket = get_date_bucket(m)
+        topic_bucket = get_topic_bucket(m)
+        bucket_key = (cat, date_bucket, topic_bucket)
+
+        if bucket_key in seen_buckets:
+            continue
+
+        # Also check Jaccard for remaining correlation
         dup = False
         for e in diversified:
             if jaccard_similarity(m["question"], e["question"]) > JACCARD_THRESHOLD:
@@ -596,6 +640,7 @@ def scan_aggressive_early_markets(all_markets):
         if not dup:
             diversified.append(m)
             category_counts[cat] = category_counts.get(cat, 0) + 1
+            seen_buckets.add(bucket_key)
 
     console.print(
         f"[bold green]After dedup + category limits: {len(diversified)}[/bold green]"
