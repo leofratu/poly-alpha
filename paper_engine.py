@@ -4,6 +4,7 @@ import urllib.request
 import urllib.error
 import time
 import ssl
+import re
 import numpy as np
 from datetime import datetime, timezone
 from rich.console import Console
@@ -11,7 +12,6 @@ from rich.table import Table
 from rich.panel import Panel
 import sys
 import os
-import re
 
 console = Console()
 
@@ -23,12 +23,19 @@ DB_FILE = os.environ.get(
     "POLY_ALPHA_DB", os.path.expanduser("~/.poly_alpha/paper_wallet.sqlite")
 )
 
-MIN_YES_PRICE = 0.05
-MAX_YES_PRICE = 0.15
-MIN_LIQUIDITY = 250
-MAX_DAYS = 30.0
+# AGGRESSIVE EARLY LIFECYCLE STRATEGY
+# Based on Reichenbach & Walther (2025) — 124M trades
+# Edge exists ONLY in first 20-30% of lifecycle
+# We enter early, exit before resolution
+
+MIN_YES_PRICE = 0.03
+MAX_YES_PRICE = 0.17
+MIN_LIQUIDITY = 200
+MIN_VOLUME = 50
+MAX_DAYS = 14.0
 MIN_DAYS = 0.1
-MIN_SHIN_EDGE = 0.02
+MAX_LIFECYCLE_PCT = 0.30  # First 30% of lifecycle
+MIN_SHIN_EDGE = 0.015
 MAX_VOL_LIQ_RATIO = 15.0
 POSITION_SIZE_PCT = 0.02
 MAX_POSITIONS = 50
@@ -39,9 +46,9 @@ CATEGORY_LIMITS = {
     "politics": 15,
     "crypto": 15,
     "sports": 10,
-    "weather": 10,
+    "weather": 15,
     "esports": 8,
-    "other": 10,
+    "other": 15,
 }
 
 SHIN_GAMMA = {
@@ -437,8 +444,8 @@ def settle_trades():
         )
 
 
-def scan_early_lifecycle_markets(all_markets):
-    """Find markets in EARLY lifecycle (first 20%) with Yes 5-15¢."""
+def scan_aggressive_early_markets(all_markets):
+    """Find markets in EARLY lifecycle with real volume/liquidity."""
     now = datetime.now(timezone.utc)
     early_markets = []
     rejected = {}
@@ -484,10 +491,10 @@ def scan_early_lifecycle_markets(all_markets):
                 except Exception:
                     pct_elapsed = 0.5
             else:
-                pct_elapsed = 0.0 if days_remaining > 14 else 0.5
+                pct_elapsed = 0.0 if days_remaining > 7 else 0.5
 
-            # EARLY LIFECYCLE FILTER: must be in first 20%
-            if pct_elapsed > 0.20:
+            # EARLY LIFECYCLE FILTER: first 30%
+            if pct_elapsed > MAX_LIFECYCLE_PCT:
                 rejected["not_early_lifecycle"] = (
                     rejected.get("not_early_lifecycle", 0) + 1
                 )
@@ -514,6 +521,9 @@ def scan_early_lifecycle_markets(all_markets):
 
             volume = float(m.get("volume", 0))
             liquidity = float(m.get("liquidity", volume * 0.05))
+            if volume < MIN_VOLUME:
+                rejected["low_volume"] = rejected.get("low_volume", 0) + 1
+                continue
             if liquidity < MIN_LIQUIDITY:
                 rejected["low_liquidity"] = rejected.get("low_liquidity", 0) + 1
                 continue
@@ -531,7 +541,8 @@ def scan_early_lifecycle_markets(all_markets):
                 rejected["low_shin_edge"] = rejected.get("low_shin_edge", 0) + 1
                 continue
 
-            confidence = (shin_edge * liquidity) / max(days_remaining, 0.1)
+            # Confidence: (edge × volume) / days — prioritizes high-volume, high-edge, short-duration
+            confidence = (shin_edge * volume) / max(days_remaining, 0.1)
 
             early_markets.append(
                 {
@@ -541,6 +552,7 @@ def scan_early_lifecycle_markets(all_markets):
                     "yes_price": yes_price,
                     "no_price": no_price,
                     "liquidity": liquidity,
+                    "volume": volume,
                     "days": days_remaining,
                     "pct_elapsed": pct_elapsed * 100,
                     "shin_no": shin_no,
@@ -559,12 +571,13 @@ def scan_early_lifecycle_markets(all_markets):
             console.print(f"  [yellow]{reason}:[/yellow] {count:,}")
 
     console.print(
-        f"\n[bold green]EARLY LIFECYCLE MARKETS FOUND: {len(early_markets)}[/bold green]"
+        f"\n[bold green]AGGRESSIVE EARLY LIFECYCLE MARKETS FOUND: {len(early_markets)}[/bold green]"
     )
 
     if not early_markets:
         return []
 
+    # Sort by confidence
     early_markets.sort(key=lambda x: -x["confidence"])
 
     # Correlation dedup + category limits
@@ -594,8 +607,8 @@ def scan_early_lifecycle_markets(all_markets):
 def trade():
     console.print(
         Panel(
-            "[bold green]EARLY LIFECYCLE STRATEGY[/bold green]\n"
-            "[white]Only entering markets in first 20% of lifecycle.[/white]\n"
+            "[bold green]AGGRESSIVE EARLY LIFECYCLE STRATEGY[/bold green]\n"
+            "[white]Entering markets in first 30% of lifecycle with real volume.[/white]\n"
             "[white]Based on Reichenbach & Walther (2025) — 124M trades.[/white]"
         )
     )
@@ -603,12 +616,15 @@ def trade():
     all_markets = fetch_all_active_markets()
     console.print(f"\n[green]Total scanned: {len(all_markets):,} markets[/green]")
 
-    candidates = scan_early_lifecycle_markets(all_markets)
+    candidates = scan_aggressive_early_markets(all_markets)
     if not candidates:
         console.print("[red]No early lifecycle markets found.[/red]")
         return
 
-    console.print(f"\n[bold cyan]Early Lifecycle Alpha Opportunities:[/bold cyan]")
+    # Show opportunities
+    console.print(
+        f"\n[bold cyan]Aggressive Early Lifecycle Alpha Opportunities:[/bold cyan]"
+    )
     t = Table(show_header=True, header_style="bold green")
     t.add_column("#", style="cyan")
     t.add_column("Cat", style="magenta")
@@ -616,7 +632,7 @@ def trade():
     t.add_column("Yes", justify="right", style="red")
     t.add_column("No", justify="right", style="green")
     t.add_column("Edge", justify="right", style="blue")
-    t.add_column("Liq", justify="right", style="yellow")
+    t.add_column("Volume", justify="right", style="yellow")
     t.add_column("Days", justify="right")
     t.add_column("Elapsed", justify="right")
 
@@ -629,7 +645,7 @@ def trade():
         "other": "bold white",
     }
 
-    for i, m in enumerate(candidates[:20]):
+    for i, m in enumerate(candidates[:25]):
         t.add_row(
             str(i + 1),
             f"[{cat_colors.get(m['category'], 'white')}]{m['category']}[/{cat_colors.get(m['category'], 'white')}]",
@@ -637,13 +653,13 @@ def trade():
             f"{m['yes_price'] * 100:.1f}¢",
             f"{m['no_price'] * 100:.1f}¢",
             f"+{m['shin_edge'] * 100:.1f}¢",
-            f"${m['liquidity']:,.0f}",
+            f"${m['volume']:,.0f}",
             f"{m['days']:.1f}",
             f"{m['pct_elapsed']:.0f}%",
         )
     console.print(t)
-    if len(candidates) > 20:
-        console.print(f"  ...and {len(candidates) - 20} more")
+    if len(candidates) > 25:
+        console.print(f"  ...and {len(candidates) - 25} more")
 
     # Execute trades
     free_capital = get_wallet()
