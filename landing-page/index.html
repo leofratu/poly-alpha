@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poly-Alpha | Autonomous Prediction Market Quant Engine</title>
+    <meta name="description" content="Poly-Alpha is a professional quantitative pipeline and background daemon engineered for deploying institutional capital on Polymarket via continuous-time Kelly Optimization.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="top-gradient"></div>
+
+    <header>
+        <div class="container nav-container">
+            <div class="logo">
+                <img src="assets/logo.png" alt="Poly-Alpha Logo" class="logo-img">
+                <span class="logo-text">Poly-Alpha</span>
+            </div>
+            <nav>
+                <a href="#features">Architecture</a>
+                <a href="#ai">AI Engine</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#waitlist" class="btn btn-secondary btn-sm">Join Waitlist</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero container">
+            <div class="hero-content">
+                <div class="badge">Limited Alpha Release</div>
+                <h1>Quantifying Asymmetry.</h1>
+                <h2>Autonomous Prediction Market Engine</h2>
+                <p>
+                    Poly-Alpha systematically captures pricing dislocations on Polymarket using 
+                    <strong>Gemini 3.0 Flash</strong> for tail-risk NLP analysis and Continuous-Time Multivariate <strong>Kelly Optimization</strong>.
+                </p>
+                <form class="waitlist-form" onsubmit="event.preventDefault();">
+                    <input type="email" placeholder="Enter your email" required>
+                    <button type="submit" class="btn btn-primary">Request Access</button>
+                </form>
+            </div>
+            <div class="hero-visual">
+                <div class="code-terminal">
+                    <div class="terminal-header">
+                        <div class="dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span class="terminal-title">ultimate_executor.py</span>
+                    </div>
+                    <pre><code class="language-python">
+# Initializing LLM cluster routing...
+# Gemini 3.0 Latency Check: PASS
+
+# Shin (1992) Power-law Debiasing
+def calculate_kelly(EV, Cov_inv):
+    f = Cov_inv.dot(EV)
+    return np.clip(f, 0, MAX_SLIPPAGE)
+
+> Executing L2 Limit GTC on Polymarket.
+                    </code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="container features">
+            <div class="section-header">
+                <h2>Strategic Edge</h2>
+                <p>Engineered for continuous, high-velocity alpha generation.</p>
+            </div>
+            <div class="grid-3">
+                <div class="feature-card">
+                    <div class="icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    </div>
+                    <h3>Latency Defense</h3>
+                    <p>Dominates the first 25% of market lifecycles before HFT bots correct spreads. Instantly drops markets with breaking real-world news catalysts.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                    </div>
+                    <h3>AI Tail-Risk Engine</h3>
+                    <p>Leverages Google Gemini 3.0 Flash to isolate tail risks, grouping correlated global events to prevent Gambler's Ruin clustering.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </div>
+                    <h3>Favorite-Longshot Bias</h3>
+                    <p>Systematically provides liquidity against bloated retail narratives, extracting the Volatility Risk Premium from >85% statistical favorites.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="ai" class="container architecture">
+            <div class="split">
+                <div class="architecture-visual">
+                    <div class="pipeline-flow">
+                        <div class="node">1. Gamma API Scrape</div>
+                        <div class="edge"></div>
+                        <div class="node">2. Gemini 3.0 Fundamental NLP</div>
+                        <div class="edge"></div>
+                        <div class="node">3. Shin-Debiased Expected Value</div>
+                        <div class="edge"></div>
+                        <div class="node">4. Limit Order Execution (Max 15% BBO)</div>
+                    </div>
+                </div>
+                <div class="architecture-content">
+                    <h2>The AI-Driven Pipeline</h2>
+                    <p>Poly-Alpha goes beyond basic statistical arbitrage. It incorporates fundamental reasoning using state-of-the-art LLMs to safely navigate prediction markets.</p>
+                    <ul class="check-list">
+                        <li><strong>Semantic Covariance:</strong> Analyzes text similarities in market descriptions to identify hidden correlations.</li>
+                        <li><strong>Clustering Defense:</strong> Ensures capital isn't wiped out by a single geopolitical "Black Swan".</li>
+                        <li><strong>Zero-Slippage Routing:</strong> Limits capital sizing geometrically directly against the Polymarket Central Limit Order Book structure.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="pricing" class="container pricing">
+            <div class="section-header text-center">
+                <h2>Pricing Plans</h2>
+                <p>Institutional-grade quantitative tooling. Transparently priced.</p>
+            </div>
+            <div class="grid-3">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Hobbyist</h3>
+                        <div class="price">$49<span>/mo</span></div>
+                        <p>For individuals learning prediction market dynamics.</p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>Access to Paper-Trading Engine</li>
+                        <li>Daily Gemini 3.0 Flash Market Reports</li>
+                        <li>End-of-Day orderbook data</li>
+                    </ul>
+                    <button class="btn btn-secondary" style="width: 100%;">Join Waitlist</button>
+                </div>
+                <div class="pricing-card glass" style="border-color: #ffffff;">
+                    <div class="pricing-header">
+                        <h3>Pro Quant</h3>
+                        <div class="price">$299<span>/mo</span></div>
+                        <p>For serious retail traders looking to capture alpha.</p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>Live Trading Execution via Polygon</li>
+                        <li>Real-time Gemini 3.0 Latency Defense</li>
+                        <li>Shin (1992) L2 Orderbook Debiasing</li>
+                        <li>Priority Chat Support</li>
+                    </ul>
+                    <button class="btn btn-primary" style="width: 100%;">Request Access</button>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Institutional</h3>
+                        <div class="price">Custom</div>
+                        <p>For funds providing liquidity at scale.</p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>Unlimited High-Frequency Subaccounts</li>
+                        <li>Custom Multimodal LLM Deployments</li>
+                        <li>Dedicated Infrastructure & API Access</li>
+                        <li>SLA Guarantees</li>
+                    </ul>
+                    <button class="btn btn-secondary" style="width: 100%;">Contact Sales</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="waitlist" class="cta-banner container">
+            <div class="banner-content text-center">
+                <h2>Ready to capture alpha?</h2>
+                <p>Join the waitlist to get early access to the Poly-Alpha Beta.</p>
+                <div class="cta-group" style="justify-content: center;">
+                    <form class="waitlist-form" style="margin: 0 auto;" onsubmit="event.preventDefault();">
+                        <input type="email" placeholder="Enter your email" required>
+                        <button type="submit" class="btn btn-primary">Join Now</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-logo">
+                <span class="logo-text">Poly-Alpha</span>
+                <p class="copyright">© 2026 Poly-Alpha, Inc. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
