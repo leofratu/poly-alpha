@@ -1,0 +1,22 @@
+{
+  "signals": 0,
+  "fills": 0,
+  "wins": 0,
+  "win_rate": 0.0,
+  "final_bankroll": 1000.0,
+  "roi_pct": 0.0,
+  "max_drawdown_pct": 0.0,
+  "sample_trades": [],
+  "config": {
+    "max_events": 20,
+    "start_offset": 0,
+    "pause_s": 0.05,
+    "fidelity": 1440,
+    "bankroll": 1000.0,
+    "risk_pct": 0.025,
+    "max_concurrent": 25,
+    "deploy_cap": 0.6,
+    "output": "data/backtests/clean_strategy_backtest_smoke.json"
+  },
+  "generated_at": "2026-04-07T10:20:48.129266+00:00"
+}

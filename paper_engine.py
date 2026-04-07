@@ -11,7 +11,6 @@ import urllib.request
 import urllib.error
 import time
 import ssl
-import re
 import sqlite3
 import os
 import sys
@@ -19,6 +18,12 @@ from datetime import datetime, timezone
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
+from strategy_core import (
+    CATEGORY_LIMITS,
+    candidate_from_market,
+    clean_late_no_config,
+    jaccard_similarity,
+)
 
 console = Console()
 
@@ -33,179 +38,10 @@ DB_FILE = os.environ.get(
 # ============================================================
 # STRATEGY PARAMETERS
 # ============================================================
-MIN_YES_PRICE = 0.01
-MAX_YES_PRICE = 0.30
-MIN_LIQUIDITY = 20
-MIN_VOLUME = 10
-MAX_DAYS = 30.0
-MIN_DAYS = 0.1
-MAX_LIFECYCLE_PCT = 0.30
-MIN_SHIN_EDGE = 0.003
-POSITION_SIZE = 5.0  # $5 per trade
-MAX_POSITIONS = 100  # Max concurrent positions
-MAX_PORTFOLIO_DEPLOY = 0.50  # 50% max deployed
-JACCARD_THRESHOLD = 0.80
-
-SHIN_GAMMA = {
-    "politics": 1.05,
-    "crypto": 1.30,
-    "weather": 1.15,
-    "esports": 1.18,
-    "sports": 1.20,
-    "other": 1.18,
-}
-
-LONG_TERM_PATTERNS = re.compile(
-    r"(win the|finish in|relegated|champion|championship|finals|"
-    r"premier league|la liga|serie a|bundesliga)",
-    re.IGNORECASE,
-)
-
-
-def classify_category(question):
-    q = question.lower()
-    if any(
-        w in q
-        for w in [
-            "trump",
-            "election",
-            "cabinet",
-            "strike",
-            "war",
-            "congress",
-            "senate",
-            "president",
-            "prime minister",
-            "governor",
-            "mayor",
-            "parliament",
-            "vote",
-            "referendum",
-            "impeach",
-            "sanction",
-            "tariff",
-            "policy",
-            "recognize",
-            "leader of",
-            "out as",
-            "resign",
-            "coup",
-            "military",
-            "invade",
-            "conflict",
-            "ceasefire",
-            "treaty",
-            "diplomatic",
-            "strait of hormuz",
-            "iran",
-            "israel",
-            "russia",
-            "ukraine",
-            "china",
-            "taiwan",
-            "venezuela",
-            "macron",
-            "putin",
-            "white house",
-            "balance of power",
-            "fidesz",
-        ]
-    ):
-        return "politics"
-    if any(
-        w in q
-        for w in [
-            "bitcoin",
-            "ethereum",
-            "solana",
-            "xrp",
-            "crypto",
-            "btc",
-            "eth",
-            "market cap",
-            "dip to",
-            "reach $",
-            "ipo",
-            "kraken",
-            "microstrategy",
-            "sec",
-            "etf",
-            "blockchain",
-            "defi",
-            "token",
-            "fdv",
-            "bnb",
-            "hyperliquid",
-            "palantir",
-        ]
-    ):
-        return "crypto"
-    if any(
-        w in q
-        for w in [
-            "temperature",
-            "weather",
-            "snow",
-            "rain",
-            "hurricane",
-            "highest temperature",
-            "lowest temperature",
-        ]
-    ):
-        return "weather"
-    if any(
-        w in q
-        for w in [
-            "lol",
-            "valorant",
-            "league of legends",
-            "counter-strike",
-            "csgo",
-            "dota",
-            "overwatch",
-            "esports",
-            "game 2",
-            "game 3",
-            "map ",
-            "first blood",
-            "total kills",
-            "honor of kings",
-            "quadra",
-            "penta",
-        ]
-    ):
-        return "esports"
-    if any(
-        w in q
-        for w in [
-            "win on",
-            "vs.",
-            "o/u",
-            "ncaa",
-            "fc ",
-            "championship",
-            "premier",
-            "la liga",
-            "serie a",
-            "bundesliga",
-        ]
-    ):
-        return "sports"
-    return "other"
-
-
-def shin_debiasing(p_market, category="other"):
-    gamma = SHIN_GAMMA.get(category, 1.18)
-    return (p_market**gamma) / ((p_market**gamma) + ((1.0 - p_market) ** gamma))
-
-
-def jaccard_similarity(s1, s2):
-    set1 = set(s1.lower().split())
-    set2 = set(s2.lower().split())
-    union = set1.union(set2)
-    if not union:
-        return 0.0
-    return len(set1.intersection(set2)) / len(union)
+CFG = clean_late_no_config()
+POSITION_SIZE_PCT = 0.025
+MAX_POSITIONS = 50
+MAX_PORTFOLIO_DEPLOY = 0.60
 
 
 def api_request(url, retries=3):
@@ -251,122 +87,36 @@ def fetch_all_active_markets():
 
 
 def scan_markets(all_markets):
-    """Find ALL markets with positive Shin edge in first 30% lifecycle."""
+    """Find filtered, diversified markets for the clean late-expiry No-side profile."""
     now = datetime.now(timezone.utc)
     all_with_edge = []
     rejected = {}
 
     for m in all_markets:
-        try:
-            question = m.get("question", "")
-            q_lower = question.lower()
-
-            if LONG_TERM_PATTERNS.search(q_lower):
-                rejected["long_term"] = rejected.get("long_term", 0) + 1
-                continue
-
-            end_date_str = m.get("endDate")
-            created_str = m.get("createdAt")
-            if not end_date_str:
-                rejected["no_end_date"] = rejected.get("no_end_date", 0) + 1
-                continue
-
-            try:
-                end_date = datetime.fromisoformat(end_date_str.replace("Z", "+00:00"))
-            except Exception:
-                rejected["parse_error"] = rejected.get("parse_error", 0) + 1
-                continue
-
-            days_remaining = (end_date - now).total_seconds() / 86400.0
-            if days_remaining < MIN_DAYS or days_remaining > MAX_DAYS:
-                rejected["outside_time"] = rejected.get("outside_time", 0) + 1
-                continue
-
-            if created_str:
-                try:
-                    created = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
-                    total_duration = (end_date - created).total_seconds() / 86400.0
-                    pct_elapsed = (
-                        1.0 - (days_remaining / total_duration)
-                        if total_duration > 0
-                        else 1.0
-                    )
-                except Exception:
-                    pct_elapsed = 0.5
-            else:
-                pct_elapsed = 0.0 if days_remaining > 10 else 0.5
-
-            if pct_elapsed > MAX_LIFECYCLE_PCT:
-                rejected["not_early"] = rejected.get("not_early", 0) + 1
-                continue
-
-            tokens = json.loads(m.get("outcomePrices", "[]"))
-            if len(tokens) < 2:
-                rejected["no_prices"] = rejected.get("no_prices", 0) + 1
-                continue
-
-            outcomes = json.loads(m.get("outcomes", "[]"))
-            if len(outcomes) != 2:
-                rejected["not_binary"] = rejected.get("not_binary", 0) + 1
-                continue
-
-            yes_price = float(tokens[0])
-            no_price = 1.0 - yes_price
-
-            if yes_price < MIN_YES_PRICE or yes_price > MAX_YES_PRICE:
-                rejected["outside_price"] = rejected.get("outside_price", 0) + 1
-                continue
-
-            volume = float(m.get("volume", 0))
-            liquidity = float(m.get("liquidity", volume * 0.05))
-            if volume < MIN_VOLUME:
-                rejected["low_volume"] = rejected.get("low_volume", 0) + 1
-                continue
-            if liquidity < MIN_LIQUIDITY:
-                rejected["low_liquidity"] = rejected.get("low_liquidity", 0) + 1
-                continue
-
-            category = classify_category(question)
-            shin_no = shin_debiasing(no_price, category)
-            shin_edge = shin_no - no_price
-
-            if shin_edge < MIN_SHIN_EDGE:
-                rejected["low_edge"] = rejected.get("low_edge", 0) + 1
-                continue
-
-            all_with_edge.append(
-                {
-                    "id": m.get("id", ""),
-                    "question": question,
-                    "category": category,
-                    "yes_price": yes_price,
-                    "no_price": no_price,
-                    "liquidity": liquidity,
-                    "volume": volume,
-                    "days": days_remaining,
-                    "pct_elapsed": pct_elapsed * 100,
-                    "shin_no": shin_no,
-                    "shin_edge": shin_edge,
-                }
-            )
-
-        except Exception:
-            rejected["parse_error"] = rejected.get("parse_error", 0) + 1
+        candidate, reason = candidate_from_market(m, now, CFG)
+        if candidate is None:
+            rejected[reason or "parse_error"] = rejected.get(reason or "parse_error", 0) + 1
             continue
+        all_with_edge.append(candidate)
 
-    # Sort by edge (highest first)
-    all_with_edge.sort(key=lambda x: -x["shin_edge"])
+    # Priority first, confidence second
+    all_with_edge.sort(key=lambda x: (x["priority"], -x["confidence"]))
 
-    # Minimal dedup
+    # Dedup + category caps
     diversified = []
+    category_counts = {}
     for m in all_with_edge:
+        cat = m["category"]
+        if category_counts.get(cat, 0) >= CATEGORY_LIMITS.get(cat, 10):
+            continue
         dup = False
         for e in diversified:
-            if jaccard_similarity(m["question"], e["question"]) > JACCARD_THRESHOLD:
+            if jaccard_similarity(m["question"], e["question"]) > CFG.jaccard_threshold:
                 dup = True
                 break
         if not dup:
             diversified.append(m)
+            category_counts[cat] = category_counts.get(cat, 0) + 1
 
     return diversified, rejected
 
@@ -487,7 +237,7 @@ def deploy_trades():
     console.print(
         Panel(
             "[bold green]POLY-ALPHA CONTINUOUS DEPLOYMENT[/bold green]\n"
-            "[white]Scanning ALL markets, deploying top 100 by edge.[/white]\n"
+            "[white]Perfect strategy mode: 5-15c Yes, early lifecycle only, strict edge/risk filters.[/white]\n"
             "[white]Continuous reinvestment as positions resolve.[/white]"
         )
     )
@@ -575,17 +325,17 @@ def deploy_trades():
         dup = False
         c.execute("SELECT question FROM positions WHERE status='OPEN'")
         for row in c.fetchall():
-            if jaccard_similarity(m["question"], row[0]) > JACCARD_THRESHOLD:
+            if jaccard_similarity(m["question"], row[0]) > CFG.jaccard_threshold:
                 dup = True
                 break
         if dup:
             continue
 
-        # Check capital
-        if total_deployed + POSITION_SIZE > free_capital * MAX_PORTFOLIO_DEPLOY:
+        target_size = max(3.0, total_portfolio * POSITION_SIZE_PCT)
+        available_budget = (free_capital * MAX_PORTFOLIO_DEPLOY) - total_deployed
+        target_size = min(target_size, available_budget, free_capital - total_deployed)
+        if target_size < 3.0:
             break
-
-        target_size = POSITION_SIZE
 
         # L2 walk
         market_id = m["id"]

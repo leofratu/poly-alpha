@@ -1,0 +1,542 @@
+{
+  "task_id": "20260407-clean-late-no-strategy",
+  "updated_at": "2026-04-07T10:22:00Z",
+  "mode": "implementation",
+  "summary": "Run the clean <=3-day, 2.5%-risk late No-side strategy end-to-end: codify filters, generate a fresh paper portfolio, export tracking files, and add a smoke backtest runner.",
+  "repo_shape": {
+    "layout": "flat_root_scripts",
+    "notes": [
+      "The repository is primarily a single-level collection of Python strategy scripts rather than the apps/backend and apps/frontend structure described in AGENTS.md.",
+      "There was no existing repo_plan directory, so this run bootstraps the required RPG artifacts.",
+      "paper_engine.py had pre-existing uncommitted changes and was treated as source-of-truth after user confirmation."
+    ]
+  },
+  "nodes": [
+    {
+      "id": "mod.readme",
+      "type": "module",
+      "path": "README.md",
+      "role": "human_strategy_overview"
+    },
+    {
+      "id": "mod.paper",
+      "type": "module",
+      "path": "poly_alpha_paper.md",
+      "role": "research_thesis"
+    },
+    {
+      "id": "mod.main_cli",
+      "type": "module",
+      "path": "main.py",
+      "role": "legacy_cli_and_contango_hunt"
+    },
+    {
+      "id": "mod.executor",
+      "type": "module",
+      "path": "executor.py",
+      "role": "ai_risk_plus_kelly_prototype"
+    },
+    {
+      "id": "mod.ultimate_executor",
+      "type": "module",
+      "path": "ultimate_executor.py",
+      "role": "maker_blotter_and_fast_market_selection"
+    },
+    {
+      "id": "mod.perfect_strategy",
+      "type": "module",
+      "path": "perfect_strategy.py",
+      "role": "codified_strategy_spec_and_monte_carlo"
+    },
+    {
+      "id": "mod.paper_engine",
+      "type": "module",
+      "path": "paper_engine.py",
+      "role": "operational_paper_trading_daemon"
+    },
+    {
+      "id": "mod.strategy_core",
+      "type": "module",
+      "path": "strategy_core.py",
+      "role": "shared_strategy_rules_and_filters"
+    },
+    {
+      "id": "mod.tracker",
+      "type": "module",
+      "path": "tracker.py",
+      "role": "forward_test_resolution_tracker"
+    },
+    {
+      "id": "mod.hist_backtest_real",
+      "type": "module",
+      "path": "historical_backtest_real.py",
+      "role": "gamma_only_historical_validation"
+    },
+    {
+      "id": "mod.orderbook_backtest",
+      "type": "module",
+      "path": "orderbook_backtest.py",
+      "role": "snapshot_based_historical_validation"
+    },
+    {
+      "id": "mod.paper_test",
+      "type": "module",
+      "path": "test_paper_strategy.py",
+      "role": "paper_assumption_sanity_check"
+    },
+    {
+      "id": "if.strategy.thesis",
+      "type": "interface",
+      "name": "Early-window No-side bias extractor",
+      "kind": "selection_and_direction",
+      "observed_state": "present",
+      "primary_files": [
+        "README.md",
+        "poly_alpha_paper.md",
+        "perfect_strategy.py",
+        "paper_engine.py"
+      ]
+    },
+    {
+      "id": "if.strategy.pricing",
+      "type": "interface",
+      "name": "Category-aware Shin debiasing",
+      "kind": "probability_model",
+      "observed_state": "present",
+      "primary_files": [
+        "paper_engine.py",
+        "perfect_strategy.py",
+        "tracker.py",
+        "historical_backtest_real.py",
+        "orderbook_backtest.py",
+        "test_paper_strategy.py"
+      ]
+    },
+    {
+      "id": "if.strategy.risk_filters",
+      "type": "interface",
+      "name": "Liquidity, lifecycle, and correlation filters",
+      "kind": "market_filtering",
+      "observed_state": "present",
+      "primary_files": [
+        "perfect_strategy.py",
+        "paper_engine.py",
+        "executor.py",
+        "ultimate_executor.py"
+      ]
+    },
+    {
+      "id": "if.strategy.execution",
+      "type": "interface",
+      "name": "Paper deployment and settlement loop",
+      "kind": "execution_engine",
+      "observed_state": "present",
+      "primary_files": [
+        "paper_engine.py"
+      ]
+    },
+    {
+      "id": "if.strategy.shared_core",
+      "type": "interface",
+      "name": "Shared category/filtering/scoring core",
+      "kind": "shared_logic",
+      "observed_state": "present",
+      "primary_files": [
+        "strategy_core.py",
+        "paper_engine.py"
+      ]
+    },
+    {
+      "id": "if.strategy.validation",
+      "type": "interface",
+      "name": "Forward and historical validation suite",
+      "kind": "validation",
+      "observed_state": "present",
+      "primary_files": [
+        "tracker.py",
+        "historical_backtest_real.py",
+        "orderbook_backtest.py",
+        "test_paper_strategy.py"
+      ]
+    },
+    {
+      "id": "mod.perfect_real_backtest",
+      "type": "module",
+      "path": "perfect_strategy_real_backtest.py",
+      "role": "strict_real_data_backtest_runner"
+    },
+    {
+      "id": "if.strategy.real_backtest",
+      "type": "interface",
+      "name": "Strict historical portfolio backtest with real entries/exits",
+      "kind": "validation",
+      "observed_state": "present",
+      "primary_files": [
+        "perfect_strategy_real_backtest.py",
+        "strategy_core.py"
+      ]
+    },
+    {
+      "id": "mod.alpha_sweep_ssrn",
+      "type": "module",
+      "path": "alpha_sweep_ssrn.py",
+      "role": "ssrn_hypothesis_sweep_runner"
+    },
+    {
+      "id": "if.strategy.alpha_sweep",
+      "type": "interface",
+      "name": "SSRN-inspired strategy preset sweep on real backtest engine",
+      "kind": "validation",
+      "observed_state": "present",
+      "primary_files": [
+        "alpha_sweep_ssrn.py",
+        "perfect_strategy_real_backtest.py"
+      ]
+    },
+    {
+      "id": "mod.autonomous_agent",
+      "type": "module",
+      "path": "autonomous_agent.py",
+      "role": "live_ev_scanner_and_risk_reporter"
+    },
+    {
+      "id": "mod.autonomous_agent_test",
+      "type": "module",
+      "path": "test_autonomous_agent.py",
+      "role": "autonomous_agent_unit_checks"
+    },
+    {
+      "id": "if.strategy.agent_report",
+      "type": "interface",
+      "name": "Live EV-ranked opportunity report with portfolio sizing",
+      "kind": "research_and_risk_reporting",
+      "observed_state": "present",
+      "primary_files": [
+        "autonomous_agent.py",
+        "strategy_core.py",
+        "test_autonomous_agent.py"
+      ]
+    },
+    {
+      "id": "mod.paper_alpha",
+      "type": "module",
+      "path": "paper_alpha.py",
+      "role": "explicit_paper_thesis_model"
+    },
+    {
+      "id": "mod.paper_alpha_backtest",
+      "type": "module",
+      "path": "paper_alpha_real_backtest.py",
+      "role": "paper_thesis_real_data_backtest_runner"
+    },
+    {
+      "id": "mod.paper_alpha_test",
+      "type": "module",
+      "path": "test_paper_alpha.py",
+      "role": "paper_model_unit_checks"
+    },
+    {
+      "id": "if.strategy.paper_alpha",
+      "type": "interface",
+      "name": "Explicit paper-based early No-side alpha model",
+      "kind": "selection_and_validation",
+      "observed_state": "present",
+      "primary_files": [
+        "paper_alpha.py",
+        "paper_alpha_real_backtest.py",
+        "autonomous_agent.py",
+        "test_paper_alpha.py"
+      ]
+    },
+    {
+      "id": "if.strategy.clean_late_no",
+      "type": "interface",
+      "name": "Clean late-expiry No-side strategy profile",
+      "kind": "strategy_profile",
+      "observed_state": "present",
+      "primary_files": [
+        "strategy_core.py",
+        "paper_engine.py",
+        "STRATEGY_CONTEXT.md",
+        "test_strategy_core.py"
+      ]
+    },
+    {
+      "id": "if.strategy.cycle_ops",
+      "type": "interface",
+      "name": "Paper-trading cycle runner and export handoff",
+      "kind": "operations",
+      "observed_state": "present",
+      "primary_files": [
+        "cycle_runner.py",
+        "TRACKING_AGENT_PROMPT.md",
+        "data/paper_cycles/latest/portfolio.json"
+      ]
+    },
+    {
+      "id": "if.strategy.clean_backtest",
+      "type": "interface",
+      "name": "Clean late-expiry strategy smoke backtest",
+      "kind": "validation",
+      "observed_state": "present",
+      "primary_files": [
+        "clean_strategy_backtest.py",
+        "data/backtests/clean_strategy_backtest_smoke.json"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "mod.readme",
+      "to": "if.strategy.thesis",
+      "type": "documents"
+    },
+    {
+      "from": "mod.paper",
+      "to": "if.strategy.thesis",
+      "type": "documents"
+    },
+    {
+      "from": "if.strategy.thesis",
+      "to": "if.strategy.pricing",
+      "type": "depends_on"
+    },
+    {
+      "from": "if.strategy.pricing",
+      "to": "if.strategy.risk_filters",
+      "type": "data_flow"
+    },
+    {
+      "from": "if.strategy.risk_filters",
+      "to": "if.strategy.execution",
+      "type": "data_flow"
+    },
+    {
+      "from": "if.strategy.execution",
+      "to": "if.strategy.validation",
+      "type": "observed_by"
+    },
+    {
+      "from": "mod.main_cli",
+      "to": "mod.executor",
+      "type": "historical_evolution"
+    },
+    {
+      "from": "mod.executor",
+      "to": "mod.ultimate_executor",
+      "type": "historical_evolution"
+    },
+    {
+      "from": "mod.ultimate_executor",
+      "to": "mod.perfect_strategy",
+      "type": "historical_evolution"
+    },
+    {
+      "from": "mod.perfect_strategy",
+      "to": "mod.paper_engine",
+      "type": "historical_evolution"
+    },
+    {
+      "from": "mod.paper_engine",
+      "to": "mod.tracker",
+      "type": "data_flow"
+    },
+    {
+      "from": "mod.strategy_core",
+      "to": "mod.paper_engine",
+      "type": "dependency"
+    },
+    {
+      "from": "if.strategy.pricing",
+      "to": "if.strategy.shared_core",
+      "type": "consolidated_into"
+    },
+    {
+      "from": "if.strategy.risk_filters",
+      "to": "if.strategy.shared_core",
+      "type": "consolidated_into"
+    },
+    {
+      "from": "mod.hist_backtest_real",
+      "to": "if.strategy.validation",
+      "type": "implements"
+    },
+    {
+      "from": "mod.orderbook_backtest",
+      "to": "if.strategy.validation",
+      "type": "implements"
+    },
+    {
+      "from": "mod.paper_test",
+      "to": "if.strategy.validation",
+      "type": "implements"
+    },
+    {
+      "from": "mod.strategy_core",
+      "to": "mod.perfect_real_backtest",
+      "type": "dependency"
+    },
+    {
+      "from": "mod.perfect_real_backtest",
+      "to": "if.strategy.real_backtest",
+      "type": "implements"
+    },
+    {
+      "from": "if.strategy.shared_core",
+      "to": "if.strategy.real_backtest",
+      "type": "depends_on"
+    },
+    {
+      "from": "mod.perfect_real_backtest",
+      "to": "mod.alpha_sweep_ssrn",
+      "type": "dependency"
+    },
+    {
+      "from": "mod.alpha_sweep_ssrn",
+      "to": "if.strategy.alpha_sweep",
+      "type": "implements"
+    },
+    {
+      "from": "if.strategy.real_backtest",
+      "to": "if.strategy.alpha_sweep",
+      "type": "depends_on"
+    },
+    {
+      "from": "mod.strategy_core",
+      "to": "mod.autonomous_agent",
+      "type": "dependency"
+    },
+    {
+      "from": "if.strategy.shared_core",
+      "to": "if.strategy.agent_report",
+      "type": "depends_on"
+    },
+    {
+      "from": "if.strategy.pricing",
+      "to": "if.strategy.agent_report",
+      "type": "data_flow"
+    },
+    {
+      "from": "if.strategy.risk_filters",
+      "to": "if.strategy.agent_report",
+      "type": "data_flow"
+    },
+    {
+      "from": "mod.autonomous_agent",
+      "to": "if.strategy.agent_report",
+      "type": "implements"
+    },
+    {
+      "from": "mod.autonomous_agent_test",
+      "to": "if.strategy.agent_report",
+      "type": "verifies"
+    },
+    {
+      "from": "mod.paper_alpha",
+      "to": "if.strategy.paper_alpha",
+      "type": "implements"
+    },
+    {
+      "from": "mod.paper_alpha_backtest",
+      "to": "if.strategy.paper_alpha",
+      "type": "verifies"
+    },
+    {
+      "from": "mod.paper_alpha_test",
+      "to": "if.strategy.paper_alpha",
+      "type": "verifies"
+    },
+    {
+      "from": "mod.paper_alpha",
+      "to": "mod.autonomous_agent",
+      "type": "dependency"
+    },
+    {
+      "from": "mod.paper_alpha",
+      "to": "mod.paper_alpha_backtest",
+      "type": "dependency"
+    },
+    {
+      "from": "if.strategy.thesis",
+      "to": "if.strategy.paper_alpha",
+      "type": "documents"
+    },
+    {
+      "from": "if.strategy.shared_core",
+      "to": "if.strategy.clean_late_no",
+      "type": "depends_on"
+    },
+    {
+      "from": "if.strategy.clean_late_no",
+      "to": "if.strategy.execution",
+      "type": "data_flow"
+    },
+    {
+      "from": "if.strategy.clean_late_no",
+      "to": "if.strategy.validation",
+      "type": "observed_by"
+    },
+    {
+      "from": "if.strategy.execution",
+      "to": "if.strategy.cycle_ops",
+      "type": "data_flow"
+    },
+    {
+      "from": "if.strategy.cycle_ops",
+      "to": "if.strategy.validation",
+      "type": "observed_by"
+    },
+    {
+      "from": "if.strategy.clean_late_no",
+      "to": "if.strategy.clean_backtest",
+      "type": "depends_on"
+    }
+  ],
+  "work_plan": [
+    {
+      "id": "if.strategy.clean_late_no",
+      "status": "tested"
+    },
+    {
+      "id": "if.strategy.execution",
+      "status": "tested"
+    },
+    {
+      "id": "if.strategy.cycle_ops",
+      "status": "tested"
+    },
+    {
+      "id": "if.strategy.clean_backtest",
+      "status": "tested"
+    },
+    {
+      "id": "if.strategy.validation",
+      "status": "tested"
+    }
+  ],
+  "notes": [
+    "This run creates a dedicated shared strategy module and removes duplicated scoring/filtering logic from paper_engine.py.",
+    "paper_engine.py now enforces tighter lifecycle/price/edge/liquidity rules and 2% position sizing with a 60% deployment cap.",
+    "No uplift claims are made; benchmark scripts referenced by AGENTS.md are not present in this working tree.",
+    "New strict real-data backtest script uses CLOB history for entries and Gamma resolutions for exits.",
+    "Current run found zero tradable signals under exact perfect-strategy constraints on available resolved markets.",
+    "Added history-stage reason diagnostics (no_history/outside_price/outside_time/low_edge).",
+    "Strict configuration produced zero signals; semistrict and relaxed runs executed for calibration only.",
+    "Added --start-offset to target newer closed-event windows and tested strict strategy across offset ranges.",
+    "Observed strict signals remain zero across tested windows; failures are dominated by no_history or strict lifecycle/edge constraints.",
+    "Read local prediction-market and behavioral papers; tested reverse favorite-longshot (YES-side) hypothesis explicitly.",
+    "Added offset-aware and side-aware tests; semistrict NO/best on offset 3000 currently dominates with small sample (+0.55% over 3 fills).",
+    "Blocker fix: alpha_sweep_ssrn now prints offset-level coverage diagnostics and supports min_fills gating.",
+    "Identified actionable window: offset 3000 has 100% history coverage on strict candidates but strict timing/edge removes most trades.",
+    "Added throughput metrics (avg/peak fills per 3-day window) to backtest output.",
+    "Lax 3-day profile achieved peak 200 fills in a 3-day window with real entries/exits; profitability remained marginal/negative in sampled run.",
+    "Current task adds a live research/reporting interface rather than another thesis-specific backtest variant.",
+    "The new agent interface is intended to make market probability, estimated probability, EV, sizing, and portfolio risk explicit in one output.",
+    "autonomous_agent.py now scans live active markets, estimates probabilities with a debiased favorite-longshot model, sizes positions with capped fractional Kelly, and writes local report snapshots.",
+    "test_autonomous_agent.py covers EV, Kelly sizing, lifecycle bias behavior, and portfolio selection constraints.",
+    "Current task adds an explicit paper-thesis model and a dedicated real-data backtest wrapper so the paper-inspired logic is separable from generic heuristics.",
+    "paper_alpha.py now encodes the thesis directly: early window only, No side only, 70-99c No band, category-specific early bias uplift, fixed-size diversified deployment assumptions.",
+    "paper_alpha_real_backtest.py verified the exact paper-mapped rules on a newer resolved window with real entry prices; sample run at offset 5000 generated 8 fills with 87.5% win rate but -0.03% ROI after paid prices.",
+    "New task focuses on the observed live edge rather than the original early-lifecycle paper thesis: late-expiry No-side entries in sports spreads/totals plus emotional politics/headline binaries."
+  ]
+}

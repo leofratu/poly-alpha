@@ -1,0 +1,85 @@
+{
+  "task_id": "20260407-clean-cycle-and-backtest",
+  "mode": "rpg",
+  "rpg_used": true,
+  "localization": {
+    "nodes": [
+      "if.strategy.clean_late_no",
+      "if.strategy.execution",
+      "if.strategy.cycle_ops",
+      "if.strategy.clean_backtest",
+      "if.strategy.validation"
+    ],
+    "files": [
+      "strategy_core.py",
+      "paper_engine.py",
+      "cycle_runner.py",
+      "clean_strategy_backtest.py",
+      "TRACKING_AGENT_PROMPT.md",
+      "data/paper_cycles/latest/portfolio.json",
+      "data/paper_cycles/latest/portfolio.csv",
+      "data/backtests/clean_strategy_backtest_smoke.json"
+    ]
+  },
+  "tests": [
+    {
+      "cmd": "python3 -m py_compile strategy_core.py paper_engine.py cycle_runner.py clean_strategy_backtest.py perfect_strategy_real_backtest.py",
+      "ok": true,
+      "interfaces": [
+        "if.strategy.clean_late_no",
+        "if.strategy.execution",
+        "if.strategy.clean_backtest"
+      ]
+    },
+    {
+      "cmd": "python3 -m pytest -q test_strategy_core.py",
+      "ok": true,
+      "interfaces": [
+        "if.strategy.clean_late_no",
+        "if.strategy.validation"
+      ]
+    },
+    {
+      "cmd": "python3 cycle_runner.py --reset",
+      "ok": true,
+      "interfaces": [
+        "if.strategy.execution",
+        "if.strategy.cycle_ops"
+      ]
+    },
+    {
+      "cmd": "python3 clean_strategy_backtest.py --max-events 1 --market-limit 20 --fidelity 1440 --output data/backtests/clean_strategy_backtest_smoke.json",
+      "ok": true,
+      "interfaces": [
+        "if.strategy.clean_backtest"
+      ]
+    }
+  ],
+  "implemented_interfaces": [
+    "if.strategy.clean_late_no",
+    "if.strategy.execution",
+    "if.strategy.cycle_ops",
+    "if.strategy.clean_backtest"
+  ],
+  "tested_interfaces": [
+    "if.strategy.clean_late_no",
+    "if.strategy.execution",
+    "if.strategy.cycle_ops",
+    "if.strategy.clean_backtest",
+    "if.strategy.validation"
+  ],
+  "files_changed": [
+    "strategy_core.py",
+    "paper_engine.py",
+    "STRATEGY_CONTEXT.md",
+    "test_strategy_core.py",
+    "cycle_runner.py",
+    "clean_strategy_backtest.py",
+    "TRACKING_AGENT_PROMPT.md",
+    "repo_plan/rpg.json",
+    "repo_plan/file_index.json",
+    "repo_plan/runs/20260407T102200Z/run.json"
+  ],
+  "elapsed_s": null,
+  "tool_calls_count": 22
+}
