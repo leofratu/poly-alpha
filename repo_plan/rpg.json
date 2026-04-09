@@ -1,8 +1,8 @@
 {
   "task_id": "20260407-clean-late-no-strategy",
-  "updated_at": "2026-04-07T10:22:00Z",
+  "updated_at": "2026-04-10T05:45:30Z",
   "mode": "implementation",
-  "summary": "Run the clean <=3-day, 2.5%-risk late No-side strategy end-to-end: codify filters, generate a fresh paper portfolio, export tracking files, and add a smoke backtest runner.",
+  "summary": "Tighten the paper strategy around sports spreads/totals only, remove garbage sleeves, and reset the paper book with a clean preset.",
   "repo_shape": {
     "layout": "flat_root_scripts",
     "notes": [
@@ -283,6 +283,44 @@
         "clean_strategy_backtest.py",
         "data/backtests/clean_strategy_backtest_smoke.json"
       ]
+    },
+    {
+      "id": "if.strategy.preset_profiles",
+      "type": "interface",
+      "name": "Preset-based late No-side profiles with tiered sizing",
+      "kind": "strategy_profile",
+      "observed_state": "present",
+      "primary_files": [
+        "strategy_core.py",
+        "paper_engine.py",
+        "cycle_runner.py"
+      ]
+    },
+    {
+      "id": "if.strategy.acceleration_profile",
+      "type": "interface",
+      "name": "Acceleration preset for 100-slot paper book expansion",
+      "kind": "strategy_profile",
+      "observed_state": "present",
+      "primary_files": [
+        "strategy_core.py",
+        "paper_engine.py",
+        "cycle_runner.py",
+        "test_strategy_core.py"
+      ]
+    },
+    {
+      "id": "if.strategy.paper_reset_profile",
+      "type": "interface",
+      "name": "Paper-reset sports-derivatives-only profile",
+      "kind": "strategy_profile",
+      "observed_state": "present",
+      "primary_files": [
+        "strategy_core.py",
+        "paper_engine.py",
+        "cycle_runner.py",
+        "test_strategy_core.py"
+      ]
     }
   ],
   "edges": [
@@ -490,11 +528,41 @@
       "from": "if.strategy.clean_late_no",
       "to": "if.strategy.clean_backtest",
       "type": "depends_on"
+    },
+    {
+      "from": "if.strategy.clean_late_no",
+      "to": "if.strategy.preset_profiles",
+      "type": "evolves_into"
+    },
+    {
+      "from": "if.strategy.preset_profiles",
+      "to": "if.strategy.execution",
+      "type": "data_flow"
+    },
+    {
+      "from": "if.strategy.preset_profiles",
+      "to": "if.strategy.acceleration_profile",
+      "type": "evolves_into"
+    },
+    {
+      "from": "if.strategy.acceleration_profile",
+      "to": "if.strategy.execution",
+      "type": "data_flow"
+    },
+    {
+      "from": "if.strategy.preset_profiles",
+      "to": "if.strategy.paper_reset_profile",
+      "type": "evolves_into"
+    },
+    {
+      "from": "if.strategy.paper_reset_profile",
+      "to": "if.strategy.execution",
+      "type": "data_flow"
     }
   ],
   "work_plan": [
     {
-      "id": "if.strategy.clean_late_no",
+      "id": "if.strategy.paper_reset_profile",
       "status": "tested"
     },
     {
@@ -506,21 +574,11 @@
       "status": "tested"
     },
     {
-      "id": "if.strategy.clean_backtest",
-      "status": "tested"
-    },
-    {
       "id": "if.strategy.validation",
       "status": "tested"
     }
   ],
   "notes": [
-    "This run creates a dedicated shared strategy module and removes duplicated scoring/filtering logic from paper_engine.py.",
-    "paper_engine.py now enforces tighter lifecycle/price/edge/liquidity rules and 2% position sizing with a 60% deployment cap.",
-    "No uplift claims are made; benchmark scripts referenced by AGENTS.md are not present in this working tree.",
-    "New strict real-data backtest script uses CLOB history for entries and Gamma resolutions for exits.",
-    "Current run found zero tradable signals under exact perfect-strategy constraints on available resolved markets.",
-    "Added history-stage reason diagnostics (no_history/outside_price/outside_time/low_edge).",
     "Strict configuration produced zero signals; semistrict and relaxed runs executed for calibration only.",
     "Added --start-offset to target newer closed-event windows and tested strict strategy across offset ranges.",
     "Observed strict signals remain zero across tested windows; failures are dominated by no_history or strict lifecycle/edge constraints.",
@@ -537,6 +595,14 @@
     "Current task adds an explicit paper-thesis model and a dedicated real-data backtest wrapper so the paper-inspired logic is separable from generic heuristics.",
     "paper_alpha.py now encodes the thesis directly: early window only, No side only, 70-99c No band, category-specific early bias uplift, fixed-size diversified deployment assumptions.",
     "paper_alpha_real_backtest.py verified the exact paper-mapped rules on a newer resolved window with real entry prices; sample run at offset 5000 generated 8 fills with 87.5% win rate but -0.03% ROI after paid prices.",
-    "New task focuses on the observed live edge rather than the original early-lifecycle paper thesis: late-expiry No-side entries in sports spreads/totals plus emotional politics/headline binaries."
+    "New task focuses on the observed live edge rather than the original early-lifecycle paper thesis: late-expiry No-side entries in sports spreads/totals plus emotional politics/headline binaries.",
+    "Next task: add an acceleration preset and runtime caps that can approach a 100-position paper book without using oversized per-trade stakes.",
+    "Acceleration preset now widens category caps, relaxes dedupe, and shrinks late-book sizing to push the live paper portfolio toward a 100-slot target.",
+    "cycle_runner exports now include trade_count/open_trade_count/closed_trade_count aliases so downstream trackers can read the latest book summary directly.",
+    "Validation on 2026-04-08: acceleration preset found 112 candidates and locked 79 paper positions from a $1,000 wallet with $461 deployed.",
+    "Operational rebalance on 2026-04-08: scaled the 79 open acceleration positions pro-rata so the paper wallet is now 100% deployed.",
+    "New task: replace mixed-sleeve acceleration with a paper-reset sports-derivatives-only preset and relaunch the paper wallet from $1,000.",
+    "Added a paper_reset preset that bans politics, emotional headlines, moneylines, draws, and synthetic fills; it only trades sports spreads/totals.",
+    "Reset the paper wallet from $1,000 and relaunched with paper_reset; current clean book holds 21 open sports derivative positions with $435 deployed."
   ]
 }
