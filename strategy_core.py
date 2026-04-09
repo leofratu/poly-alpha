@@ -86,6 +86,11 @@ class StrategyConfig:
     include_categories: tuple[str, ...] = ("sports", "politics", "other")
     allowed_sports_types: tuple[str, ...] = ("spread", "total")
     allow_emotional_other: bool = True
+    category_limits: dict[str, int] = field(default_factory=lambda: dict(CATEGORY_LIMITS))
+    max_positions: int = 50
+    max_portfolio_deploy: float = 0.60
+    min_trade_size: float = 3.0
+    allow_synthetic_retail_fill: bool = False
     category_min_edge: dict[str, float] = field(
         default_factory=lambda: {
             "sports": 0.03,
@@ -105,6 +110,191 @@ class MarketProfile:
 def clean_late_no_config() -> StrategyConfig:
     """Observed live-alpha profile: late-expiry No-side sports plus emotional headlines."""
     return StrategyConfig()
+
+
+def paper_reset_sports_core_config() -> StrategyConfig:
+    """Reset profile: keep only the sleeves that look closest to the paper's working edge."""
+    return StrategyConfig(
+        min_yes_price=0.04,
+        max_yes_price=0.18,
+        min_liquidity=175.0,
+        min_volume=12.0,
+        max_days=3.0,
+        min_lifecycle_pct=0.55,
+        max_lifecycle_pct=1.0,
+        min_shin_edge=0.025,
+        max_vol_liq_ratio=12.0,
+        jaccard_threshold=0.45,
+        include_categories=("sports",),
+        allowed_sports_types=("spread", "total"),
+        allow_emotional_other=False,
+        category_limits={
+            "sports": 40,
+            "politics": 0,
+            "other": 0,
+            "crypto": 0,
+            "weather": 0,
+            "esports": 0,
+        },
+        max_positions=40,
+        max_portfolio_deploy=0.75,
+        min_trade_size=8.0,
+        allow_synthetic_retail_fill=False,
+        category_min_edge={
+            "sports": 0.025,
+        },
+    )
+
+
+def balanced_late_no_config() -> StrategyConfig:
+    """Higher-throughput profile that broadens the clean sleeve while keeping basic guardrails."""
+    return StrategyConfig(
+        min_yes_price=0.04,
+        max_yes_price=0.18,
+        max_days=5.0,
+        min_lifecycle_pct=0.60,
+        max_lifecycle_pct=1.0,
+        include_categories=("sports", "politics", "other", "crypto"),
+        allowed_sports_types=("spread", "total", "moneyline"),
+        category_min_edge={
+            "sports": 0.02,
+            "politics": 0.005,
+            "other": 0.02,
+            "crypto": 0.02,
+        },
+    )
+
+
+def throughput_late_no_config() -> StrategyConfig:
+    """Aggressive search profile for throughput exploration; use with extra caution."""
+    return StrategyConfig(
+        min_yes_price=0.03,
+        max_yes_price=0.20,
+        max_days=7.0,
+        min_lifecycle_pct=0.50,
+        max_lifecycle_pct=1.0,
+        include_categories=("sports", "politics", "other", "crypto"),
+        allowed_sports_types=("spread", "total", "moneyline"),
+        category_min_edge={
+            "sports": 0.015,
+            "politics": 0.003,
+            "other": 0.015,
+            "crypto": 0.015,
+        },
+        category_limits={
+            "sports": 28,
+            "politics": 10,
+            "other": 8,
+            "crypto": 8,
+            "weather": 4,
+            "esports": 4,
+        },
+        max_positions=65,
+        max_portfolio_deploy=0.70,
+        min_trade_size=2.5,
+    )
+
+
+def expansion_late_no_config() -> StrategyConfig:
+    """Broader alpha-hunting profile that reopens more sleeves for paper exploration."""
+    return StrategyConfig(
+        min_yes_price=0.02,
+        max_yes_price=0.25,
+        min_liquidity=100.0,
+        min_volume=5.0,
+        max_days=10.0,
+        min_lifecycle_pct=0.35,
+        max_lifecycle_pct=1.0,
+        include_categories=("sports", "politics", "other", "crypto", "weather", "esports"),
+        allowed_sports_types=("spread", "total", "moneyline"),
+        category_min_edge={
+            "sports": 0.01,
+            "politics": 0.002,
+            "other": 0.01,
+            "crypto": 0.01,
+            "weather": 0.008,
+            "esports": 0.01,
+        },
+        category_limits={
+            "sports": 45,
+            "politics": 16,
+            "other": 12,
+            "crypto": 12,
+            "weather": 8,
+            "esports": 8,
+        },
+        max_positions=90,
+        max_portfolio_deploy=0.80,
+        min_trade_size=2.0,
+    )
+
+
+def quality_expansion_config() -> StrategyConfig:
+    """Hybrid profile: expand trade count, but keep core quality in sports derivatives."""
+    return StrategyConfig(
+        min_yes_price=0.03,
+        max_yes_price=0.18,
+        min_liquidity=150.0,
+        min_volume=8.0,
+        max_days=7.0,
+        min_lifecycle_pct=0.40,
+        max_lifecycle_pct=1.0,
+        include_categories=("sports", "politics", "other", "crypto"),
+        allowed_sports_types=("spread", "total", "moneyline"),
+        category_min_edge={
+            "sports": 0.015,
+            "politics": 0.003,
+            "other": 0.015,
+            "crypto": 0.015,
+        },
+        category_limits={
+            "sports": 32,
+            "politics": 12,
+            "other": 8,
+            "crypto": 8,
+            "weather": 4,
+            "esports": 4,
+        },
+        max_positions=70,
+        max_portfolio_deploy=0.72,
+        min_trade_size=2.5,
+    )
+
+
+def acceleration_config() -> StrategyConfig:
+    """Expansion profile for pushing toward a 100-slot paper book with smaller sleeve sizing."""
+    return StrategyConfig(
+        min_yes_price=0.02,
+        max_yes_price=0.22,
+        min_liquidity=75.0,
+        min_volume=5.0,
+        max_days=7.0,
+        min_lifecycle_pct=0.30,
+        max_lifecycle_pct=1.0,
+        jaccard_threshold=0.85,
+        include_categories=("sports", "politics", "other", "crypto", "weather", "esports"),
+        allowed_sports_types=("spread", "total", "moneyline"),
+        category_min_edge={
+            "sports": 0.008,
+            "politics": 0.0015,
+            "other": 0.01,
+            "crypto": 0.01,
+            "weather": 0.007,
+            "esports": 0.008,
+        },
+        category_limits={
+            "sports": 60,
+            "politics": 20,
+            "other": 10,
+            "crypto": 12,
+            "weather": 10,
+            "esports": 10,
+        },
+        max_positions=100,
+        max_portfolio_deploy=0.85,
+        min_trade_size=2.0,
+        allow_synthetic_retail_fill=True,
+    )
 
 
 def classify_category(question: str) -> str:
