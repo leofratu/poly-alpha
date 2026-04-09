@@ -19,9 +19,14 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from strategy_core import (
-    CATEGORY_LIMITS,
     candidate_from_market,
+    balanced_late_no_config,
     clean_late_no_config,
+    paper_reset_sports_core_config,
+    throughput_late_no_config,
+    expansion_late_no_config,
+    quality_expansion_config,
+    acceleration_config,
     jaccard_similarity,
 )
 
@@ -38,10 +43,80 @@ DB_FILE = os.environ.get(
 # ============================================================
 # STRATEGY PARAMETERS
 # ============================================================
-CFG = clean_late_no_config()
+PRESET = os.environ.get("POLY_ALPHA_PRESET", "strict").lower()
+if PRESET == "balanced":
+    CFG = balanced_late_no_config()
+elif PRESET == "paper_reset":
+    CFG = paper_reset_sports_core_config()
+elif PRESET == "throughput":
+    CFG = throughput_late_no_config()
+elif PRESET == "expansion":
+    CFG = expansion_late_no_config()
+elif PRESET == "quality_expansion":
+    CFG = quality_expansion_config()
+elif PRESET == "acceleration":
+    CFG = acceleration_config()
+else:
+    CFG = clean_late_no_config()
 POSITION_SIZE_PCT = 0.025
-MAX_POSITIONS = 50
-MAX_PORTFOLIO_DEPLOY = 0.60
+
+
+def position_size_pct(candidate: dict[str, object], deployed_count: int) -> float:
+    """Use smaller overflow sizing in broader presets so throughput can increase without breaking bankroll math."""
+    if PRESET == "balanced":
+        market_type = str(candidate.get("market_type", ""))
+        category = str(candidate.get("category", ""))
+        if category == "sports" and market_type in {"spread", "total"} and deployed_count < 8:
+            return POSITION_SIZE_PCT
+        if category == "sports" and market_type in {"spread", "total"}:
+            return 0.015
+        return 0.01
+    if PRESET == "throughput":
+        return 0.01
+    if PRESET == "paper_reset":
+        edge = float(candidate.get("shin_edge", 0.0))
+        if deployed_count < 10:
+            return 0.025 if edge >= 0.035 else 0.02
+        return 0.0175 if edge >= 0.03 else 0.015
+    if PRESET == "expansion":
+        market_type = str(candidate.get("market_type", ""))
+        category = str(candidate.get("category", ""))
+        if category == "sports" and market_type in {"spread", "total"}:
+            return 0.0125
+        return 0.0075
+    if PRESET == "quality_expansion":
+        market_type = str(candidate.get("market_type", ""))
+        category = str(candidate.get("category", ""))
+        edge = float(candidate.get("shin_edge", 0.0))
+        if category == "sports" and market_type in {"spread", "total"}:
+            return 0.015 if edge >= 0.025 else 0.0125
+        if category == "sports" and market_type == "moneyline":
+            return 0.0075
+        if category in {"politics", "crypto"}:
+            return 0.0075
+        return 0.005
+    if PRESET == "acceleration":
+        market_type = str(candidate.get("market_type", ""))
+        category = str(candidate.get("category", ""))
+        edge = float(candidate.get("shin_edge", 0.0))
+        if category == "sports" and market_type in {"spread", "total"}:
+            if deployed_count >= 50:
+                return 0.006
+            if deployed_count < 25:
+                return 0.0125 if edge >= 0.02 else 0.01
+            return 0.008
+        if category == "sports" and market_type == "moneyline":
+            if deployed_count >= 50:
+                return 0.0045
+            return 0.006
+        if category in {"politics", "crypto"}:
+            if deployed_count >= 50:
+                return 0.004
+            return 0.005
+        if deployed_count >= 50:
+            return 0.0035
+        return 0.004
+    return POSITION_SIZE_PCT
 
 
 def api_request(url, retries=3):
@@ -107,7 +182,7 @@ def scan_markets(all_markets):
     category_counts = {}
     for m in all_with_edge:
         cat = m["category"]
-        if category_counts.get(cat, 0) >= CATEGORY_LIMITS.get(cat, 10):
+        if category_counts.get(cat, 0) >= CFG.category_limits.get(cat, 10):
             continue
         dup = False
         for e in diversified:
@@ -233,11 +308,11 @@ def settle_trades():
 
 
 def deploy_trades():
-    """Deploy new trades up to MAX_POSITIONS."""
+    """Deploy new trades up to the configured maximum slot count."""
     console.print(
         Panel(
             "[bold green]POLY-ALPHA CONTINUOUS DEPLOYMENT[/bold green]\n"
-            "[white]Perfect strategy mode: 5-15c Yes, early lifecycle only, strict edge/risk filters.[/white]\n"
+            f"[white]Preset: {PRESET} | max slots: {CFG.max_positions} | deploy cap: {CFG.max_portfolio_deploy:.0%}[/white]\n"
             "[white]Continuous reinvestment as positions resolve.[/white]"
         )
     )
@@ -306,7 +381,7 @@ def deploy_trades():
     total_portfolio = free_capital + locked
 
     console.print(f"\n[bold]Current state:[/bold]")
-    console.print(f"  Active positions: {active_count}/{MAX_POSITIONS}")
+    console.print(f"  Active positions: {active_count}/{CFG.max_positions}")
     console.print(f"  Free capital: ${free_capital:,.2f}")
     console.print(f"  Locked: ${locked:,.2f}")
 
@@ -314,8 +389,8 @@ def deploy_trades():
     total_deployed = 0.0
     deployed_count = 0
 
-    for m in candidates[:MAX_POSITIONS]:
-        if active_count >= MAX_POSITIONS:
+    for m in candidates[: CFG.max_positions]:
+        if active_count >= CFG.max_positions:
             break
 
         if m["id"] in active_ids:
@@ -331,10 +406,10 @@ def deploy_trades():
         if dup:
             continue
 
-        target_size = max(3.0, total_portfolio * POSITION_SIZE_PCT)
-        available_budget = (free_capital * MAX_PORTFOLIO_DEPLOY) - total_deployed
+        target_size = max(CFG.min_trade_size, total_portfolio * position_size_pct(m, deployed_count))
+        available_budget = (free_capital * CFG.max_portfolio_deploy) - total_deployed
         target_size = min(target_size, available_budget, free_capital - total_deployed)
-        if target_size < 3.0:
+        if target_size < CFG.min_trade_size:
             break
 
         # L2 walk
@@ -399,12 +474,20 @@ def deploy_trades():
                                 best_size, target_size / best_ask
                             )
                             total_shares = min(best_size, target_size / best_ask)
-                            if total_cost < 3:
+                            if total_cost < CFG.min_trade_size:
                                 continue
                         else:
-                            continue
+                            if CFG.allow_synthetic_retail_fill:
+                                total_cost = target_size
+                                total_shares = target_size / max(retail_no, 0.01)
+                            else:
+                                continue
                     else:
-                        continue
+                        if CFG.allow_synthetic_retail_fill:
+                            total_cost = target_size
+                            total_shares = target_size / max(retail_no, 0.01)
+                        else:
+                            continue
 
                 actual_entry_no = (
                     total_cost / total_shares if total_shares > 0 else retail_no
