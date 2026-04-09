@@ -1,6 +1,12 @@
 from datetime import datetime, timezone
 
-from strategy_core import candidate_from_market, clean_late_no_config, describe_market
+from strategy_core import (
+    acceleration_config,
+    candidate_from_market,
+    clean_late_no_config,
+    describe_market,
+    paper_reset_sports_core_config,
+)
 
 
 NOW = datetime(2026, 4, 7, 12, 0, tzinfo=timezone.utc)
@@ -65,3 +71,24 @@ def test_candidate_accepts_emotional_other_binary_but_rejects_structured_other()
     candidate, reason = candidate_from_market(structured_market, NOW, CFG)
     assert candidate is None
     assert reason == "structured_other"
+
+
+def test_acceleration_profile_targets_100_slots_with_smaller_trade_size():
+    cfg = acceleration_config()
+    assert cfg.max_positions == 100
+    assert cfg.max_portfolio_deploy == 0.85
+    assert cfg.min_trade_size == 2.0
+    assert cfg.jaccard_threshold == 0.85
+    assert cfg.category_limits["sports"] >= 60
+    assert cfg.category_limits["weather"] >= 10
+    assert cfg.allow_synthetic_retail_fill is True
+
+
+def test_paper_reset_profile_bans_garbage_sleeves_and_focuses_sports_derivatives():
+    cfg = paper_reset_sports_core_config()
+    assert cfg.include_categories == ("sports",)
+    assert cfg.allowed_sports_types == ("spread", "total")
+    assert cfg.allow_emotional_other is False
+    assert cfg.category_limits["politics"] == 0
+    assert cfg.allow_synthetic_retail_fill is False
+    assert cfg.max_positions == 40
