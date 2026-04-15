@@ -14,34 +14,37 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }, observerOptions);
 
-    // Apply fade-in class to elements we want to animate
+    // Apply animation class to elements
     const elementsToAnimate = [
+        ...document.querySelectorAll('.fade-in-up'),
         ...document.querySelectorAll('.feature-card'),
         document.querySelector('.architecture-content'),
-        document.querySelector('.pipeline-flow'),
-        document.querySelector('.pulse-glow')
+        document.querySelector('.architecture-visual'),
+        document.querySelector('.company-box')
     ];
 
     elementsToAnimate.forEach((el, index) => {
-        if (el) {
-            el.classList.add('fade-in');
+        if (el && !el.classList.contains('fade-in-up')) {
+            el.classList.add('fade-in-up');
             // Stagger animations slightly if they are cards
             if (el.classList.contains('feature-card')) {
-                el.style.transitionDelay = `${index * 0.15}s`;
+                el.style.transitionDelay = `${index * 0.1}s`;
             }
+        }
+        if (el) {
             observer.observe(el);
         }
     });
 
     // Smooth scrolling for navigation links
-    document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
-            e.preventDefault();
             const targetId = this.getAttribute('href');
-            if (targetId === '#') return;
+            if (targetId === '#' || !targetId) return;
             
             const targetElement = document.querySelector(targetId);
             if (targetElement) {
+                e.preventDefault();
                 const headerOffset = 80;
                 const elementPosition = targetElement.getBoundingClientRect().top;
                 const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
