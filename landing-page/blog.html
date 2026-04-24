@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poly-Alpha | Research & Engineering Blog</title>
+    <meta name="description" content="Deep technical insights into multi-agent systems, continuous-time Kelly optimization, and the future of prediction markets.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+    <style>
+        /* Blog-specific overrides */
+        .blog-page-header {
+            padding: 10rem 0 5rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .blog-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 5rem;
+            padding: 5rem 0 8rem;
+        }
+
+        .blog-article {
+            padding-bottom: 4rem;
+            margin-bottom: 4rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .blog-article:last-child {
+            border-bottom: none;
+        }
+
+        .blog-tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+        }
+
+        .blog-date {
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+            margin-left: 1rem;
+        }
+
+        .blog-article h2 {
+            font-size: 2rem;
+            margin-bottom: 1.25rem;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .blog-article p {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+
+        /* Sidebar */
+        .blog-sidebar {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+
+        .sidebar-widget {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-widget h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.25rem;
+        }
+
+        .sidebar-widget p {
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .sidebar-widget input[type="email"] {
+            width: 100%;
+            padding: 0.7rem 0.875rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .sidebar-widget input[type="email"]:focus {
+            border-color: var(--accent-primary);
+        }
+
+        .sidebar-widget .btn {
+            width: 100%;
+        }
+
+        .sidebar-list {
+            list-style: none;
+        }
+
+        .sidebar-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .sidebar-list li:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .sidebar-list a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-list a:hover {
+            color: var(--accent-primary);
+        }
+
+        .sidebar-list .count {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+        }
+
+        @media (max-width: 900px) {
+            .blog-layout {
+                grid-template-columns: 1fr;
+            }
+            .blog-sidebar {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <header>
+        <div class="container nav-container">
+            <div class="nav-left">
+                <a href="index.html" class="logo">
+                    <img src="assets/logo.png" alt="Poly-Alpha Logo" class="logo-img">
+                    <span class="logo-text">Poly-Alpha</span>
+                </a>
+                <nav class="nav-links">
+                    <a href="index.html#about">About</a>
+                    <a href="index.html#platform">Platform</a>
+                    <a href="index.html#pricing">Pricing</a>
+                    <a href="blog.html" style="color: var(--accent-primary);">Blog</a>
+                </nav>
+            </div>
+            <div class="auth-group">
+                <a href="app.html" class="btn btn-secondary">Sign In</a>
+                <a href="app.html" class="btn btn-primary">Start Building</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="blog-page-header fade-up">
+            <div class="container">
+                <div class="badge">Research & Engineering</div>
+                <h1 class="text-gradient" style="margin-top: 1rem;">Quantitative AI Insights.</h1>
+                <p style="max-width: 600px; margin: 1.5rem auto 0; font-size: 1.25rem;">
+                    Deep technical dives into multi-agent systems, Kelly optimization, and the science of autonomous capital deployment.
+                </p>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="blog-layout">
+
+                <!-- Main Articles -->
+                <div class="blog-main">
+
+                    <article class="blog-article fade-up">
+                        <div>
+                            <span class="blog-tag">Agentic Engineering</span>
+                            <span class="blog-date">April 14, 2026</span>
+                        </div>
+                        <h2>Replacing Monolithic Scripts with Multi-Agent Swarms for Arbitrage.</h2>
+                        <p>
+                            For the last decade, quantitative trading has been defined by rigid, monolithic architectures. A script ingests data, calculates a moving average, and fires an order. But prediction markets are uniquely chaotic—driven by unstructured human narrative, geopolitical breaking news, and nuanced semantic shifts that simple algorithms cannot parse.
+                        </p>
+                        <p>
+                            The core problem with legacy infrastructure is brittleness. When an unexpected black swan event occurs, a hard-coded bot either shuts down or blindly executes into ruin. By contrast, an autonomous agent can ingest a breaking Reuters headline, recognize it as an anomalous tail-risk, and immediately adjust the covariance matrix of its Kelly sizing model. We achieve this by splitting the workload: one agent reads the news (The Oracle), one calculates risk (The Actuary), and one handles execution (The Broker).
+                        </p>
+                        <a href="#" class="btn btn-secondary">Read Full Paper &rarr;</a>
+                    </article>
+
+                    <article class="blog-article fade-up">
+                        <div>
+                            <span class="blog-tag">Quantitative Finance</span>
+                            <span class="blog-date">March 28, 2026</span>
+                        </div>
+                        <h2>Dynamic Shin (1992) Debiasing in Low-Liquidity Orderbooks.</h2>
+                        <p>
+                            Extracting the volatility risk premium from statistically bloated favorites is a proven strategy, but scaling it requires precise parameterization. Here, we detail our proprietary modifications to the Shin debiasing constants to protect capital in highly illiquid L2 environments.
+                        </p>
+                        <p>
+                            Standard Kelly Criterion math assumes infinite liquidity and zero slippage—two assumptions that instantly destroy capital in emerging prediction markets. The Poly-Alpha OS automatically scales down its fractional Kelly bets dynamically. As the spread widens, our agents autonomously query the historical data lake to identify similar liquidity deserts, scaling back their deployment in real-time.
+                        </p>
+                        <a href="#" class="btn btn-secondary">Read Full Paper &rarr;</a>
+                    </article>
+
+                    <article class="blog-article fade-up">
+                        <div>
+                            <span class="blog-tag">Product Update</span>
+                            <span class="blog-date">March 10, 2026</span>
+                        </div>
+                        <h2>Poly-Alpha OS v2.0: Sub-10ms Layer-2 Routing is Live.</h2>
+                        <p>
+                            We are thrilled to announce a complete rewrite of our execution pipeline. Poly-Alpha now natively interacts directly with Polygon RPC nodes, bypassing rate-limited REST APIs entirely to achieve sub-10ms limit order placements.
+                        </p>
+                        <p>
+                            Speed is paramount. By directly monitoring the mempool and executing via highly optimized smart contract wrappers, our agents now guarantee priority queue positioning on the orderbook, maximizing fill rates and allowing clients to capture Maker rebates with unprecedented consistency.
+                        </p>
+                        <a href="#" class="btn btn-secondary">Read Release Notes &rarr;</a>
+                    </article>
+
+                    <article class="blog-article fade-up">
+                        <div>
+                            <span class="blog-tag">Market Analysis</span>
+                            <span class="blog-date">February 22, 2026</span>
+                        </div>
+                        <h2>Why Prediction Markets Are the Most Efficient AI Training Ground.</h2>
+                        <p>
+                            Unlike traditional financial markets, prediction markets resolve with binary clarity. This creates a perfect closed-loop environment for reinforcement learning: an agent places a bet, the market resolves, and the agent receives an unambiguous reward signal. This property is invaluable for training models to identify mispriced probabilities.
+                        </p>
+                        <p>
+                            The Poly-Alpha swarm exploits this training ground by continuously deploying small probe bets to test its own probability models, updating its internal representations based on live market feedback. It is a form of self-supervised online learning that would be prohibitively expensive in traditional markets.
+                        </p>
+                        <a href="#" class="btn btn-secondary">Read Full Analysis &rarr;</a>
+                    </article>
+
+                </div>
+
+                <!-- Sidebar -->
+                <aside class="blog-sidebar">
+
+                    <div class="sidebar-widget fade-up">
+                        <h4>Subscribe to Research</h4>
+                        <p>Get technical papers and product updates delivered to your inbox.</p>
+                        <input type="email" placeholder="name@fund.com">
+                        <button class="btn btn-primary">Subscribe</button>
+                    </div>
+
+                    <div class="sidebar-widget fade-up">
+                        <h4>Categories</h4>
+                        <ul class="sidebar-list">
+                            <li><a href="#">Agentic Engineering <span class="count">14</span></a></li>
+                            <li><a href="#">Quantitative Finance <span class="count">28</span></a></li>
+                            <li><a href="#">Product Updates <span class="count">9</span></a></li>
+                            <li><a href="#">Market Analysis <span class="count">42</span></a></li>
+                        </ul>
+                    </div>
+
+                    <div class="sidebar-widget fade-up">
+                        <h4>Whitepapers</h4>
+                        <ul class="sidebar-list">
+                            <li><a href="#">The Future of Autonomous Capital Allocation</a></li>
+                            <li><a href="#">Mitigating Hallucinations in Financial LLMs</a></li>
+                            <li><a href="#">Decentralized Prediction Markets: A Technical Review</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="sidebar-widget fade-up" style="text-align: center; background: rgba(139, 92, 246, 0.08); border-color: rgba(139, 92, 246, 0.2);">
+                        <h4 style="color: var(--accent-primary);">Ready to Deploy?</h4>
+                        <p>Start your autonomous quantitative swarm in minutes.</p>
+                        <a href="app.html" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Get Started</a>
+                    </div>
+
+                </aside>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <a href="index.html" class="logo" style="margin-bottom: 1.25rem; display: inline-flex;">
+                        <img src="assets/logo.png" alt="Poly-Alpha" class="logo-img">
+                        <span class="logo-text">Poly-Alpha</span>
+                    </a>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary);">Autonomous multi-agent infrastructure designed to reason, plan, and execute efficiently.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Platform</h4>
+                    <a href="app.html">Agent SDK</a>
+                    <a href="app.html">Historical Data</a>
+                    <a href="index.html#pricing">Pricing</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <a href="index.html#team">Team</a>
+                    <a href="app.html">Careers</a>
+                    <a href="blog.html">Blog</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Legal</h4>
+                    <a href="app.html">Privacy</a>
+                    <a href="app.html">Terms</a>
+                    <a href="app.html">Security</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Poly-Alpha, Inc. All rights reserved.</p>
+                <div style="display: flex; gap: 1.5rem;">
+                    <a href="app.html" style="color: var(--text-secondary); text-decoration: none;">Twitter</a>
+                    <a href="app.html" style="color: var(--text-secondary); text-decoration: none;">GitHub</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js?v=3"></script>
+</body>
+</html>

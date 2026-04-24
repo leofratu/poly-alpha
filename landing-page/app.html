@@ -3,163 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poly-Alpha | Authentication</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>Poly-Alpha | Sign In</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-base: #030303;
-            --bg-surface: #0a0a0b;
-            --border-color: rgba(255, 255, 255, 0.08);
-            --text-primary: #ededed;
+            --bg-base: #000000;
+            --bg-surface: #0a0a0a;
+            --border-color: rgba(255,255,255,0.1);
+            --border-subtle: rgba(255,255,255,0.05);
+            --text-primary: #ffffff;
             --text-secondary: #a1a1aa;
-            --primary-color: #2dd4bf;
+            --accent: #8b5cf6;
+            --error: #ef4444;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         body {
-            background-color: var(--bg-base);
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-base);
             color: var(--text-primary);
-            font-family: 'Inter', system-ui, sans-serif;
+            min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
         }
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .orb-1 { top: -10%; left: 5%; width: 50vw; height: 50vw; background: radial-gradient(circle, #8b5cf6, transparent 70%); }
+        .orb-2 { bottom: -10%; right: 5%; width: 40vw; height: 40vw; background: radial-gradient(circle, #3b82f6, transparent 70%); }
 
-        .auth-container {
+        .auth-card {
+            position: relative;
+            z-index: 10;
             width: 100%;
             max-width: 420px;
-            padding: 3rem;
-            background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+            padding: 2.5rem;
+            background: rgba(10,10,10,0.8);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(16px);
-            text-align: center;
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
-
-        .logo {
-            margin-bottom: 2rem;
+        .logo-link {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        
-        .logo img {
-            height: 32px;
-        }
-
-        .logo-text {
-            font-size: 1.25rem;
-            font-weight: 600;
+            gap: 0.6rem;
+            text-decoration: none;
             color: #fff;
-        }
-
-        h1 {
-            font-size: 1.5rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        p {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
+            font-weight: 600;
+            font-size: 1.125rem;
             margin-bottom: 2rem;
         }
+        .logo-link img { height: 28px; }
+        h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.4rem; }
+        .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem; }
 
-        .form-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-        }
-
-        .form-group input {
+        .form-group { margin-bottom: 1.25rem; }
+        label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.4rem; color: var(--text-secondary); }
+        input {
             width: 100%;
             padding: 0.75rem 1rem;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(255,255,255,0.04);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border-radius: 8px;
             color: #fff;
             font-family: inherit;
+            font-size: 0.9375rem;
             outline: none;
-            transition: all 0.2s ease;
+            transition: border-color 0.2s;
         }
+        input:focus { border-color: var(--accent); }
+        input.error-input { border-color: var(--error); }
 
-        .form-group input:focus {
-            border-color: rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.05);
+        .error-box {
+            display: none;
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 8px;
+            padding: 0.875rem 1rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.875rem;
+            color: #fca5a5;
         }
+        .error-box.visible { display: block; }
+
+        .info-box {
+            display: none;
+            background: rgba(139,92,246,0.08);
+            border: 1px solid rgba(139,92,246,0.2);
+            border-radius: 8px;
+            padding: 0.875rem 1rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.875rem;
+            color: #c4b5fd;
+        }
+        .info-box.visible { display: block; }
 
         .btn {
             width: 100%;
             padding: 0.75rem;
-            background: #fff;
-            color: #000;
-            border: none;
-            border-radius: 6px;
-            font-weight: 500;
-            font-size: 0.875rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            font-family: inherit;
             cursor: pointer;
-            transition: background 0.2s ease;
+            transition: all 0.2s;
+            border: none;
+        }
+        .btn-primary { background: #fff; color: #000; }
+        .btn-primary:hover { background: #e5e5e5; }
+        .btn-primary:disabled { background: #3f3f46; color: #71717a; cursor: not-allowed; }
+
+        .divider {
+            display: flex; align-items: center; gap: 1rem;
+            margin: 1.5rem 0;
+            color: var(--text-secondary); font-size: 0.8125rem;
+        }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
+
+        .sso-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: not-allowed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            opacity: 0.5;
         }
 
-        .btn:hover { background: #e5e5e5; }
-        
         .back-link {
-            display: inline-block;
-            margin-top: 1.5rem;
+            display: block;
+            text-align: center;
+            margin-top: 1.75rem;
+            font-size: 0.875rem;
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.875rem;
+            transition: color 0.2s;
         }
-        
-        .back-link:hover {
-            color: #fff;
-        }
+        .back-link:hover { color: #fff; }
 
-        .background-glow {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60vw; height: 60vw;
-            background: radial-gradient(circle, rgba(45, 212, 191, 0.02) 0%, rgba(0,0,0,0) 60%);
-            z-index: -1;
-            pointer-events: none;
+        .notice {
+            position: relative;
+            z-index: 10;
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
         }
     </style>
 </head>
 <body>
-    <div class="background-glow"></div>
-    <div class="auth-container">
-        <div class="logo">
-            <img src="assets/logo.png" alt="Poly-Alpha Logo" onerror="this.style.display='none'">
-            <span class="logo-text">Poly-Alpha</span>
-        </div>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+
+    <div class="auth-card">
+        <a href="index.html" class="logo-link">
+            <img src="assets/logo.png" alt="Logo" onerror="this.style.display='none'">
+            Poly-Alpha
+        </a>
+
         <h1>Institutional Portal</h1>
-        <p>Sign in to access your quantitative dashboard</p>
-        
-        <form onsubmit="event.preventDefault();">
+        <p class="subtitle">Sign in to your Poly-Alpha workspace.</p>
+
+        <div class="error-box" id="errorBox">
+            Incorrect email or password. Please try again.
+        </div>
+
+        <div class="info-box" id="infoBox">
+            New account registration is currently closed. Please contact your account manager or reach out via <strong>Contact Sales</strong>.
+        </div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)">
             <div class="form-group">
-                <label>Institutional Email</label>
-                <input type="email" placeholder="name@fund.com" required>
+                <label for="email">Institutional Email</label>
+                <input type="email" id="email" placeholder="name@fund.com" required>
             </div>
             <div class="form-group">
-                <label>API Deployment Key</label>
-                <input type="password" placeholder="••••••••••••••••" required>
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
             </div>
-            <button type="submit" class="btn">Authenticate</button>
+            <button type="submit" class="btn btn-primary" id="submitBtn">Sign In</button>
         </form>
-        
-        <a href="index.html" class="back-link">&larr; Back to Platform</a>
+
+        <div class="divider">or</div>
+
+        <button class="sso-btn" onclick="showSignupBlocked()" type="button">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Single Sign-On (SAML) — Not Available
+        </button>
+
+        <a href="index.html" class="back-link">&larr; Back to platform</a>
     </div>
+
+    <p class="notice">By signing in you agree to our <a href="#" style="color:inherit;">Terms</a> &amp; <a href="#" style="color:inherit;">Privacy Policy</a>.</p>
+
+    <script>
+        function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const errorBox = document.getElementById('errorBox');
+            const infoBox = document.getElementById('infoBox');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+
+            // Reset state
+            errorBox.classList.remove('visible');
+            infoBox.classList.remove('visible');
+            emailInput.classList.remove('error-input');
+            passwordInput.classList.remove('error-input');
+
+            // Simulate loading
+            btn.disabled = true;
+            btn.textContent = 'Verifying...';
+
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+                errorBox.classList.add('visible');
+                emailInput.classList.add('error-input');
+                passwordInput.classList.add('error-input');
+                passwordInput.value = '';
+            }, 1200);
+        }
+
+        function showSignupBlocked() {
+            const infoBox = document.getElementById('infoBox');
+            infoBox.classList.add('visible');
+            document.getElementById('errorBox').classList.remove('visible');
+        }
+    </script>
 </body>
 </html>

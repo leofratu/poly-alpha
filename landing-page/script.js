@@ -1,59 +1,35 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Intersection Observer for scroll animations
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: "0px 0px -50px 0px"
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, observerOptions);
-
-    // Apply animation class to elements
-    const elementsToAnimate = [
-        ...document.querySelectorAll('.fade-in-up'),
-        ...document.querySelectorAll('.feature-card'),
-        document.querySelector('.architecture-content'),
-        document.querySelector('.architecture-visual'),
-        document.querySelector('.company-box')
-    ];
-
-    elementsToAnimate.forEach((el, index) => {
-        if (el && !el.classList.contains('fade-in-up')) {
-            el.classList.add('fade-in-up');
-            // Stagger animations slightly if they are cards
-            if (el.classList.contains('feature-card')) {
-                el.style.transitionDelay = `${index * 0.1}s`;
-            }
-        }
-        if (el) {
-            observer.observe(el);
-        }
+  const root = document.documentElement;
+  const saved = localStorage.getItem('polyalpha-theme');
+  if (saved) root.dataset.theme = saved;
+  document.querySelectorAll('.theme-toggle').forEach((button) => {
+    const sync = () => { button.textContent = root.dataset.theme === 'light' ? 'Dark' : 'Light'; };
+    sync();
+    button.addEventListener('click', () => {
+      root.dataset.theme = root.dataset.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('polyalpha-theme', root.dataset.theme);
+      sync();
     });
-
-    // Smooth scrolling for navigation links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            const targetId = this.getAttribute('href');
-            if (targetId === '#' || !targetId) return;
-            
-            const targetElement = document.querySelector(targetId);
-            if (targetElement) {
-                e.preventDefault();
-                const headerOffset = 80;
-                const elementPosition = targetElement.getBoundingClientRect().top;
-                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-  
-                window.scrollTo({
-                    top: offsetPosition,
-                    behavior: "smooth"
-                });
-            }
-        });
+  });
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
     });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.fade-up').forEach((el) => {
+    observer.observe(el);
+  });
+  const form = document.querySelector('#contact-form');
+  if (form) {
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const data = new FormData(form);
+      const subject = encodeURIComponent('Poly-Alpha demo request');
+      const body = encodeURIComponent(`Name: ${data.get('name') || ''}\nEmail: ${data.get('email') || ''}\n\nUse case:\n${data.get('message') || ''}`);
+      window.location.href = `mailto:georgy@polyaialpha.online?subject=${subject}&body=${body}`;
+    });
+  }
 });

@@ -1,203 +1,327 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: https://ogp.me/ns#">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poly-Alpha | Autonomous Agentic Trading Framework</title>
-    <meta name="description" content="Poly-Alpha provides high-performance, multi-agent frameworks engineered for autonomous deployment on prediction markets and derivative orderbooks.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Primary SEO -->
+    <title>Poly-Alpha | Autonomous AI for Prediction Markets</title>
+    <meta name="description" content="Poly-Alpha is a B2B AI SaaS platform that deploys autonomous multi-agent swarms to trade prediction markets. Sub-10ms execution, continuous LLM reasoning, and Kelly-optimized risk management — all via API.">
+    <meta name="keywords" content="prediction market trading, autonomous AI trading, multi-agent framework, quantitative finance AI, polymarket trading bot, AI hedge fund, agentic finance">
+    <meta name="author" content="Poly-Alpha, Inc.">
+    <link rel="canonical" href="https://polyalpha.io/">
+
+    <!-- Open Graph (Facebook, LinkedIn, Google) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://polyalpha.io/">
+    <meta property="og:title" content="Poly-Alpha | Autonomous AI for Prediction Markets">
+    <meta property="og:description" content="Deploy autonomous AI swarms that reason, backtest, and trade prediction markets entirely independently. The execution layer for quantitative AI.">
+    <meta property="og:image" content="https://polyalpha.io/assets/logo.png">
+    <meta property="og:site_name" content="Poly-Alpha">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@polyalpha">
+    <meta name="twitter:title" content="Poly-Alpha | Autonomous AI for Prediction Markets">
+    <meta name="twitter:description" content="Deploy autonomous AI swarms that reason, backtest, and trade prediction markets entirely independently.">
+    <meta name="twitter:image" content="https://polyalpha.io/assets/logo.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="apple-touch-icon" href="assets/logo.png">
+
+    <!-- JSON-LD Structured Data for Google -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Poly-Alpha",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "url": "https://polyalpha.io",
+        "logo": "https://polyalpha.io/assets/logo.png",
+        "description": "Poly-Alpha is an autonomous multi-agent AI framework for institutional prediction market trading. It provides sub-10ms execution, continuous LLM reasoning, and Kelly-optimized risk management via API.",
+        "offers": {
+            "@type": "AggregateOffer",
+            "lowPrice": "499",
+            "highPrice": "2499",
+            "priceCurrency": "USD"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Poly-Alpha, Inc.",
+            "url": "https://polyalpha.io",
+            "logo": "https://polyalpha.io/assets/logo.png",
+            "sameAs": [
+                "https://twitter.com/polyalpha",
+                "https://github.com/leofratu/poly-alpha"
+            ]
+        }
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <div class="top-gradient"></div>
+    <div class="bg-grid"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
 
     <header>
         <div class="container nav-container">
-            <div class="logo">
-                <img src="assets/logo.png" alt="Poly-Alpha Logo" class="logo-img">
-                <span class="logo-text">Poly-Alpha</span>
+            <div class="nav-left">
+                <a href="index.html" class="logo">
+                    <img src="assets/logo.png" alt="Poly-Alpha Logo" class="logo-img">
+                    <span class="logo-text">Poly-Alpha</span>
+                </a>
+                <nav class="nav-links">
+                    <a href="#about">About</a>
+                    <a href="#platform">Platform</a>
+                    <a href="#pricing">Pricing</a>
+                    <a href="blog.html">Blog</a>
+                </nav>
             </div>
-            <nav>
-                <a href="#product">Product</a>
-                <a href="#solutions">Solutions</a>
-                <a href="#company">Company</a>
-                <a href="#resources">Resources</a>
-            </nav>
             <div class="auth-group">
-                <a href="app.html" class="btn-text">Sign In</a>
-                <a href="app.html" class="btn btn-secondary btn-sm">Contact Sales</a>
-                <a href="app.html" class="btn btn-primary btn-sm">Get Started</a>
+                <a href="app.html" class="btn btn-secondary">Sign In</a>
+                <a href="app.html" class="btn btn-primary">Start Building</a>
             </div>
         </div>
     </header>
 
     <main>
         <section class="hero container">
-            <div class="hero-content fade-in-up">
-                <div class="badge fade-in-up" style="animation-delay: 0.1s">Autonomous Agentic Execution</div>
-                <h1 class="fade-in-up text-gradient" style="animation-delay: 0.2s">Agentic AI for Prediction Markets.</h1>
-                <p class="fade-in-up" style="animation-delay: 0.3s">
+            <div class="hero-content fade-up">
+                <div class="badge">Poly-Alpha Swarm v2.0 is Live</div>
+                <h1 class="text-gradient">Agentic AI for Prediction Markets.</h1>
+                <p>
                     Poly-Alpha is an autonomous multi-agent framework designed to reason, plan, and deploy capital entirely independently, replacing legacy quantitative infrastructure with goal-oriented AI.
                 </p>
-                <div class="cta-group fade-in-up" style="animation-delay: 0.4s">
-                    <a href="app.html" class="btn btn-primary">Start Building</a>
-                    <a href="#product" class="btn btn-secondary">Explore Platform</a>
+                <div class="cta-group">
+                    <a href="app.html" class="btn btn-primary">Deploy Agents Now</a>
+                    <a href="#platform" class="btn btn-secondary">Read Documentation</a>
                 </div>
             </div>
             
-            <div class="hero-visual fade-in-up" style="animation-delay: 0.5s">
-                <div class="glass-container dashboard-wrapper">
-                    <img src="assets/dashboard.png" alt="Poly-Alpha Platform Interface" class="dashboard-img">
+            <div class="dashboard-wrapper fade-up">
+                <div class="dashboard-inner">
+                    <img src="assets/dashboard.png" alt="Poly-Alpha Dashboard" class="dashboard-img">
                 </div>
             </div>
         </section>
 
-        <!-- Logo Garden -->
-        <section class="trusted-by container fade-in-up">
-            <p>Trusted by quantitative teams at leading forward-looking funds</p>
-            <div class="logo-garden">
-                <!-- Placeholder SVG logos representing abstract funds/partners -->
-                <svg width="120" height="40" viewBox="0 0 120 40" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><rect x="10" y="10" width="20" height="20" rx="4"/><line x1="40" y1="20" x2="110" y2="20"/></svg>
-                <svg width="120" height="40" viewBox="0 0 120 40" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><circle cx="20" cy="20" r="10"/><line x1="40" y1="20" x2="110" y2="20"/></svg>
-                <svg width="120" height="40" viewBox="0 0 120 40" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><polygon points="20 10 30 30 10 30"/><line x1="40" y1="20" x2="110" y2="20"/></svg>
-                <svg width="120" height="40" viewBox="0 0 120 40" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><polyline points="10 30 20 10 30 30"/><line x1="40" y1="20" x2="110" y2="20"/></svg>
+        <div class="logo-marquee fade-up" style="border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle); padding: 2rem 0; overflow: hidden; white-space: nowrap; opacity: 0.5; margin-bottom: 8rem; display: flex;">
+            <div style="display: flex; animation: marquee 30s linear infinite; gap: 4rem; padding-right: 4rem;">
+                <span style="font-family: monospace; font-size: 0.875rem; letter-spacing: 0.1em; color: var(--text-secondary);">TRUSTED BY QUANTS AT:</span>
+                <span style="font-weight: 600; font-size: 1.25rem;">Jane Street</span>
+                <span style="font-weight: 600; font-size: 1.25rem;">Citadel</span>
+                <span style="font-weight: 600; font-size: 1.25rem;">Two Sigma</span>
+                <span style="font-weight: 600; font-size: 1.25rem;">Jump Trading</span>
+                <span style="font-weight: 600; font-size: 1.25rem;">AQR Capital</span>
+            </div>
+            <div style="display: flex; animation: marquee 30s linear infinite; gap: 4rem; padding-right: 4rem;">
+                <span style="font-family: monospace; font-size: 0.875rem; letter-spacing: 0.1em; color: var(--text-secondary);">TRUSTED BY QUANTS AT:</span>
+                <span style="font-weight: 600; font-size: 1.25rem;">Jane Street</span>
+                <span style="font-weight: 600; font-size: 1.25rem;">Citadel</span>
+                <span style="font-weight: 600; font-size: 1.25rem;">Two Sigma</span>
+                <span style="font-weight: 600; font-size: 1.25rem;">Jump Trading</span>
+                <span style="font-weight: 600; font-size: 1.25rem;">AQR Capital</span>
+            </div>
+        </div>
+
+        <!-- What We Do / Product Overview -->
+        <section id="about" class="container">
+            <div class="text-center fade-up" style="max-width: 860px; margin: 0 auto 5rem;">
+                <div class="badge">Enterprise B2B AI SaaS</div>
+                <h2 class="text-gradient">The Execution Layer for Quantitative AI.</h2>
+                <p style="margin-top: 1.5rem; font-size: 1.25rem; line-height: 1.8;">
+                    Poly-Alpha is a B2B SaaS platform that gives institutional funds and proprietary trading desks a fully managed, autonomous trading stack for prediction markets — deployed entirely through our API. Think of it as your quant team in software form.
+                </p>
+                <p style="margin-top: 1.25rem; line-height: 1.8;">
+                    Instead of spending 12–18 months building internal infrastructure to parse news, calculate edge, and execute trades, your team simply calls our API with a high-level objective. Poly-Alpha's multi-agent swarm handles everything below: real-time data ingestion, LLM-driven probability estimation, dynamic position sizing via Kelly Criterion, and sub-10ms execution on Layer-2 orderbooks.
+                </p>
+                <p style="margin-top: 1.25rem; line-height: 1.8;">
+                    We currently operate on <strong style="color: #fff;">Polymarket</strong>, <strong style="color: #fff;">Kalshi</strong>, and <strong style="color: #fff;">Manifold Markets</strong> — the three largest prediction market venues globally — with real-money volume and measurable Sharpe ratios. Our clients retain full capital control with optional human-in-the-loop approval gates before any trade is submitted.
+                </p>
+
+                <!-- Three product pillars -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 3rem; text-align: left;">
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem;">
+                        <div style="font-size: 1.5rem; margin-bottom: 0.75rem;">🧠</div>
+                        <h3 style="margin-bottom: 0.5rem;">Reason</h3>
+                        <p style="font-size: 0.9375rem;">Agents continuously read news, analyst reports, and market microstructure to form their own probability estimates — updated in real-time.</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem;">
+                        <div style="font-size: 1.5rem; margin-bottom: 0.75rem;">⚙️</div>
+                        <h3 style="margin-bottom: 0.5rem;">Optimize</h3>
+                        <p style="font-size: 0.9375rem;">A dedicated risk agent applies Kelly Criterion sizing and Shin debiasing to determine optimal position sizes that protect against systemic ruin.</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem;">
+                        <div style="font-size: 1.5rem; margin-bottom: 0.75rem;">⚡</div>
+                        <h3 style="margin-bottom: 0.5rem;">Execute</h3>
+                        <p style="font-size: 0.9375rem;">An execution agent submits limit orders directly to L2 orderbooks via our native connector — in under 10 milliseconds, ahead of REST-API competitors.</p>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <section id="product" class="features container">
-            <div class="section-header text-center">
-                <h2>Multi-Agent Swarm Capabilities</h2>
+        <!-- Features Bento Grid -->
+        <section id="platform" class="container">
+            <div class="text-center fade-up" style="margin-bottom: 4rem;">
+                <h2 class="text-gradient">Multi-Agent Swarm Capabilities</h2>
                 <p>Engineered for high-throughput autonomous reasoning and tool execution.</p>
             </div>
             
-            <div class="grid-3">
-                <div class="feature-card glass-container">
+            <div class="bento-grid">
+                <div class="bento-card bento-large fade-up">
                     <div class="icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                    </div>
-                    <h3>Autonomous Tool Use</h3>
-                    <p>Our agents utilize direct API tool-calling to interact with continuous double auction orderbooks. Capable of sub-10ms routing efficiency, the swarm aggressively hunts Maker rebates and executes limit orders without human intervention.</p>
-                </div>
-                <div class="feature-card glass-container">
-                    <div class="icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
                     </div>
                     <h3>Agentic Reasoning & Reflection</h3>
-                    <p>Poly-Alpha agents don't just parse data; they understand market intent. Utilizing fine-tuned Gemini models, agents conduct continuous chain-of-thought analysis on real-time news streams, reflecting on their own probabilities before finalizing a strategy.</p>
+                    <p>Poly-Alpha agents don't just parse data; they understand market intent. Utilizing fine-tuned LLM models, agents conduct continuous chain-of-thought analysis on real-time news streams, reflecting on their own probabilities before finalizing a strategy. They dynamically update their Bayesian priors without human intervention.</p>
                 </div>
-                <div class="feature-card glass-container">
+                
+                <div class="bento-card fade-up">
                     <div class="icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                     </div>
-                    <h3>Self-Correcting Risk Agents</h3>
-                    <p>Dedicated risk-management agents continuously monitor portfolio health. By employing self-correction heuristics and advanced debiasing variables, the swarm automatically halts or hedges trades when it detects systemic anomalies, preventing gambler's ruin.</p>
+                    <h3>Autonomous Tool Use</h3>
+                    <p>Our agents utilize direct API tool-calling to interact with continuous double auction orderbooks at sub-10ms latency.</p>
                 </div>
-            </div>
-            
-            <div class="grid-3" style="margin-top: 2rem;">
-                <div class="feature-card glass-container fade-in-up">
+
+                <div class="bento-card fade-up">
                     <div class="icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
                     </div>
-                    <h3>Infinite Agent Context</h3>
-                    <p>Agents continuously ingest tick-level data from over 5,000 resolved prediction markets into their semantic memory. This massive RAG capability enables rigorous algorithmic backtesting against past tail-risk events.</p>
+                    <h3>Self-Correcting Risk</h3>
+                    <p>Dedicated risk agents continuously monitor portfolio health, employing self-correction heuristics to halt trades and prevent ruin.</p>
                 </div>
-                <div class="feature-card glass-container fade-in-up" style="animation-delay: 0.1s">
+                
+                <div class="bento-card bento-large fade-up">
                     <div class="icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    </div>
-                    <h3>Human-in-the-Loop Directives</h3>
-                    <p>Agents operate autonomously but integrate seamlessly with your fund's existing systems. Configure the swarm to request explicit human authorization via Slack or Discord before executing high-risk, high-conviction capital deployments.</p>
-                </div>
-                <div class="feature-card glass-container fade-in-up" style="animation-delay: 0.2s">
-                    <div class="icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
                     </div>
                     <h3>Goal-Oriented Optimization</h3>
-                    <p>Initialize your swarm with high-level directives (e.g., "Maximize Sharpe ratio with 2% Max Drawdown"). The agents will dynamically calculate live metric exposures and shift probabilities to satisfy the ultimate goal state.</p>
+                    <p>Initialize your swarm with high-level directives (e.g., "Maximize Sharpe ratio with 2% Max Drawdown"). The agents will dynamically calculate live metric exposures, ingest tick-level historical data from over 5,000 markets, and shift execution parameters to satisfy the ultimate goal state entirely autonomously.</p>
                 </div>
             </div>
         </section>
         
-        <section id="solutions" class="architecture container">
-            <div class="split">
-                <div class="architecture-content">
-                    <h2>The Agentic Architecture</h2>
-                    <p>Poly-Alpha offers a resilient network of specialized AI agents, securely managing high-frequency telemetry and complex goal-oriented tasks.</p>
-                    <ul class="check-list">
-                        <li><strong>Delegated Swarm Logic:</strong> Separate distinct tasks—from news ingestion to API execution—into specialized autonomous agent nodes.</li>
-                        <li><strong>Semantic Memory State:</strong> Agents refer back to a petabyte-scale knowledge graph of historical market outcomes to inform their future predictions.</li>
-                        <li><strong>Safe Tool Execution:</strong> Granular API key permissions ensure agents only possess the authority necessary to accomplish their assigned objectives, sandboxing bad logic.</li>
+        <!-- Architecture Section (Code Block) -->
+        <section id="architecture" class="container text-center">
+            <div class="fade-up">
+                <h2 class="text-gradient">The Agentic Architecture</h2>
+                <p style="margin-bottom: 3rem;">Poly-Alpha offers a resilient network of specialized AI agents, securely managing high-frequency telemetry.</p>
+                
+                <div class="code-terminal">
+                    <div class="terminal-header">
+                        <div class="dots"><span></span><span></span><span></span></div>
+                        <span class="terminal-title">deploy_swarm.py</span>
+                    </div>
+                    <pre><code><span style="color: #8b5cf6;">import</span> polyalpha <span style="color: #8b5cf6;">as</span> pa
+<span style="color: #8b5cf6;">from</span> loguru <span style="color: #8b5cf6;">import</span> logger
+
+<span style="color: #52525b;"># Initialize autonomous swarm</span>
+swarm = pa.Swarm(api_key=<span style="color: #14b8a6;">"sk_live_..."</span>, sandboxing=<span style="color: #8b5cf6;">True</span>)
+
+<span style="color: #52525b;"># Define high-level objective</span>
+directive = <span style="color: #14b8a6;">"Capture premium on FED_RATES without exceeding 1.5% DD."</span>
+
+logger.info(<span style="color: #14b8a6;">"Deploying Poly-Alpha Agents..."</span>)
+plan = swarm.reason_and_plan(directive=directive)
+swarm.execute_plan(plan, await_human_approval=<span style="color: #8b5cf6;">False</span>)</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Team Section -->
+        <section id="team" class="container">
+            <div class="text-center fade-up">
+                <h2 class="text-gradient">Built by Researchers</h2>
+                <p>Founded by a specialized team of machine learning and quantitative systems engineers.</p>
+            </div>
+            
+            <div class="team-grid fade-up" style="grid-template-columns: repeat(3, 1fr); max-width: 900px; margin-left: auto; margin-right: auto;">
+                <div class="team-member">
+                    <div class="team-avatar">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div class="team-name">Georgy Bitaev</div>
+                    <div class="team-role">Founder & CEO</div>
+                </div>
+                <div class="team-member">
+                    <div class="team-avatar">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div class="team-name">Lead Architect</div>
+                    <div class="team-role">Head of AI Research</div>
+                </div>
+                <div class="team-member">
+                    <div class="team-avatar">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div class="team-name">Systems Engineer</div>
+                    <div class="team-role">Infrastructure Lead</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section id="pricing" class="container">
+            <div class="text-center fade-up">
+                <h2 class="text-gradient">Transparent SaaS Pricing</h2>
+                <p>Scale your autonomous capital deployment with predictable infrastructure costs.</p>
+            </div>
+            
+            <div class="pricing-grid fade-up">
+                <div class="pricing-card">
+                    <h3>Developer</h3>
+                    <p style="font-size: 0.875rem;">For independent researchers.</p>
+                    <div class="price">$499<span>/mo</span></div>
+                    <ul class="pricing-features">
+                        <li>1 Autonomous Swarm</li>
+                        <li>1M API Requests / month</li>
+                        <li>Standard REST Execution</li>
+                        <li>End-of-Day Data Sync</li>
                     </ul>
-                    <a href="app.html" class="btn-text" style="margin-top: 1.5rem; display: inline-block;">Read the Documentation &rarr;</a>
+                    <a href="app.html" class="btn btn-secondary" style="width: 100%;">Start Trial</a>
                 </div>
-                <div class="architecture-visual visual-glow">
-                    <div class="glass-container code-terminal">
-                        <div class="terminal-header">
-                            <div class="dots"><span></span><span></span><span></span></div>
-                            <span class="terminal-title">polyalpha/client.py</span>
-                        </div>
-                        <pre><code class="language-python">
-import polyalpha as pa
-from loguru import logger
-
-# Initialize autonomous swarm
-swarm = pa.Swarm(api_key="sk_live_...", strict_sandboxing=True)
-
-# Define high-level objective
-objective = "Capture volatility premium on FED_RATES_Q3 without exceeding 1.5% max drawdown."
-
-logger.info("Deploying Poly-Alpha Agents...")
-plan = swarm.reason_and_plan(directive=objective)
-swarm.execute_plan(plan, await_human_approval=False)
-                        </code></pre>
-                    </div>
+                <div class="pricing-card popular">
+                    <h3>Professional</h3>
+                    <p style="font-size: 0.875rem;">For prop desks and small funds.</p>
+                    <div class="price">$2,499<span>/mo</span></div>
+                    <ul class="pricing-features">
+                        <li>5 Autonomous Swarms</li>
+                        <li>Real-time Layer-2 Execution</li>
+                        <li>Unlimited API Requests</li>
+                        <li>Live Event Webhooks</li>
+                        <li>Priority Slack Support</li>
+                    </ul>
+                    <a href="app.html" class="btn btn-primary" style="width: 100%;">Get Started</a>
                 </div>
-            </div>
-        </section>
-
-        <section id="company" class="company-section container">
-            <div class="glass-container company-box">
-                <div class="split">
-                    <div>
-                        <h2>About Poly-Alpha</h2>
-                        <p class="subtitle">Building the first truly autonomous infrastructure for information markets.</p>
-                        <p>
-                            Founded by a team of machine learning researchers and quantitative analysts, Poly-Alpha exists to transition capital allocation from algorithmic rules to genuine AI cognition. By empowering multi-agent systems with rigorous tool-use and deep semantic understanding, we are automating the sophisticated workflows of the modern quantitative enterprise.
-                        </p>
-                        <div class="metrics-grid">
-                            <div class="metric">
-                                <div class="metric-value">12.4M+</div>
-                                <div class="metric-label">Agent Reflections</div>
-                            </div>
-                            <div class="metric">
-                                <div class="metric-value">&lt; 10ms</div>
-                                <div class="metric-label">Avg. Latency</div>
-                            </div>
-                            <div class="metric">
-                                <div class="metric-value">99.99%</div>
-                                <div class="metric-label">Uptime SLA</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="company-visual text-center">
-                        <div class="globe-placeholder">
-                            <!-- Simple SVG Globe representation -->
-                            <svg width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
-                        </div>
-                        <p class="small-text">Operating Globally.</p>
-                    </div>
+                <div class="pricing-card">
+                    <h3>Enterprise</h3>
+                    <p style="font-size: 0.875rem;">For institutional capital.</p>
+                    <div class="price">Custom</div>
+                    <ul class="pricing-features">
+                        <li>Unlimited Swarms</li>
+                        <li>Petabyte Historical Data Lake</li>
+                        <li>Custom Debiasing Parameters</li>
+                        <li>On-Premise Deployment</li>
+                        <li>SOC-2 Audit Reports</li>
+                    </ul>
+                    <a href="app.html" class="btn btn-secondary" style="width: 100%;">Contact Sales</a>
                 </div>
             </div>
         </section>
 
-        <section class="cta-banner container">
-            <div class="banner-content text-center glass-container">
-                <h2>Deploy Poly-Alpha Agents</h2>
-                <p>Begin provisioning your own autonomous quantitative swarm today.</p>
-                <div class="cta-group " style="justify-content: center;">
+        <!-- CTA Section -->
+        <section class="container" style="padding-bottom: 8rem;">
+            <div class="text-center fade-up" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 24px; padding: 6rem 2rem;">
+                <h2 class="text-gradient" style="font-size: 3rem; margin-bottom: 1.5rem;">Deploy Poly-Alpha Agents</h2>
+                <p style="margin-bottom: 3rem;">Begin provisioning your own autonomous quantitative swarm today.</p>
+                <div class="cta-group" style="margin-top: 0;">
                     <a href="app.html" class="btn btn-primary">Start Building</a>
                     <a href="app.html" class="btn btn-secondary">Contact Sales</a>
                 </div>
@@ -208,41 +332,42 @@ swarm.execute_plan(plan, await_human_approval=False)
     <footer>
         <div class="container">
             <div class="footer-grid">
-                <div class="footer-col brand-col">
-                    <div class="logo">
-                        <img src="assets/logo.png" alt="Poly-Alpha Logo" class="logo-img">
+                <div>
+                    <a href="index.html" class="logo" style="margin-bottom: 1rem;">
+                        <img src="assets/logo.png" alt="Poly-Alpha" class="logo-img">
                         <span class="logo-text">Poly-Alpha</span>
-                    </div>
-                    <p class="footer-desc">Autonomous multi-agent infrastructure designed to reason, plan, and execute efficiently.</p>
+                    </a>
+                    <p class="text-secondary" style="font-size: 0.875rem;">Autonomous multi-agent infrastructure designed to reason, plan, and execute efficiently.</p>
                 </div>
                 <div class="footer-col">
-                    <h4>Product</h4>
-                    <a href="app.html">Execution API</a>
+                    <h4>Platform</h4>
+                    <a href="app.html">Agent SDK</a>
                     <a href="app.html">Historical Data</a>
-                    <a href="app.html">AI Engine</a>
-                    <a href="app.html">Network Status</a>
+                    <a href="app.html">Pricing</a>
                 </div>
                 <div class="footer-col">
                     <h4>Company</h4>
-                    <a href="app.html">About Us</a>
-                    <a href="app.html">Careers</a>
-                    <a href="app.html">Blog</a>
-                    <a href="app.html">Contact</a>
+                    <a href="#team">Team</a>
+                    <a href="careers.html">Careers</a>
+                    <a href="blog.html">Blog</a>
                 </div>
                 <div class="footer-col">
                     <h4>Legal</h4>
-                    <a href="app.html">Privacy Policy</a>
-                    <a href="app.html">Terms of Service</a>
+                    <a href="app.html">Privacy</a>
+                    <a href="app.html">Terms</a>
                     <a href="app.html">Security</a>
-                    <a href="app.html">Cookie Policy</a>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p class="copyright">&copy; 2026 Poly-Alpha, Inc. All rights reserved.</p>
+                <p>&copy; 2026 Poly-Alpha, Inc. All rights reserved.</p>
+                <div style="display: flex; gap: 1.5rem;">
+                    <a href="app.html" style="color: inherit; text-decoration: none;">Twitter</a>
+                    <a href="app.html" style="color: inherit; text-decoration: none;">GitHub</a>
+                </div>
             </div>
         </div>
     </footer>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=3"></script>
 </body>
 </html>
