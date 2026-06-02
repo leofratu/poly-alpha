@@ -1,8 +1,42 @@
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
 .venv/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Data
 *.sqlite
 *.csv
 *.json
+!pyproject.toml
+!vercel.json
+!render.yaml
+
+# Logs
+*.log
+
+# Tools
 .ruff_cache/
-poly_cache.sqlite
-paper_wallet.sqlite
+.mypy_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# OS
+.DS_Store
+Thumbs.db
+
+# uv
+uv.lock
