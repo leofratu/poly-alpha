@@ -33,3 +33,43 @@ class Provenance:
     retrieved_at: datetime | None = None
     url: str | None = None
     note: str = ""
+
+
+@dataclass(frozen=True)
+class AssetRef:
+    """A tradeable asset an adapter can supply prices for."""
+
+    symbol: str
+    asset_class: str
+    description: str = ""
+
+
+@dataclass(frozen=True)
+class PriceLevel:
+    """A single resting order-book level."""
+
+    price: float
+    size: float
+
+
+@dataclass(frozen=True)
+class Uncertainty:
+    """An interval estimate plus the basis it was derived from.
+
+    `simulated` must be True whenever the interval comes from generated rather than
+    observed outcomes, so interfaces can label it honestly.
+    """
+
+    estimate: float
+    low: float
+    high: float
+    basis: str = "heuristic"
+    n_observations: int = 0
+    simulated: bool = False
+
+    @property
+    def width(self) -> float:
+        return self.high - self.low
+
+    def contains(self, value: float) -> bool:
+        return self.low <= value <= self.high
