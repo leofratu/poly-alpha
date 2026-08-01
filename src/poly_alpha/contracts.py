@@ -73,3 +73,32 @@ class Uncertainty:
 
     def contains(self, value: float) -> bool:
         return self.low <= value <= self.high
+
+
+@dataclass(frozen=True)
+class MarketSnapshot:
+    """Normalized point-in-time view of one two-sided market."""
+
+    market_id: str
+    question: str
+    asset: AssetRef
+    yes_price: float | None
+    no_price: float | None
+    liquidity: float
+    volume: float
+    provenance: Provenance
+    close_time: datetime | None = None
+    orderbook: tuple[PriceLevel, ...] = ()
+
+    @property
+    def is_tradeable(self) -> bool:
+        return self.yes_price is not None and self.no_price is not None
+
+    def implied_yes(self) -> float | None:
+        """De-vigged mid probability when both sides are present."""
+        if self.yes_price is None or self.no_price is None:
+            return None
+        total = self.yes_price + self.no_price
+        if total <= 0:
+            return None
+        return self.yes_price / total
