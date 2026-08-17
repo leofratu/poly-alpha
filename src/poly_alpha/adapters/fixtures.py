@@ -136,3 +136,49 @@ _SPECS: tuple[_FixtureSpec, ...] = (
     ),
     _FixtureSpec(
         "fixture-crypto-eth-up",
+        "Will ETH close above its previous price?",
+        "CRYPTO-ETH-UP",
+        "crypto",
+        0.49,
+        0.51,
+        6300.0,
+        33000.0,
+        datetime(2026, 6, 8, 20, 0, tzinfo=UTC),
+    ),
+)
+
+
+def _orderbook(mid: float) -> tuple[PriceLevel, ...]:
+    """Build a small deterministic book around a mid price."""
+    return (
+        PriceLevel(price=round(mid - _BOOK_STEP, 4), size=1000.0),
+        PriceLevel(price=round(mid, 4), size=1500.0),
+        PriceLevel(price=round(mid + _BOOK_STEP, 4), size=1000.0),
+    )
+
+
+def _build_markets() -> list[MarketSnapshot]:
+    """Materialize every fixture snapshot from the static specs."""
+    markets: list[MarketSnapshot] = []
+    for spec in _SPECS:
+        provenance = Provenance(
+            source=_PROVENANCE_SOURCE,
+            kind=DataSourceKind.FIXTURE,
+            retrieved_at=FIXTURE_AS_OF,
+            note=f"Deterministic fixture for the {spec.asset_class} category.",
+        )
+        markets.append(
+            MarketSnapshot(
+                market_id=spec.market_id,
+                question=spec.question,
+                asset=AssetRef(
+                    symbol=spec.symbol,
+                    asset_class=spec.asset_class,
+                    description=spec.question,
+                ),
+                yes_price=spec.yes_price,
+                no_price=spec.no_price,
+                liquidity=spec.liquidity,
+                volume=spec.volume,
+                provenance=provenance,
+                close_time=spec.close_time,
