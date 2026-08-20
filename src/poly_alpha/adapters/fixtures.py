@@ -182,3 +182,31 @@ def _build_markets() -> list[MarketSnapshot]:
                 volume=spec.volume,
                 provenance=provenance,
                 close_time=spec.close_time,
+                orderbook=_orderbook(spec.yes_price),
+            )
+        )
+    return markets
+
+
+class FixtureMarketAdapter:
+    """Offline adapter serving hand-authored, fully deterministic markets."""
+
+    name = "fixture"
+    source_kind = DataSourceKind.FIXTURE
+
+    def __init__(self) -> None:
+        self._markets = _build_markets()
+        self._by_id = {market.market_id: market for market in self._markets}
+
+    def list_markets(self) -> list[MarketSnapshot]:
+        """Return every fixture market snapshot."""
+        return list(self._markets)
+
+    def get_snapshot(self, market_id: str) -> MarketSnapshot | None:
+        """Return the fixture snapshot for an id, or None when unknown."""
+        return self._by_id.get(market_id)
+
+
+def fixture_adapter() -> FixtureMarketAdapter:
+    """Return a fresh, cheap-to-construct fixture adapter."""
+    return FixtureMarketAdapter()
