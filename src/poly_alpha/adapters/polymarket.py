@@ -90,3 +90,49 @@ class PolymarketAdapter:
         events = client.get_events(active=True, closed=False, limit=self._limit)
         snapshots: list[MarketSnapshot] = []
         for event in events:
+            nested = event.get("markets")
+            if isinstance(nested, list):
+                for market in nested:
+                    snapshot = self._parse_market(market)
+                    if snapshot is not None:
+                        snapshots.append(snapshot)
+            else:
+                snapshot = self._parse_market(event)
+                if snapshot is not None:
+                    snapshots.append(snapshot)
+        return snapshots
+
+    def get_snapshot(self, market_id: str) -> MarketSnapshot | None:
+        """Return the live snapshot for an id, or None when it is not found."""
+        for snapshot in self.list_markets():
+            if snapshot.market_id == market_id:
+                return snapshot
+        return None
+
+    def _parse_market(self, market: dict[str, Any]) -> MarketSnapshot | None:
+        """Map one raw Gamma market dict, skipping malformed payloads."""
+        prices = _two_sided_prices(market)
+        if prices is None:
+            return None
+        market_id = str(market.get("id") or market.get("conditionId") or "").strip()
+        if not market_id:
+            return None
+        question = str(market.get("question") or "").strip()
+        if not question:
+            return None
+        yes_price, no_price = prices
+        provenance = Provenance(
+            source="Polymarket Gamma API",
+            kind=DataSourceKind.REAL,
+            url=GAMMA_API_BASE,
+            retrieved_at=datetime.now(UTC),
+        )
+        return MarketSnapshot(
+            market_id=market_id,
+            question=question,
+            asset=AssetRef(
+                symbol=str(market.get("slug") or market_id),
+                asset_class=str(market.get("category") or "prediction"),
+                description=question,
+            ),
+            yes_price=yes_price,
