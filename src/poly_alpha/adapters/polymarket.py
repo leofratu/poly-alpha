@@ -136,3 +136,9 @@ class PolymarketAdapter:
                 description=question,
             ),
             yes_price=yes_price,
+            no_price=no_price,
+            liquidity=_to_float(market.get("liquidity")) or 0.0,
+            volume=_to_float(market.get("volume")) or 0.0,
+            provenance=provenance,
+            close_time=_parse_datetime(market.get("endDate")),
+        )
