@@ -377,6 +377,7 @@ uv run poly-alpha research simulate           # paper equity curve over demo res
 uv run poly-alpha research curves             # walk-forward over deterministic histories
 uv run poly-alpha research calibration        # uncertainty coverage over demo outcomes
 uv run poly-alpha research costs --fee-bps 100  # fee/slippage-adjusted edges
+uv run poly-alpha research costs --size 100    # + depth-aware edge from the order book
 uv run poly-alpha research overview           # cross-market ranking by research edge
 uv run poly-alpha research validate           # contract invariant check on all markets
 uv run poly-alpha research journal            # append a provenance summary of a run
