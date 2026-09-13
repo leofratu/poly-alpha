@@ -90,3 +90,49 @@ def default_provider() -> DataProvider:
     try:
         from poly_alpha.adapters.fixtures import fixture_adapter
         from poly_alpha.backtesting.comparison import compare_strategies
+        from poly_alpha.portfolio.risk import analyze_portfolio
+        from poly_alpha.research.analyst import research_markets
+    except ImportError as exc:
+        note = f"live modules unavailable: {exc}"
+        return StaticProvider(risk={"status": "unavailable", "note": note})
+    return _ModuleProvider(
+        markets_fn=lambda: fixture_adapter().list_markets(),
+        research_fn=research_markets,
+        risk_fn=lambda: analyze_portfolio(()),
+        compare_fn=lambda: compare_strategies((), {}),
+    )
+
+
+def _to_jsonable(value: object) -> object:
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, Mapping):
+        return {str(key): _to_jsonable(item) for key, item in value.items()}
+    if is_dataclass(value) and not isinstance(value, type):
+        return {field.name: _to_jsonable(getattr(value, field.name)) for field in fields(value)}
+    if isinstance(value, (list, tuple, set)):
+        return [_to_jsonable(item) for item in value]
+    return value
+
+
+def snapshot_to_dict(s: MarketSnapshot) -> dict:
+    """Convert a snapshot into JSON-safe primitives."""
+    return cast(dict, _to_jsonable(s))
+
+
+def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            path = urlsplit(self.path).path
+            if path == "/health":
+                self._send(200, {"status": "ok", "capabilities": list(CAPABILITIES)})
+            elif path == "/markets":
+                markets = provider.markets()
+                data = [snapshot_to_dict(market) for market in markets]
+                self._send(200, {"data": data, "count": len(data)})
+            elif path == "/research":
+                research = provider.research()
+                simulated = any(not market.provenance.kind.is_real for market in provider.markets())
+                self._send(
