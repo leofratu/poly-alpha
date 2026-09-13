@@ -44,3 +44,49 @@ MARKETS = [
 
 RESOLUTIONS = {"m1": False, "m2": False, "m3": True}
 
+
+def oracle(resolutions: Mapping[str, bool]) -> Callable[[MarketSnapshot], float | None]:
+    def strategy(snapshot: MarketSnapshot) -> float | None:
+        return 1.0 if resolutions[snapshot.market_id] else 0.0
+
+    return strategy
+
+
+def always_skip(snapshot: MarketSnapshot) -> float | None:
+    return None
+
+
+def test_empty_input_yields_flat_result() -> None:
+    result = simulate_portfolio((), oracle(RESOLUTIONS), starting_bankroll=500.0)
+    assert result.trades == 0
+    assert result.starting_bankroll == pytest.approx(500.0)
+    assert result.ending_bankroll == pytest.approx(500.0)
+    assert result.equity_curve == (500.0,)
+    assert result.max_drawdown == 0.0
+    assert result.caveat == CAVEAT
+
+
+def test_strong_no_edge_produces_trades_and_curve() -> None:
+    result = simulate_portfolio(MARKETS, oracle(RESOLUTIONS))
+    assert result.trades == 2
+    assert len(result.equity_curve) == result.trades + 1
+    assert result.equity_curve[0] == pytest.approx(result.starting_bankroll)
+    assert result.ending_bankroll == pytest.approx(result.equity_curve[-1])
+    assert result.ending_bankroll > result.starting_bankroll
+
+
+def test_none_strategy_takes_no_trades() -> None:
+    result = simulate_portfolio(MARKETS, always_skip)
+    assert result.trades == 0
+    assert result.ending_bankroll == pytest.approx(result.starting_bankroll)
+    assert result.equity_curve == (result.starting_bankroll,)
+
+
+def test_max_drawdown_within_bounds() -> None:
+    result = simulate_portfolio(MARKETS, oracle(RESOLUTIONS))
+    assert 0.0 <= result.max_drawdown <= 1.0
+
+
+def test_simulation_is_deterministic() -> None:
+    first = simulate_portfolio(MARKETS, oracle(RESOLUTIONS))
+    second = simulate_portfolio(MARKETS, oracle(RESOLUTIONS))
