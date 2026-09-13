@@ -29,10 +29,10 @@ def _fixture_markets() -> list[Any]:
     return fixture_adapter().list_markets()
 
 
-def _real_markets() -> list[Any]:
+def _real_markets(limit: int = 100) -> list[Any]:
     from poly_alpha.adapters.registry import real_markets
 
-    snapshots = real_markets()
+    snapshots = real_markets(limit=limit)
     if not snapshots:
         console.print("[red]Could not fetch real markets from Polymarket or Kalshi.[/red]")
     return snapshots
@@ -46,10 +46,11 @@ def markets(
     json_out: bool = JSON_OPTION,
     all_kinds: bool = typer.Option(False, "--all", help="Include synthetic asset markets."),
     real: bool = REAL_OPTION,
+    limit: int = typer.Option(100, "--limit", help="Maximum real markets per source."),
 ) -> None:
-    """List markets: labeled fixtures, synthetic with --all, or real Polymarket with --real."""
+    """List markets: labeled fixtures, synthetic with --all, or real Polymarket/Kalshi with --real."""
     if real:
-        snapshots = _real_markets()
+        snapshots = _real_markets(limit)
     elif all_kinds:
         from poly_alpha.adapters.registry import default_markets
 

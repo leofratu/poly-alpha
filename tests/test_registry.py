@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from poly_alpha.adapters import (
     AdapterError,
     BinaryFromSeriesAdapter,
@@ -13,6 +15,7 @@ from poly_alpha.adapters.registry import (
     default_adapters,
     default_markets,
     markets_by_kind,
+    real_adapters,
     sample_series,
 )
 from poly_alpha.contracts import DataSourceKind, MarketSnapshot
@@ -85,3 +88,18 @@ def test_duplicate_ids_are_kept_not_deduplicated() -> None:
 
 def test_default_markets_matches_aggregate() -> None:
     assert default_markets() == aggregate_markets(default_adapters())
+
+
+def test_real_adapters_threads_the_limit(monkeypatch: pytest.MonkeyPatch) -> None:
+    import poly_alpha.adapters.registry as registry
+
+    seen: list[int] = []
+
+    class _FakeAdapter:
+        def __init__(self, limit: int = 100) -> None:
+            seen.append(limit)
+
+    monkeypatch.setattr(registry, "PolymarketAdapter", _FakeAdapter)
+    monkeypatch.setattr(registry, "KalshiAdapter", _FakeAdapter)
+    assert len(real_adapters(limit=7)) == 2
+    assert seen == [7, 7]

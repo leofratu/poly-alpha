@@ -75,11 +75,11 @@ def default_markets() -> list[MarketSnapshot]:
     return aggregate_markets(default_adapters())
 
 
-def real_adapters() -> list[MarketAdapter]:
+def real_adapters(limit: int = 100) -> list[MarketAdapter]:
     """Return the live, read-only market adapters: Polymarket and Kalshi."""
-    return [PolymarketAdapter(), KalshiAdapter()]
+    return [PolymarketAdapter(limit=limit), KalshiAdapter(limit=limit)]
 
 
-def real_markets() -> list[MarketSnapshot]:
-    """Aggregate real snapshots; a source that fails is skipped, not fatal."""
-    return aggregate_markets(real_adapters())
+def real_markets(limit: int = 100) -> list[MarketSnapshot]:
+    """Aggregate real snapshots up to ``limit`` per source; failures are skipped."""
+    return aggregate_markets(real_adapters(limit=limit))
