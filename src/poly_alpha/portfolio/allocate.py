@@ -90,3 +90,49 @@ def allocate(
     cap: float = 0.05,
     max_positions: int = 20,
     max_deploy: float = 0.6,
+) -> AllocationPlan:
+    """Allocate a bankroll across ranked opportunities within deployment limits.
+
+    Opportunities are consumed in their given (already ranked) order. A market is
+    skipped when it has no strictly interior price, when its conservative Kelly
+    fraction is non-positive, or once ``max_positions`` allocations are held. The
+    deployed fraction never exceeds ``max_deploy``; the crossing allocation is clamped
+    to the remaining budget. Output is a simulated, in-sample heuristic and is neither
+    investment advice nor a forecast.
+    """
+    _validate(bankroll, cap, max_positions, max_deploy)
+
+    allocations: list[Allocation] = []
+    total_fraction = 0.0
+    for opportunity in opportunities:
+        if len(allocations) >= max_positions:
+            break
+        price = _price_for(opportunity, prices)
+        if price is None:
+            continue
+        decision = kelly_fraction(
+            probability=opportunity.note.model_yes.estimate,
+            price=price,
+            uncertainty=opportunity.note.model_yes,
+            cap=cap,
+        )
+        if decision.fraction <= 0.0:
+            continue
+        remaining = max_deploy - total_fraction
+        if remaining <= 0.0:
+            break
+        clamped = decision.fraction > remaining
+        fraction = remaining if clamped else decision.fraction
+        allocations.append(
+            _build_allocation(
+                opportunity.note.market_id,
+                fraction,
+                bankroll,
+                decision,
+                clamped=clamped,
+            )
+        )
+        total_fraction += fraction
+
+    total_stake = sum(allocation.stake for allocation in allocations)
+    return AllocationPlan(
