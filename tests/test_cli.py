@@ -335,3 +335,18 @@ def test_experiments_verify_table_shows_reproduced(tmp_path: Path) -> None:
     assert result.exit_code == 0
     assert "Reproduced" in result.output
     assert "yes" in result.output
+
+
+def test_markets_real_limit_is_threaded(monkeypatch: pytest.MonkeyPatch) -> None:
+    from poly_alpha import cli_platform
+
+    seen: dict[str, int] = {}
+
+    def fake_real_markets(limit: int = 100) -> list[Any]:
+        seen["limit"] = limit
+        return []
+
+    monkeypatch.setattr(cli_platform, "_real_markets", fake_real_markets)
+    result = _invoke(["research", "markets", "--real", "--limit", "7", "--json"])
+    assert result.exit_code == 0
+    assert seen["limit"] == 7
