@@ -48,7 +48,7 @@ class StrategyMetrics:
         return CAVEAT
 
 
-def _max_drawdown(equity_curve: Sequence[float]) -> float:
+def max_drawdown(equity_curve: Sequence[float]) -> float:
     peak = equity_curve[0]
     worst = 0.0
     for equity in equity_curve:
@@ -99,7 +99,7 @@ def _run_strategy(
         total_stake=total_stake,
         total_pnl=total_pnl,
         roi=total_pnl / total_stake if total_stake else 0.0,
-        max_drawdown=_max_drawdown(equity_curve),
+        max_drawdown=max_drawdown(equity_curve),
     )
 
 

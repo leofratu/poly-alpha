@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
-from poly_alpha.backtesting.comparison import ResolvedMarket
+from poly_alpha.backtesting.comparison import ResolvedMarket, max_drawdown
 from poly_alpha.contracts import MarketSnapshot
 from poly_alpha.portfolio.sizing import kelly_fraction
 
@@ -34,16 +34,6 @@ class SimulationResult:
     max_drawdown: float
     trades: int
     caveat: str
-
-
-def _max_drawdown(equity_curve: Sequence[float]) -> float:
-    peak = equity_curve[0]
-    worst = 0.0
-    for equity in equity_curve:
-        peak = max(peak, equity)
-        if peak > 0.0:
-            worst = max(worst, (peak - equity) / peak)
-    return max(0.0, min(1.0, worst))
 
 
 def simulate_portfolio(
@@ -100,7 +90,7 @@ def simulate_portfolio(
         starting_bankroll=starting_bankroll,
         ending_bankroll=bankroll,
         equity_curve=tuple(equity_curve),
-        max_drawdown=_max_drawdown(equity_curve),
+        max_drawdown=max_drawdown(equity_curve),
         trades=trades,
         caveat=CAVEAT,
     )
