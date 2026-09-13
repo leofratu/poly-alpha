@@ -90,3 +90,6 @@ class BinaryFromSeriesAdapter:
         """Return one up/down snapshot per usable asset series."""
         return list(self._markets)
 
+    def get_snapshot(self, market_id: str) -> MarketSnapshot | None:
+        """Return the synthetic snapshot for an id, or None when unknown."""
+        return self._by_id.get(market_id)
