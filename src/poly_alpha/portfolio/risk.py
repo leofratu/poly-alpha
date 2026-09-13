@@ -66,6 +66,9 @@ def analyze_portfolio(
     that a return series is required.
     """
     stakes = [position.stake for position in positions]
+    for stake in stakes:
+        if not np.isfinite(stake) or stake < 0.0:
+            raise ValueError(f"stake must be finite and non-negative, got {stake!r}")
     total_stake = float(sum(stakes))
     exposure_by_class: dict[str, float] = {}
     for position in positions:
@@ -85,6 +88,8 @@ def analyze_portfolio(
         notes.append("historical VaR requires a return series; none was supplied")
     else:
         series = np.asarray(returns, dtype=float)
+        if not np.all(np.isfinite(series)):
+            raise ValueError("returns must all be finite")
         historical_var_95 = float(np.percentile(series, VAR_QUANTILE))
         max_drawdown = _drawdown_from_returns(series)
         notes.append(

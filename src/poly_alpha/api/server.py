@@ -101,20 +101,28 @@ def _shin_debiased(snapshot: MarketSnapshot) -> float | None:
 
 
 def default_provider() -> DataProvider:
-    """Build the real provider, falling back to static data when modules are absent."""
+    """Build the offline research provider over labeled fixture and demo data."""
     try:
         from poly_alpha.adapters.fixtures import fixture_adapter
         from poly_alpha.backtesting.comparison import compare_strategies
+        from poly_alpha.backtesting.demo_data import (
+            demo_positions,
+            demo_resolved_markets,
+            demo_returns,
+        )
         from poly_alpha.portfolio.risk import analyze_portfolio
         from poly_alpha.research.analyst import research_markets
     except ImportError as exc:
-        note = f"live modules unavailable: {exc}"
+        note = f"research modules unavailable: {exc}"
         return StaticProvider(risk={"status": "unavailable", "note": note})
     return _ModuleProvider(
         markets_fn=lambda: fixture_adapter().list_markets(),
         research_fn=research_markets,
-        risk_fn=lambda: analyze_portfolio(()),
-        compare_fn=lambda: compare_strategies((), {}),
+        risk_fn=lambda: analyze_portfolio(demo_positions(), demo_returns()),
+        compare_fn=lambda: compare_strategies(
+            demo_resolved_markets(),
+            {"market_implied": _market_implied, "shin_debiased": _shin_debiased},
+        ),
     )
 
 
@@ -149,7 +157,9 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                 self._send(200, {"data": data, "count": len(data)})
             elif path == "/research":
                 research = provider.research()
-                simulated = any(not market.provenance.kind.is_real for market in provider.markets())
+                simulated = any(
+                    not market.provenance.kind.is_real for market in provider.markets()
+                ) or any(bool(note.get("model_yes", {}).get("simulated")) for note in research)
                 self._send(
                     200,
                     {"data": research, "count": len(research), "simulated": simulated},
