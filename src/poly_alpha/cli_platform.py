@@ -483,3 +483,36 @@ def curves(json_out: bool = JSON_OPTION) -> None:
         console.print(f"[yellow]{results[0][2].caveat}[/yellow]")
 
 
+@app.command()
+def calibration(json_out: bool = JSON_OPTION) -> None:
+    """Report uncertainty-interval coverage over labeled demo resolutions."""
+    from poly_alpha.api.server import to_jsonable
+    from poly_alpha.backtesting.demo_data import demo_resolved_markets
+    from poly_alpha.research.analyst import research_markets
+    from poly_alpha.research.calibration import calibration_by_kind, interval_coverage
+
+    markets = demo_resolved_markets()
+    notes = research_markets([market.snapshot for market in markets])
+    outcomes = [market.resolved_yes for market in markets]
+    report = interval_coverage(notes, outcomes)
+    groups = calibration_by_kind(notes, outcomes)
+    if json_out:
+        payload = {
+            "report": to_jsonable(report),
+            "by_kind": {kind: to_jsonable(value) for kind, value in groups.items()},
+        }
+        _print_json(payload)
+        return
+    table = Table(title="Uncertainty coverage (DEMO resolutions; not real-world evidence)")
+    table.add_column("Group", style="cyan")
+    table.add_column("N", justify="right")
+    table.add_column("Coverage", justify="right")
+    table.add_column("Mean width", justify="right")
+    table.add_row("all", str(report.n), f"{report.coverage:.0%}", f"{report.mean_width:.3f}")
+    for kind, value in groups.items():
+        table.add_row(kind, str(value.n), f"{value.coverage:.0%}", f"{value.mean_width:.3f}")
+    console.print(table)
+    for note in report.notes:
+        console.print(f"[yellow]{note}[/yellow]")
+
+
