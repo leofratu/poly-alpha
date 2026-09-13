@@ -379,6 +379,7 @@ uv run poly-alpha research validate           # contract invariant check on all 
 uv run poly-alpha research journal            # append a provenance summary of a run
 uv run poly-alpha research history            # list recorded research journal entries
 uv run poly-alpha research risk               # demo concentration + historical risk
+uv run poly-alpha research stress             # deterministic price-shock scenarios
 uv run poly-alpha research serve --port 8000  # read-only JSON API + dashboard at /
 ```
 

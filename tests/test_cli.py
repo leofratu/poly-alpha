@@ -164,3 +164,12 @@ def test_costs_json_applies_basis_points() -> None:
     payload = json.loads(result.output)
     assert payload["total_bps"] == 100.0
     assert payload["rows"]
+
+
+def test_stress_json_reports_scenarios() -> None:
+    result = _invoke(["research", "stress", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    names = [row["scenario"] for row in payload]
+    assert "base" in names
+    assert any(row["change"] < 0 for row in payload)

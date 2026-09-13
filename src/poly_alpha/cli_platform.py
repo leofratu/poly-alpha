@@ -596,3 +596,36 @@ def costs(
     console.print(
         f"[yellow]Assumed cost {model.total_bps:.0f} bps. Not investment advice.[/yellow]"
     )
+
+
+@app.command()
+def stress(json_out: bool = JSON_OPTION) -> None:
+    """Run deterministic price-shock scenarios over the demo portfolio."""
+    from poly_alpha.adapters.fixtures import fixture_adapter
+    from poly_alpha.api.server import to_jsonable
+    from poly_alpha.backtesting.demo_data import demo_positions
+    from poly_alpha.portfolio.stress import run_scenarios
+
+    prices = {
+        market.market_id: market.yes_price if market.yes_price is not None else 0.5
+        for market in fixture_adapter().list_markets()
+    }
+    results = run_scenarios(demo_positions(), prices)
+    if json_out:
+        _print_json([to_jsonable(result) for result in results])
+        return
+    table = Table(title="Portfolio stress (SIMULATED demo positions; not advice)")
+    table.add_column("Scenario", style="cyan")
+    table.add_column("Start", justify="right")
+    table.add_column("Stressed", justify="right")
+    table.add_column("Change", justify="right")
+    table.add_column("Worst")
+    for result in results:
+        table.add_row(
+            result.scenario,
+            f"{result.start_value:,.2f}",
+            f"{result.stressed_value:,.2f}",
+            f"{result.change:+,.2f}",
+            result.worst_market_id or "n/a",
+        )
+    console.print(table)
