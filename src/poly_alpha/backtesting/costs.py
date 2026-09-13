@@ -83,26 +83,3 @@ class CostModel:
         if normalized == _BUY:
             return fair_probability - self.effective_price(price, _BUY)
         return (1.0 - fair_probability) - (1.0 - self.effective_price(price, _SELL))
-
-    def adjust_fair(
-        self,
-        fair_probability: float,
-        price: float,
-        *,
-        side: str = _BUY,
-    ) -> float | None:
-        """Return a fair probability consistent with the costed edge, else None.
-
-        Returns ``None`` when the costed edge is non-positive, signalling that the
-        opportunity should be skipped. Otherwise the returned value is the fair
-        probability that, against the costed price, reproduces the net edge: for a
-        buy it is ``effective_price("buy") + net_edge``, and for a sell it is the
-        mirrored ``effective_price("sell") - net_edge``.
-        """
-        normalized = _normalize_side(side)
-        edge = self.net_edge(fair_probability=fair_probability, price=price, side=normalized)
-        if edge <= 0.0:
-            return None
-        if normalized == _BUY:
-            return self.effective_price(price, _BUY) + edge
-        return self.effective_price(price, _SELL) - edge
