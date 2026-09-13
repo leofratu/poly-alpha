@@ -326,3 +326,12 @@ def test_experiments_verify_handles_invalid_records(tmp_path: Path) -> None:
     result = _invoke(["research", "experiments", "--path", str(path), "--verify", "--json"])
     assert result.exit_code == 0
     assert json.loads(result.output)[0]["reproduced"] is False
+
+
+def test_experiments_verify_table_shows_reproduced(tmp_path: Path) -> None:
+    path = tmp_path / "experiments.jsonl"
+    assert _invoke(["research", "experiment", "--path", str(path)]).exit_code == 0
+    result = _invoke(["research", "experiments", "--path", str(path), "--verify"])
+    assert result.exit_code == 0
+    assert "Reproduced" in result.output
+    assert "yes" in result.output
