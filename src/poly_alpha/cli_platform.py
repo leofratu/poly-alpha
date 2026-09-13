@@ -207,3 +207,31 @@ def screen(
     console.print(table)
 
 
+@app.command()
+def report(
+    output: str = typer.Option("", help="Write Markdown here instead of stdout."),
+) -> None:
+    """Render a provenance-tagged Markdown dossier over the fixtures."""
+    from poly_alpha.backtesting.comparison import compare_strategies
+    from poly_alpha.backtesting.demo_data import (
+        demo_positions,
+        demo_resolved_markets,
+        demo_returns,
+    )
+    from poly_alpha.portfolio.risk import analyze_portfolio
+    from poly_alpha.research.analyst import research_markets
+    from poly_alpha.research.report import render_markdown, write_markdown
+    from poly_alpha.research.screen import rank_opportunities
+
+    notes = research_markets(_fixture_markets())
+    opportunities = rank_opportunities(notes, min_edge_low=-1.0)
+    metrics = compare_strategies(demo_resolved_markets(), _strategies())
+    risk = analyze_portfolio(demo_positions(), demo_returns())
+    content = render_markdown(notes, opportunities=opportunities, metrics=metrics, risk=risk)
+    if output:
+        write_markdown(output, content)
+        console.print(f"[green]Wrote dossier to {output}[/green]")
+        return
+    typer.echo(content)
+
+
