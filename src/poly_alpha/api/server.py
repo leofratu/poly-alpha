@@ -232,20 +232,18 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                     {"data": research, "count": len(research), "simulated": simulated},
                 )
             elif path == "/risk":
+                from poly_alpha.portfolio.risk import DEMO_CAVEAT
+
                 self._send(
                     200,
-                    {"data": provider.risk(), "simulated": _markets_are_simulated(provider)},
+                    {"data": provider.risk(), "simulated": True, "caveat": DEMO_CAVEAT},
                 )
             elif path == "/compare":
                 from poly_alpha.backtesting.comparison import CAVEAT
 
                 self._send(
                     200,
-                    {
-                        "data": provider.compare(),
-                        "simulated": _markets_are_simulated(provider),
-                        "caveat": CAVEAT,
-                    },
+                    {"data": provider.compare(), "simulated": True, "caveat": CAVEAT},
                 )
             elif path == "/overview":
                 from poly_alpha.research.overview import build_overview, dimensions

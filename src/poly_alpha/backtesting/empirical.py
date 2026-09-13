@@ -1,4 +1,4 @@
-"""Empirical backtest calibrated to Reichenbach & Walther (2025) Table 3 data."""
+"""Synthetic Monte Carlo over hardcoded win-rate assumptions (not a backtest)."""
 
 from __future__ import annotations
 

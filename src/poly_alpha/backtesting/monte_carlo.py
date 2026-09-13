@@ -1,4 +1,4 @@
-"""Monte Carlo backtesting engine against historical Polymarket resolutions."""
+"""Synthetic Monte Carlo with fabricated resolutions (not a historical backtest)."""
 
 from __future__ import annotations
 
