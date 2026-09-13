@@ -44,3 +44,49 @@ def test_cap_binds_and_marks_capped() -> None:
     assert decision.capped is True
 
 
+def test_below_cap_is_not_capped() -> None:
+    decision = kelly_fraction(probability=0.52, price=0.5, cap=0.05)
+    assert decision.fraction < 0.05
+    assert decision.capped is False
+
+
+def test_lower_bound_reduces_fraction() -> None:
+    uncertainty = make_uncertainty(low=0.53, estimate=0.56)
+    point = kelly_fraction(probability=0.56, price=0.52, cap=0.05)
+    conservative = kelly_fraction(
+        probability=0.56, price=0.52, uncertainty=uncertainty, cap=0.05
+    )
+    assert conservative.fraction < point.fraction
+    assert conservative.probability_used == pytest.approx(0.53)
+
+
+def test_probability_used_reflects_lower_bound() -> None:
+    uncertainty = make_uncertainty(low=0.62)
+    decision = kelly_fraction(probability=0.9, price=0.5, uncertainty=uncertainty)
+    assert decision.probability_used == pytest.approx(0.62)
+    assert "lower bound used" in decision.rationale
+
+
+def test_lower_bound_can_be_disabled() -> None:
+    uncertainty = make_uncertainty(low=0.2)
+    decision = kelly_fraction(
+        probability=0.7, price=0.5, uncertainty=uncertainty, use_lower_bound=False
+    )
+    assert decision.probability_used == pytest.approx(0.7)
+    assert decision.fraction > 0.0
+    assert "point estimate used" in decision.rationale
+
+
+def test_probability_used_is_clamped() -> None:
+    decision = kelly_fraction(probability=1.5, price=0.5, use_lower_bound=False)
+    assert decision.probability_used == pytest.approx(1.0)
+
+
+def test_mismatched_lengths_raise() -> None:
+    with pytest.raises(ValueError):
+        portfolio_fractions([0.6, 0.7], [0.5])
+
+
+def test_portfolio_fractions_are_pairwise_and_un_normalized() -> None:
+    decisions = portfolio_fractions([0.9, 0.9], [0.1, 0.1], cap=0.05)
+    assert [decision.fraction for decision in decisions] == pytest.approx([0.05, 0.05])
