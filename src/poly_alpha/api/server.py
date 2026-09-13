@@ -225,6 +225,12 @@ def _markets_are_simulated(provider: DataProvider) -> bool:
     return any(not market.provenance.kind.is_real for market in provider.markets())
 
 
+def _note_is_simulated(note: JsonDict) -> bool:
+    """True when a serialized research note marks its model estimate as simulated."""
+    model_yes = note.get("model_yes")
+    return isinstance(model_yes, dict) and bool(model_yes.get("simulated"))
+
+
 def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
@@ -256,7 +262,7 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
             elif path == "/research":
                 research = provider.research()
                 simulated = _markets_are_simulated(provider) or any(
-                    bool(note.get("model_yes", {}).get("simulated")) for note in research
+                    _note_is_simulated(note) for note in research
                 )
                 self._send(
                     200,
@@ -309,7 +315,7 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                 from poly_alpha.backtesting.strategies import default_strategies
                 from poly_alpha.backtesting.walkforward import walk_forward
 
-                rows = [
+                curve_rows = [
                     {
                         "market_id": history.market_id,
                         "strategy": name,
@@ -318,7 +324,7 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                     for history in fixture_histories()
                     for name, strategy in default_strategies().items()
                 ]
-                self._send(200, {"data": rows, "simulated": True})
+                self._send(200, {"data": curve_rows, "simulated": True})
             elif path == "/calibration":
                 from poly_alpha.backtesting.demo_data import demo_resolved_markets
                 from poly_alpha.research.analyst import research_markets
@@ -327,9 +333,9 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                     interval_coverage,
                 )
 
-                markets = demo_resolved_markets()
-                notes = research_markets([market.snapshot for market in markets])
-                outcomes = [market.resolved_yes for market in markets]
+                resolved = demo_resolved_markets()
+                notes = research_markets([market.snapshot for market in resolved])
+                outcomes = [market.resolved_yes for market in resolved]
                 groups = calibration_by_kind(notes, outcomes)
                 self._send(
                     200,
