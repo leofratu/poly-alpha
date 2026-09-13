@@ -44,3 +44,30 @@ def uncertainty_gated(snapshot: MarketSnapshot) -> float | None:
 
 
 def default_strategies() -> dict[str, StrategyFn]:
+    """Return a fresh mapping of the built-in strategy names to their callables."""
+    return {
+        "market_implied": market_implied,
+        "shin_debiased": shin_debiased,
+        "constant_half": constant_half,
+        "uncertainty_gated": uncertainty_gated,
+    }
+
+
+def describe() -> dict[str, str]:
+    """Return one-line descriptions of the built-in strategies."""
+    return {
+        "market_implied": (
+            "Returns the de-vigged market-implied yes price; " f"{_HEURISTIC_NOTE}."
+        ),
+        "shin_debiased": (
+            "Shin-debiases the de-vigged yes price using the classified category; "
+            f"{_HEURISTIC_NOTE}."
+        ),
+        "constant_half": (
+            "Always returns a neutral 0.5 yes probability; " f"{_HEURISTIC_NOTE}."
+        ),
+        "uncertainty_gated": (
+            "Returns the research model estimate when its lower edge bound is positive; "
+            f"{_HEURISTIC_NOTE}."
+        ),
+    }
