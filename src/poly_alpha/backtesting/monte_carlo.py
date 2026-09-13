@@ -40,7 +40,11 @@ def run(
 
     Returns dict with avg_roi, avg_apy, p5, p95, win_rate.
     """
-    console.print("[bold cyan]Monte Carlo Backtest on Historical Polymarket Data[/bold cyan]")
+    banner = (
+        "[bold red]SYNTHETIC Monte Carlo — resolutions and returns are fabricated, "
+        "not observed. This is not a backtest.[/bold red]"
+    )
+    console.print(banner)
 
     events = fetch_resolved_markets()
     historical_trades: list[dict[str, Any]] = []
@@ -64,7 +68,7 @@ def run(
         console.print("[red]No historical data available.[/red]")
         return {}
 
-    console.print(f"Calibrated {len(historical_trades)} historical markets.")
+    console.print(f"Generated {len(historical_trades)} synthetic market samples (random resolutions).")
 
     mc_rois = np.zeros(iterations)
 
@@ -101,10 +105,10 @@ def run(
     table.add_column("Metric", style="cyan")
     table.add_column("Result", justify="right", style="yellow")
     table.add_row("Iterations", f"{iterations:,}")
-    table.add_row("Historical Markets", f"{len(historical_trades)}")
+    table.add_row("Synthetic Markets", f"{len(historical_trades)}")
     table.add_row("Win Rate", f"{win_rate * 100:.2f}%")
     table.add_row("Average ROI (per cycle)", f"{avg_roi * 100:.2f}%")
-    table.add_row("Annualized APY", f"[bold green]{avg_apy * 100:.2f}%[/bold green]")
+    table.add_row("Annualized (synthetic, not a forecast)", f"[bold yellow]{avg_apy * 100:.2f}%[/bold yellow]")
     table.add_row("5th Percentile", f"{p5 * 100:.2f}%")
     table.add_row("95th Percentile", f"{p95 * 100:.2f}%")
     console.print(table)

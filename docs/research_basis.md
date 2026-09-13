@@ -102,9 +102,10 @@ Therefore, `poly-alpha-cli` is strictly an **Early Window (`t < 0.25`) Structura
 * **Execution Constraint:** Gamma API does not actively tag live events with strict "hours to expiry" metadata accurately (they often rely on Oracle resolution delays). A dedicated live-sports API connector (e.g., The Rundown or Sportradar) must be paired with Polymarket's CLOB WebSocket to execute intraday arbitrage properly.
 
 ## Risk-Adjusted Returns (Sharpe Ratio)
-Based on a 100,000 run Continuous-Time Monte Carlo executing the 15% Max-Risk Kelly Allocation:
-* **Expected Mean Monthly Return:** 58.41%
-* **Expected Monthly Volatility ($\sigma$):** 33.28%
-* **Annualized Sharpe Ratio:** **6.04**
 
-A Sharpe Ratio above 3.0 is considered the holy grail of quantitative finance (indicating an almost perfectly smooth equity curve relative to the massive upside). Medallion Fund (Renaissance Technologies) operates near a 4.0 Sharpe. The Poly-Alpha engine produces a 6.04 Annualized Sharpe purely because the physical frequency of Black Swans (2.41%) is so severely disconnected from the retail premium (5-15%) that the structural variance is almost completely absorbed by the Law of Large Numbers.
+> **Correction.** An earlier version of this file reported an "Expected Mean Monthly Return"
+> of 58.41% and an "Annualized Sharpe Ratio" of 6.04 from a 100,000-run Monte Carlo. That
+> simulation generated its own resolutions and returns, so those figures were not derived
+> from market outcomes and are withdrawn. No validated Sharpe ratio or return estimate
+> exists for this system. The comparison harness now reports in-sample, non-annualized
+> metrics with an explicit caveat, and research estimates carry simulated/real provenance.
