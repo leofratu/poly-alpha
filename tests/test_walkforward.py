@@ -44,3 +44,49 @@ def make_history(market_id: str, yes_prices: Sequence[float]) -> MarketHistory:
     )
 
 
+def strategy_returning(fair: float | None) -> Callable[[MarketSnapshot], float | None]:
+    def strategy(snapshot: MarketSnapshot) -> float | None:
+        return fair
+
+    return strategy
+
+
+def test_none_strategy_yields_flat_result() -> None:
+    history = make_history("wf1", [0.30, 0.30])
+    result = walk_forward(history, strategy_returning(None), starting_bankroll=500.0)
+    assert isinstance(result, WalkForwardResult)
+    assert result.market_id == "wf1"
+    assert result.trades == 0
+    assert result.starting_bankroll == pytest.approx(500.0)
+    assert result.ending_bankroll == pytest.approx(500.0)
+    assert result.equity_curve == (500.0,)
+    assert result.max_drawdown == 0.0
+    assert result.caveat == CAVEAT
+
+
+def test_strong_no_edge_and_final_yes_below_half_gains() -> None:
+    history = make_history("wf2", [0.30, 0.30, 0.30])
+    result = walk_forward(history, strategy_returning(0.20))
+    assert result.trades == 1
+    assert len(result.equity_curve) == 4
+    assert result.ending_bankroll > result.starting_bankroll
+    assert result.ending_bankroll == pytest.approx(result.equity_curve[-1])
+
+
+def test_final_yes_at_or_above_half_loses() -> None:
+    history = make_history("wf3", [0.60, 0.60, 0.60])
+    result = walk_forward(history, strategy_returning(0.20))
+    assert result.trades == 1
+    assert result.ending_bankroll < result.starting_bankroll
+
+
+def test_equity_curve_length_equals_processed_steps_plus_one() -> None:
+    history = make_history("wf4", [0.30, 0.30, 0.30])
+    result = walk_forward(history, strategy_returning(0.20))
+    assert len(result.equity_curve) == len(history.snapshots) + 1
+
+
+def test_max_drawdown_within_bounds() -> None:
+    history = make_history("wf5", [0.30, 0.30, 0.30])
+    result = walk_forward(history, strategy_returning(0.20))
+    assert 0.0 <= result.max_drawdown <= 1.0
