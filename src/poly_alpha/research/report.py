@@ -45,8 +45,13 @@ def _sources_text(sources: Sequence[Provenance]) -> str:
 
 
 def _provenance_lines(notes: Sequence[ResearchNote]) -> list[str]:
-    """Summarize note counts per source kind and whether any real data is present."""
-    lines = ["## Provenance summary", ""]
+    """Summarize primary market provenance per kind and whether any real data is present."""
+    lines = [
+        "## Provenance summary",
+        "",
+        "_Counts are each note's primary market provenance; per-claim sources are listed below._",
+        "",
+    ]
     for kind in DataSourceKind:
         count = sum(1 for note in notes if note.provenance.kind is kind)
         lines.append(f"- {kind.value}: {count}")

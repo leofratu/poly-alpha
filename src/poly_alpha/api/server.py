@@ -299,7 +299,8 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                     {
                         "data": [to_jsonable(row) for row in rows],
                         "dimensions": dimensions(rows),
-                        "simulated": _markets_are_simulated(provider),
+                        "simulated": _markets_are_simulated(provider)
+                        or any(row.simulated for row in rows),
                     },
                 )
             elif path == "/validation":
@@ -378,8 +379,9 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                     research_markets(markets), min_edge_low=float("-inf")
                 )
                 prices = {
-                    market.market_id: market.yes_price if market.yes_price is not None else 0.5
+                    market.market_id: market.yes_price
                     for market in markets
+                    if market.yes_price is not None
                 }
                 self._send(
                     200,

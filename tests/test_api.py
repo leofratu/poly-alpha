@@ -8,6 +8,7 @@ import urllib.error
 import urllib.request
 from collections.abc import Iterator
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import UTC, datetime
 
 from poly_alpha.api.server import StaticProvider, create_server
@@ -205,3 +206,18 @@ def test_run_route() -> None:
     assert body["simulated"] is True
     assert "allocations" in body["data"]
     assert "calibration" in body["data"]
+
+
+def test_overview_envelope_marks_model_simulation() -> None:
+    real = replace(
+        _snapshot(),
+        provenance=Provenance(
+            source="real venue",
+            kind=DataSourceKind.REAL,
+            retrieved_at=datetime(2026, 6, 1, tzinfo=UTC),
+        ),
+    )
+    with _served(StaticProvider(markets=[real])) as port:
+        _, body = _get(port, "/overview")
+    assert body["simulated"] is True
+    assert body["data"][0]["simulated"] is True
