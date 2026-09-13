@@ -109,3 +109,17 @@ def test_walk_book_reports_shortfall() -> None:
 def test_walk_book_rejects_bad_size() -> None:
     with pytest.raises(ValueError):
         walk_book(_book(), 0.0)
+
+
+def test_depth_effective_price_none_when_depth_is_short() -> None:
+    model = CostModel(fee_bps=100.0)
+    assert model.depth_effective_price(_book(), 50.0) is not None
+    assert model.depth_effective_price((PriceLevel(0.5, 10.0),), 100.0) is None
+
+
+def test_depth_net_edge_worsens_with_size() -> None:
+    model = CostModel(fee_bps=100.0)
+    small = model.depth_net_edge(fair_probability=0.6, levels=_book(), size=50.0)
+    large = model.depth_net_edge(fair_probability=0.6, levels=_book(), size=200.0)
+    assert small is not None and large is not None
+    assert small > large

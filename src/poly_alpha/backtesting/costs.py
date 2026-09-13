@@ -132,3 +132,31 @@ class CostModel:
         if normalized == _BUY:
             return fair_probability - self.effective_price(price, _BUY)
         return (1.0 - fair_probability) - (1.0 - self.effective_price(price, _SELL))
+
+    def depth_effective_price(
+        self,
+        levels: Sequence[PriceLevel],
+        size: float,
+        side: str = _BUY,
+    ) -> float | None:
+        """Fee-adjusted average fill price for ``size`` shares, or None if depth is short."""
+        fill = walk_book(levels, size, side=side)
+        if not fill.is_complete:
+            return None
+        return self.effective_price(fill.average_price, side)
+
+    def depth_net_edge(
+        self,
+        *,
+        fair_probability: float,
+        levels: Sequence[PriceLevel],
+        size: float,
+        side: str = _BUY,
+    ) -> float | None:
+        """Edge after walking ``levels`` and applying costs, or None if depth is short."""
+        price = self.depth_effective_price(levels, size, side)
+        if price is None:
+            return None
+        if _normalize_side(side) == _BUY:
+            return fair_probability - price
+        return (1.0 - fair_probability) - (1.0 - price)
