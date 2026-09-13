@@ -36,9 +36,13 @@ def constant_half(snapshot: MarketSnapshot) -> float | None:
 
 
 def uncertainty_gated(snapshot: MarketSnapshot) -> float | None:
-    """Return the research model estimate only when its lower edge bound is positive."""
+    """Return the research estimate when even its optimistic edge bound stays negative.
+
+    The comparison harness takes the No side, so the estimate is returned only when
+    the model sits below the market across its whole uncertainty interval.
+    """
     note = research_market(snapshot)
-    if note.edge.low > 0.0:
+    if note.edge.high < 0.0:
         return note.model_yes.estimate
     return None
 
@@ -56,18 +60,11 @@ def default_strategies() -> dict[str, StrategyFn]:
 def describe() -> dict[str, str]:
     """Return one-line descriptions of the built-in strategies."""
     return {
-        "market_implied": (
-            "Returns the de-vigged market-implied yes price; " f"{_HEURISTIC_NOTE}."
-        ),
-        "shin_debiased": (
-            "Shin-debiases the de-vigged yes price using the classified category; "
-            f"{_HEURISTIC_NOTE}."
-        ),
-        "constant_half": (
-            "Always returns a neutral 0.5 yes probability; " f"{_HEURISTIC_NOTE}."
-        ),
+        "market_implied": f"Returns the de-vigged market-implied yes price; {_HEURISTIC_NOTE}.",
+        "shin_debiased": f"Shin-debiases the de-vigged yes price; {_HEURISTIC_NOTE}.",
+        "constant_half": f"Always returns a neutral 0.5 yes probability; {_HEURISTIC_NOTE}.",
         "uncertainty_gated": (
-            "Returns the research model estimate when its lower edge bound is positive; "
-            f"{_HEURISTIC_NOTE}."
+            "Returns the research estimate when its optimistic edge bound is "
+            f"negative; {_HEURISTIC_NOTE}."
         ),
     }

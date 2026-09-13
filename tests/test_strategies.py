@@ -106,17 +106,17 @@ def test_uncertainty_gated_returns_none_when_lower_edge_not_positive() -> None:
     assert uncertainty_gated(snapshot) is None
 
 
-def test_uncertainty_gated_returns_value_when_lower_edge_positive() -> None:
-    bullish_book = (
-        PriceLevel(price=0.95, size=200.0),
-        PriceLevel(price=0.95, size=200.0),
-        PriceLevel(price=0.95, size=200.0),
+def test_uncertainty_gated_returns_value_when_upper_edge_negative() -> None:
+    bearish_book = (
+        PriceLevel(price=0.05, size=200.0),
+        PriceLevel(price=0.05, size=200.0),
+        PriceLevel(price=0.05, size=200.0),
     )
     snapshot = make_snapshot(
-        yes_price=0.70,
-        no_price=0.30,
+        yes_price=0.30,
+        no_price=0.70,
         liquidity=5000.0,
-        orderbook=bullish_book,
+        orderbook=bearish_book,
     )
     result = uncertainty_gated(snapshot)
     assert result is not None
