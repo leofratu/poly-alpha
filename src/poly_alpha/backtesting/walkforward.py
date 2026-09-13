@@ -58,8 +58,11 @@ def walk_forward(
     processed step.
 
     Raises:
-        ValueError: If ``starting_bankroll`` is not positive or ``cap`` is not in
-            ``(0, 1]``.
+        ValueError: If ``starting_bankroll`` is not positive, ``cap`` is not in
+            ``(0, 1]``, or the history has no snapshots.
+
+    A final snapshot with no YES price cannot be settled; in that case the position is
+    left marked to market and no settlement point is appended.
     """
     if starting_bankroll <= 0.0:
         raise ValueError(f"starting_bankroll must be positive, got {starting_bankroll!r}")

@@ -1,4 +1,8 @@
-"""Standard-library-only read-only JSON API over the poly-alpha data contracts."""
+"""Standard-library-only read-only JSON API over the poly-alpha data contracts.
+
+Most endpoints read from the injected DataProvider; `/curves` and `/calibration` are
+computed from the packaged fixture/demo datasets and are intentionally not provider-injected.
+"""
 
 from __future__ import annotations
 
@@ -288,9 +292,7 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                     200,
                     {
                         "data": to_jsonable(interval_coverage(notes, outcomes)),
-                        "by_kind": {
-                            kind: to_jsonable(report) for kind, report in groups.items()
-                        },
+                        "by_kind": {kind: to_jsonable(report) for kind, report in groups.items()},
                         "simulated": True,
                     },
                 )

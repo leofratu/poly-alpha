@@ -18,6 +18,10 @@ _SIMULATION_NOTE = (
     "Intervals come from a deterministic heuristic; coverage over demo data is not "
     "evidence of real-world calibration."
 )
+_OUTCOME_NOTE = (
+    "Coverage is scored against point outcomes (1.0 YES / 0.0 NO); interior intervals "
+    "are expected to miss, so near-zero coverage is not evidence either way."
+)
 
 
 @dataclass(frozen=True)
@@ -37,7 +41,9 @@ def interval_coverage(
     """Measure model-interval coverage against known YES/NO resolutions.
 
     Each resolution becomes a realized value of 1.0 for YES and 0.0 for NO, which is
-    covered when it falls within ``note.model_yes`` inclusive.
+    covered when it falls within ``note.model_yes`` inclusive. Because the analyst's
+    intervals are interior, coverage against these point outcomes is normally zero; the
+    report says so rather than implying calibration.
     """
     if len(notes) != len(resolved_yes):
         raise ValueError(
@@ -59,7 +65,7 @@ def interval_coverage(
         coverage=covered / n if n else 0.0,
         mean_width=width_sum / n if n else 0.0,
         simulated=simulated,
-        notes=(_SIMULATION_NOTE,),
+        notes=(_SIMULATION_NOTE, _OUTCOME_NOTE),
     )
 
 

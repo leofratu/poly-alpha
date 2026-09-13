@@ -153,8 +153,9 @@ def test_calibration_json_reports_coverage() -> None:
     result = _invoke(["research", "calibration", "--json"])
     assert result.exit_code == 0
     payload = json.loads(result.output)
-    assert payload["report"]["n"] >= 1
-    assert "coverage" in payload["report"]
+    report = payload["report"]
+    assert report["n"] >= 1
+    assert 0.0 <= report["coverage"] <= 1.0
 
 
 def test_costs_json_applies_basis_points() -> None:

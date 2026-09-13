@@ -107,3 +107,10 @@ def test_demo_calibration_runs_and_disclaims_real_world_evidence() -> None:
     assert report.n >= 1
     assert report.simulated is True
     assert any("not evidence of real-world calibration" in note for note in report.notes)
+
+
+def test_interior_intervals_miss_point_outcomes() -> None:
+    notes = [_note(low=0.3, high=0.4), _note(low=0.6, high=0.7)]
+    report = interval_coverage(notes, [True, False])
+    assert report.coverage == 0.0
+    assert any("point outcomes" in note for note in report.notes)
