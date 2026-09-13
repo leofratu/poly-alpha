@@ -131,3 +131,11 @@ def test_journal_and_history_round_trip(tmp_path: Path) -> None:
     entries = json.loads(read.output)
     assert len(entries) == 1
     assert entries[0]["simulated"] is True
+
+
+def test_strategy_lists_named_heuristics() -> None:
+    result = _invoke(["research", "strategy", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert "uncertainty_gated" in payload
+    assert all("heuristic" in text for text in payload.values())

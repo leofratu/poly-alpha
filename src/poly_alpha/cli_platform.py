@@ -171,14 +171,18 @@ def serve(
 def screen(
     json_out: bool = JSON_OPTION,
     min_edge_low: float = typer.Option(0.0, help="Minimum conservative edge bound."),
+    require_real: bool = typer.Option(False, "--require-real", help="Keep only real data."),
 ) -> None:
-    """Rank fixture markets by the lower bound of the model edge."""
+    """Rank labeled offline markets by the lower bound of the model edge."""
+    from poly_alpha.adapters.registry import default_markets
     from poly_alpha.api.server import to_jsonable
     from poly_alpha.research.analyst import research_markets
     from poly_alpha.research.screen import rank_opportunities, summarize
 
     opportunities = rank_opportunities(
-        research_markets(_fixture_markets()), min_edge_low=min_edge_low
+        research_markets(default_markets()),
+        min_edge_low=min_edge_low,
+        require_real=require_real,
     )
     if json_out:
         payload = {
@@ -420,4 +424,21 @@ def history(path: str = JOURNAL_PATH, json_out: bool = JSON_OPTION) -> None:
             entry.top_market_id or "n/a",
             "yes" if entry.simulated else "no",
         )
+    console.print(table)
+
+
+@app.command()
+def strategy(json_out: bool = JSON_OPTION) -> None:
+    """List the named heuristic strategies and what each one assumes."""
+    from poly_alpha.backtesting.strategies import describe
+
+    descriptions = describe()
+    if json_out:
+        _print_json(descriptions)
+        return
+    table = Table(title="Strategy ideas (heuristics; no validated performance)")
+    table.add_column("Strategy", style="cyan")
+    table.add_column("Description")
+    for name, text in descriptions.items():
+        table.add_row(name, text)
     console.print(table)
