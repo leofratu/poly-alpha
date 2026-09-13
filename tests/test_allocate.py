@@ -136,3 +136,27 @@ def test_cash_accounting_balances() -> None:
     plan = allocate(opportunities, prices, bankroll=2500.0, cap=0.03, max_deploy=0.08)
     assert plan.total_stake == pytest.approx(sum(a.stake for a in plan.allocations))
     assert plan.total_stake + plan.cash == pytest.approx(2500.0, abs=1e-9)
+    assert plan.cash == pytest.approx(2500.0 * (1.0 - plan.total_fraction), abs=1e-9)
+
+
+@pytest.mark.parametrize("bankroll", [0.0, -1.0, -1000.0])
+def test_invalid_bankroll_raises(bankroll: float) -> None:
+    with pytest.raises(ValueError):
+        allocate([], {}, bankroll=bankroll)
+
+
+@pytest.mark.parametrize("cap", [0.0, -0.1, 1.5])
+def test_invalid_cap_raises(cap: float) -> None:
+    with pytest.raises(ValueError):
+        allocate([], {}, cap=cap)
+
+
+@pytest.mark.parametrize("max_deploy", [0.0, -0.5, 1.0001])
+def test_invalid_max_deploy_raises(max_deploy: float) -> None:
+    with pytest.raises(ValueError):
+        allocate([], {}, max_deploy=max_deploy)
+
+
+def test_invalid_max_positions_raises() -> None:
+    with pytest.raises(ValueError):
+        allocate([], {}, max_positions=-1)
