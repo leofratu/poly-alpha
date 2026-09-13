@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from poly_alpha.data.polymarket import PolymarketClient
+import pytest
+
+from poly_alpha.data.polymarket import PolymarketClient, fetch_active_markets
 
 
 class _PagingClient(PolymarketClient):
@@ -38,3 +40,19 @@ def test_get_all_active_events_stops_on_empty_page() -> None:
     client = _PagingClient({})
     assert client.get_all_active_events(batch_size=5) == []
     assert client.offsets == [0]
+
+
+def test_fetch_active_markets_keeps_only_open_markets(monkeypatch: pytest.MonkeyPatch) -> None:
+    events: list[dict[str, Any]] = [
+        {
+            "markets": [
+                {"id": "open", "active": True, "closed": False},
+                {"id": "closed", "active": True, "closed": True},
+                {"id": "inactive", "active": False, "closed": False},
+            ]
+        }
+    ]
+    monkeypatch.setattr(
+        PolymarketClient, "get_all_active_events", lambda self, batch_size=1000: events
+    )
+    assert fetch_active_markets() == [{"id": "open", "active": True, "closed": False}]
