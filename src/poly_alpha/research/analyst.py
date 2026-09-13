@@ -182,3 +182,49 @@ def research_market(snapshot: MarketSnapshot, *, now: datetime | None = None) ->
     liquidity_confidence = _clamp(snapshot.liquidity / _LIQUIDITY_REFERENCE)
     depth = _orderbook_depth(orderbook)
     book_confidence = _clamp(depth / _DEPTH_REFERENCE)
+    imbalance = _orderbook_imbalance(orderbook)
+
+    base = implied if implied is not None else 0.5
+    if has_book:
+        method = "devig+orderbook-imbalance"
+        base = _clamp(base + _IMBALANCE_WEIGHT * imbalance)
+    elif implied is not None:
+        method = "shin-debias"
+        base = shin_debiasing(implied, classify_category(snapshot.question))
+    else:
+        method = "neutral-prior"
+
+    estimate = _clamp(0.5 + liquidity_confidence * (base - 0.5))
+    half_width = _clamp(
+        _BASE_HALF_WIDTH
+        + _LIQUIDITY_HALF_WIDTH * (1.0 - liquidity_confidence)
+        + _DEPTH_HALF_WIDTH * (1.0 - book_confidence),
+        high=_MAX_HALF_WIDTH,
+    )
+    low = _clamp(estimate - half_width)
+    high = _clamp(estimate + half_width)
+    basis = f"{method}+liquidity-shrink (simulated heuristic)"
+
+    model_yes = Uncertainty(
+        estimate=estimate,
+        low=low,
+        high=high,
+        basis=basis,
+        n_observations=len(orderbook),
+        simulated=True,
+    )
+
+    if implied is not None:
+        edge_center = implied
+        edge_basis = "model estimate minus de-vigged market implied"
+    else:
+        edge_center = 0.5
+        edge_basis = "model estimate minus neutral 0.5 prior (no market price)"
+    edge = Uncertainty(
+        estimate=estimate - edge_center,
+        low=low - edge_center,
+        high=high - edge_center,
+        basis=edge_basis,
+        n_observations=0,
+        simulated=True,
+    )
