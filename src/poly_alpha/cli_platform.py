@@ -442,3 +442,44 @@ def strategy(json_out: bool = JSON_OPTION) -> None:
     for name, text in descriptions.items():
         table.add_row(name, text)
     console.print(table)
+
+
+@app.command()
+def curves(json_out: bool = JSON_OPTION) -> None:
+    """Walk each named strategy forward over deterministic fixture histories."""
+    from poly_alpha.adapters.history import fixture_histories
+    from poly_alpha.api.server import to_jsonable
+    from poly_alpha.backtesting.strategies import default_strategies
+    from poly_alpha.backtesting.walkforward import walk_forward
+
+    results = [
+        (history.market_id, name, walk_forward(history, strategy))
+        for history in fixture_histories()
+        for name, strategy in default_strategies().items()
+    ]
+    if json_out:
+        payload = [
+            {"market_id": market_id, "strategy": name, "result": to_jsonable(result)}
+            for market_id, name, result in results
+        ]
+        _print_json(payload)
+        return
+    table = Table(title="Walk-forward (SIMULATED fixture histories, in-sample)")
+    table.add_column("Market")
+    table.add_column("Strategy", style="cyan")
+    table.add_column("Trades", justify="right")
+    table.add_column("Ending", justify="right")
+    table.add_column("Max DD", justify="right")
+    for market_id, name, result in results:
+        table.add_row(
+            market_id,
+            name,
+            str(result.trades),
+            f"{result.ending_bankroll:,.2f}",
+            f"{result.max_drawdown:.1%}",
+        )
+    console.print(table)
+    if results:
+        console.print(f"[yellow]{results[0][2].caveat}[/yellow]")
+
+
