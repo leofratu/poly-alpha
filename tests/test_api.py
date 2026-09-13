@@ -125,3 +125,15 @@ def test_non_get_method_returns_405() -> None:
             assert exc.code == 405
         else:
             raise AssertionError("expected HTTPError 405")
+
+
+def test_default_provider_exposes_simulated_research_and_demo_compare() -> None:
+    from poly_alpha.api.server import default_provider
+
+    provider = default_provider()
+    notes = provider.research()
+    assert notes
+    assert all(note["model_yes"]["simulated"] is True for note in notes)
+    metrics = provider.compare()
+    assert metrics
+    assert "roi" in metrics[0] and "trades" in metrics[0]

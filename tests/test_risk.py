@@ -96,3 +96,13 @@ def test_portfolio_value_marks_to_price() -> None:
 def test_portfolio_value_falls_back_to_stake() -> None:
     positions = [make_position("m1", "sports", 100.0, yes_probability=0.4)]
     assert portfolio_value(positions, {}) == pytest.approx(100.0)
+
+
+def test_negative_stake_rejected() -> None:
+    with pytest.raises(ValueError):
+        analyze_portfolio([make_position("m1", "sports", -10.0)])
+
+
+def test_non_finite_returns_rejected() -> None:
+    with pytest.raises(ValueError):
+        analyze_portfolio([make_position("m1", "sports", 100.0)], [0.1, float("nan")])
