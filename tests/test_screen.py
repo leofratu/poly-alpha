@@ -136,3 +136,14 @@ def test_summarize_counts_and_edge_statistics() -> None:
     fixture = research_market(
         make_snapshot(
             market_id="fixture", yes_price=0.90, no_price=0.10, orderbook=HIGH_BOOK
+        ),
+        now=NOW,
+    )
+    opportunities = rank_opportunities([real, fixture])
+    stats = summarize(opportunities)
+
+    edge_lows = [opportunity.edge_low for opportunity in opportunities]
+    assert stats["count"] == 2
+    assert stats["real_count"] == 1
+    assert stats["mean_edge_low"] == pytest.approx(sum(edge_lows) / len(edge_lows))
+    assert stats["max_edge_low"] == pytest.approx(max(edge_lows))
