@@ -25,6 +25,8 @@ resolved markets, summarizes portfolio risk, and serves the results over a small
 | `research/notes.py` | Note containers: `ResearchClaim` (direction, support, sources) and `ResearchNote` (summary, model `Uncertainty`, edge, caveats, `source_kinds`). |
 | `research/analyst.py` | Deterministic offline engine. `research_market` / `research_markets` turn snapshots into notes using de-vigged price, order-book imbalance, liquidity shrinkage, and Shin debiasing. |
 | `research/screen.py` | `Opportunity`, `rank_opportunities`, `summarize`: ranks notes by the **lower bound** of the model edge, optionally requiring `REAL` provenance. |
+| `research/overview.py` | `MarketOverview`, `build_overview`, `dimensions`, `overview_rows`: cross-market ranking by absolute edge across asset classes and data kinds. |
+| `validation.py` | `validate_snapshot`, `is_valid`, `validate_uncertainty`: dependency-free contract invariant checks (no exceptions on bad data). |
 | `research/report.py` | `render_markdown` / `write_markdown`: composes notes, opportunities, comparison metrics, and risk into one provenance-labeled Markdown dossier. |
 | `portfolio/sizing.py` | `SizingDecision`, `kelly_fraction`: conservative fractional-Kelly sizing that uses the uncertainty lower bound and a hard cap. |
 | `backtesting/comparison.py` | `ResolvedMarket`, `StrategyMetrics`, `compare_strategies`: replays resolved markets through supplied strategies and ranks the No-side ledger by total PnL. |
@@ -34,7 +36,7 @@ resolved markets, summarizes portfolio risk, and serves the results over a small
 | `api/server.py` | Stdlib-only read-only JSON API: `DataProvider`, `StaticProvider`, `default_provider`, `create_server`; endpoints `/health`, `/markets`, `/research`, `/risk`, `/compare`. |
 | `strategy.py` | Shared strategy primitives used by the engine (`classify_category`, `shin_debiasing`). |
 | `cli.py` | Typer entry point (`scan`, `status`, `init`, `step`, `live`, `backtest`); the research modules are imported lazily by the commands. |
-| `cli_platform.py` | Typer group mounted as `poly-alpha research`: `markets`, `research`, `screen`, `report`, `size`, `compare`, `simulate`, `risk`, `serve`. |
+| `cli_platform.py` | Typer group mounted as `poly-alpha research`: `markets`, `research`, `screen`, `report`, `size`, `compare`, `simulate`, `overview`, `validate`, `risk`, `serve`. |
 
 ## End-to-end flow
 
