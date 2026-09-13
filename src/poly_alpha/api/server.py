@@ -47,6 +47,7 @@ data are labeled and are not real. Not investment advice.</p>
 <h2>Capabilities</h2><div id="health"></div>
 <h2>Cross-market overview</h2><div id="overview"></div>
 <h2>Portfolio risk (demo)</h2><div id="risk"></div>
+<h2>Allocation (demo)</h2><div id="allocation"></div>
 <h2>Uncertainty coverage (demo)</h2><div id="calibration"></div>
 <script>
 async function load(){
@@ -70,6 +71,15 @@ async function load(){
   document.getElementById('calibration').textContent =
     'markets=' + cr.n + ' coverage=' + cr.coverage + ' mean_width=' + cr.mean_width +
     ' simulated=' + ca.simulated;
+  const al = await (await fetch('/allocate')).json();
+  const ap = al.data || {};
+  const allocs = (ap.allocations || []).map(a =>
+    '<tr><td>' + a.market_id + '</td><td>' + a.fraction.toFixed(3) + '</td><td>' +
+    a.stake.toFixed(2) + '</td></tr>').join('');
+  document.getElementById('allocation').innerHTML =
+    'deployed=' + ap.total_stake + ' cash=' + ap.cash + ' simulated=' + al.simulated +
+    '<table><thead><tr><th>Market</th><th>Fraction</th><th>Stake</th></tr></thead><tbody>' +
+    allocs + '</tbody></table>';
 }
 load();
 </script></body></html>"""
