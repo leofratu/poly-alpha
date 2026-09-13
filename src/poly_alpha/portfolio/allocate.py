@@ -136,3 +136,10 @@ def allocate(
 
     total_stake = sum(allocation.stake for allocation in allocations)
     return AllocationPlan(
+        bankroll=bankroll,
+        total_fraction=total_fraction,
+        total_stake=total_stake,
+        cash=bankroll - total_stake,
+        allocations=tuple(allocations),
+        caveat=_CAVEAT,
+    )
