@@ -90,3 +90,49 @@ def test_require_real_filters_fixture_out() -> None:
     )
     both = rank_opportunities([real, fixture])
     assert {opportunity.note.market_id for opportunity in both} == {"real", "fixture"}
+
+    filtered = rank_opportunities([real, fixture], require_real=True)
+    assert [opportunity.note.market_id for opportunity in filtered] == ["real"]
+    assert all(opportunity.is_real for opportunity in filtered)
+
+
+def test_ordering_is_deterministic_with_market_id_tie_break() -> None:
+    high = make_snapshot(market_id="c", yes_price=0.90, no_price=0.10, orderbook=HIGH_BOOK)
+    tie_a = make_snapshot(market_id="a")
+    tie_b = make_snapshot(market_id="b")
+    low = make_snapshot(market_id="d", yes_price=0.80, no_price=0.20, orderbook=LOW_EDGE_BOOK)
+    notes = [
+        research_market(snapshot, now=NOW) for snapshot in (tie_b, low, tie_a, high)
+    ]
+
+    ranked = rank_opportunities(notes)
+    assert [opportunity.note.market_id for opportunity in ranked] == ["c", "a", "b", "d"]
+    scores = [opportunity.score for opportunity in ranked]
+    assert scores == sorted(scores, reverse=True)
+    assert scores[1] == scores[2]
+
+
+def test_screen_markets_matches_research_then_rank() -> None:
+    snapshots = [make_snapshot(market_id="x"), make_snapshot(market_id="y", yes_price=0.80)]
+    screened = screen_markets(snapshots, now=NOW)
+    notes = [research_market(snapshot, now=NOW) for snapshot in snapshots]
+    expected = rank_opportunities(notes)
+    assert [opportunity.note.market_id for opportunity in screened] == [
+        opportunity.note.market_id for opportunity in expected
+    ]
+
+
+def test_summarize_empty_returns_zeroes() -> None:
+    assert summarize([]) == {
+        "count": 0,
+        "real_count": 0,
+        "mean_edge_low": 0.0,
+        "max_edge_low": 0.0,
+    }
+
+
+def test_summarize_counts_and_edge_statistics() -> None:
+    real = research_market(make_snapshot(market_id="real"), now=NOW)
+    fixture = research_market(
+        make_snapshot(
+            market_id="fixture", yes_price=0.90, no_price=0.10, orderbook=HIGH_BOOK
