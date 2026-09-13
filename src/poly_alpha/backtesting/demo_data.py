@@ -44,3 +44,46 @@ def demo_resolved_markets() -> list[ResolvedMarket]:
     """Pair each fixture market with a deterministic demo resolution.
 
     The outcome is decided by SHA-256 hashing the ``market_id`` and comparing the
+    first four digest bytes, read as a big-endian fraction in ``[0, 1)``, against
+    the snapshot's ``yes_price``. This is fully deterministic and deliberately not
+    the naive ``yes_price > 0.5`` rule, so a market can resolve against its quoted
+    favorite. Each ``ResolvedMarket`` keeps the fixture snapshot, whose provenance
+    is ``DataSourceKind.FIXTURE``.
+    """
+    return [
+        ResolvedMarket(snapshot=snapshot, resolved_yes=_resolve(snapshot))
+        for snapshot in fixture_adapter().list_markets()
+    ]
+
+
+def demo_positions() -> list[Position]:
+    """Build one simulated demo position per fixture market.
+
+    Each stake is ``round(liquidity * 0.02, 2)`` and each ``yes_probability`` is the
+    de-vigged ``implied_yes()``, falling back to 0.5 when unavailable. Provenance is
+    copied from the fixture snapshot.
+    """
+    positions: list[Position] = []
+    for snapshot in fixture_adapter().list_markets():
+        implied = snapshot.implied_yes()
+        positions.append(
+            Position(
+                market_id=snapshot.market_id,
+                asset_class=snapshot.asset.asset_class,
+                stake=round(snapshot.liquidity * _DEMO_STAKE_FRACTION, 2),
+                yes_probability=implied if implied is not None else _FALLBACK_YES,
+                provenance=snapshot.provenance,
+            )
+        )
+    return positions
+
+
+def demo_returns(n: int = 60) -> list[float]:
+    """Return a deterministic simulated return series of length ``n``.
+
+    Draws from ``numpy.random.default_rng`` with a fixed seed, sampling
+    ``normal(0.0005, 0.02)``. The values are simulated, not observed, and exist only
+    to demonstrate historical VaR and drawdown.
+    """
+    rng = np.random.default_rng(_DEMO_RETURN_SEED)
+    return [float(value) for value in rng.normal(_DEMO_RETURN_MEAN, _DEMO_RETURN_STD, n)]
