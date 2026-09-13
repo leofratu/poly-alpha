@@ -44,3 +44,49 @@ def kelly_fraction(
     non-positive edge at the effective probability yields a zero fraction. Full
     Kelly for a binary paying 1.0 is ``edge / (1 - price)``; the returned fraction
     is the smaller of that and ``cap``.
+    """
+    lower_bound_used = uncertainty is not None and use_lower_bound
+    raw = uncertainty.low if lower_bound_used else probability
+    effective = _clamp_probability(raw)
+    bound_note = "lower bound used" if lower_bound_used else "point estimate used"
+    if not 0.0 < price < 1.0:
+        return SizingDecision(
+            fraction=0.0,
+            rationale=f"price {price!r} outside (0, 1); effective probability "
+            f"{effective:.4f} ({bound_note})",
+            capped=False,
+            probability_used=effective,
+        )
+    edge = effective - price
+    if edge <= 0.0:
+        return SizingDecision(
+            fraction=0.0,
+            rationale="no positive edge at the conservative bound",
+            capped=False,
+            probability_used=effective,
+        )
+    full = edge / (1.0 - price)
+    fraction = min(full, cap)
+    fraction = max(0.0, min(cap, fraction))
+    capped = full > cap
+    rationale = (
+        f"effective probability {effective:.4f} ({bound_note}), price {price:.4f}, "
+        f"edge {edge:.4f}, full Kelly {full:.4f}, cap {cap:.4f}"
+    )
+    if capped:
+        rationale += "; capped"
+    return SizingDecision(
+        fraction=fraction,
+        rationale=rationale,
+        capped=capped,
+        probability_used=effective,
+    )
+
+
+def portfolio_fractions(
+    probabilities: Sequence[float],
+    prices: Sequence[float],
+    *,
+    cap: float = 0.05,
+) -> list[SizingDecision]:
+    """Size each market independently, with no cross-position normalization.
