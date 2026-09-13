@@ -548,7 +548,14 @@ def costs(
             }
         )
     if json_out:
-        _print_json({"total_bps": model.total_bps, "rows": rows})
+        _print_json(
+            {
+                "total_bps": model.total_bps,
+                "rows": rows,
+                "simulated": True,
+                "caveat": "Simulated cost-adjusted edges over labeled fixture data; not advice.",
+            }
+        )
         return
     table = Table(title="Cost-adjusted buy edges (SIMULATED; gross vs net)")
     table.add_column("Market", style="cyan")

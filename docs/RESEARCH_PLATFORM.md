@@ -36,7 +36,7 @@ resolved markets, summarizes portfolio risk, and serves the results over a small
 | `backtesting/strategies.py` | Named heuristic strategies (`market_implied`, `shin_debiased`, `constant_half`, `uncertainty_gated`) plus `describe`; no strategy claims validated performance. |
 | `backtesting/simulation.py` | `simulate_portfolio`: uncertainty-aware paper equity curve over supplied resolved markets; in-sample, non-annualized, caveated. |
 | `backtesting/walkforward.py` | `WalkForwardResult`, `walk_forward`: holds one No-side position across a deterministic snapshot history and settles at the final snapshot; caveated. |
-| `backtesting/costs.py` | `CostModel`: fee/slippage-adjusted effective price, net edge, and cost-adjusted fair probability. |
+| `backtesting/costs.py` | `CostModel`: fee/slippage-adjusted effective price and net edge for a buy or sell side. |
 | `portfolio/risk.py` | `Position`, `RiskReport`, `analyze_portfolio`, `portfolio_value`: concentration (HHI, max position fraction) and, when a return series is supplied, historical VaR and drawdown. |
 | `api/server.py` | Stdlib-only read-only JSON API: `DataProvider`, `StaticProvider`, `default_provider`, `create_server`; endpoints `/health`, `/markets`, `/research`, `/risk`, `/compare`, `/overview`, `/validation`, plus a read-only HTML dashboard at `/`. |
 | `strategy.py` | Shared strategy primitives used by the engine (`classify_category`, `shin_debiasing`). |
