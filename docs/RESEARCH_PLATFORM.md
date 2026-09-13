@@ -44,3 +44,43 @@ research.analyst.research_markets(...)  --> ResearchNote (Uncertainty, claims, c
         +--> portfolio.risk.analyze_portfolio(...)          --> RiskReport
         |
         v
+api.server (read-only JSON)  /  cli.py commands
+```
+
+1. An adapter produces `MarketSnapshot`s, each carrying a `Provenance`.
+2. `research_markets` derives a `ResearchNote` per snapshot, with a simulated heuristic
+   estimate, an explicit interval, and cited sources.
+3. `compare_strategies` scores strategies over already-resolved markets;
+   `analyze_portfolio` summarizes concentration and supplied historical returns.
+4. `api.server` (or `cli.py`) presents the snapshots, notes, metrics, and risk report.
+
+## Extension points
+
+Adding an adapter:
+
+1. Implement the `MarketAdapter` protocol: expose `name`, `source_kind`, `list_markets()`,
+   and `get_snapshot(market_id)`.
+2. Build `MarketSnapshot`s with the correct `DataSourceKind` and a `Provenance` naming the
+   source, retrieval time, and any URL/note.
+3. Raise `AdapterError` when a snapshot cannot be produced; skip malformed payloads rather
+   than fabricating values.
+4. Wire the adapter into `api.server.default_provider` (or a custom `DataProvider`) so the
+   research, comparison, and risk paths pick it up.
+
+Other extension points: add a new `strategy` callable for `compare_strategies`, or a new
+`DataProvider` to serve a different composition of the same contracts.
+
+## Limitations and honesty
+
+- The research engine is a **deterministic offline heuristic, not a trained model**. It is
+  a pure function of the snapshot (de-vigged price, order-book depth/imbalance, liquidity),
+  with no learning and no external inputs.
+- Fixture, synthetic, and simulated data are **labeled** via `DataSourceKind` and
+  `Provenance`, and **are not real market data**. Fixture markets are hand-authored;
+  series markets are generated; the model's own intervals are marked `simulated`.
+- Backtest metrics are **in-sample, not annualized, and not forecasts**. They score a fixed
+  set of supplied resolved markets and describe the past, not future performance.
+- Nothing here executes live trades. Research notes, comparison metrics, and risk reports
+  are analysis artifacts only, and the API is read-only.
+- This is not investment advice, and no claim of profitability, expected return, or win
+  rate is made anywhere in the platform.
