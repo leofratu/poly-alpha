@@ -286,6 +286,9 @@ Cycle Return Distribution (300K simulations)
 
 ### 5.3 Edge Decay Analysis
 
+> **Correction.** The lifecycle win rates and information ratios below are **legacy synthetic
+> output** and are withdrawn as evidence; they were not computed from observed resolutions.
+
 The favorite-longshot bias is not constant across market lifecycle:
 
 | Lifecycle Phase | Win Rate | Shin Edge | Information Ratio |

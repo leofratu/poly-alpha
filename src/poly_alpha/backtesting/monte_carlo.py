@@ -36,9 +36,11 @@ def run(
     capital_per_trade: float = 10_000.0,
     trades_per_sample: int = 10,
 ) -> dict[str, float | str]:
-    """Run Monte Carlo simulation over historical market data.
+    """Run a synthetic Monte Carlo with fabricated resolutions and returns.
 
-    Returns dict with avg_roi, avg_apy, p5, p95, win_rate.
+    The GitHub market list is only used to seed questions and a count; outcomes are
+    generated, so the output is not a backtest of observed markets. Returns dict with
+    avg_roi, avg_apy, p5, p95, win_rate, a synthetic marker, and a caveat.
     """
     banner = (
         "[bold red]SYNTHETIC Monte Carlo — resolutions and returns are fabricated, "
