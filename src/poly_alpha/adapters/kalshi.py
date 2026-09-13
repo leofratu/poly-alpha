@@ -62,3 +62,39 @@ def _yes_price(market: dict[str, Any]) -> float | None:
         if candidate is not None and 0.0 < candidate < 1.0:
             return candidate
     return None
+
+
+class KalshiAdapter:
+    """Adapter over the real Kalshi Trade API."""
+
+    name = "kalshi"
+    source_kind = DataSourceKind.REAL
+
+    def __init__(self, client: KalshiClient | None = None, limit: int = 100) -> None:
+        self._client = client
+        self._limit = limit
+
+    def list_markets(self) -> list[MarketSnapshot]:
+        """Fetch open markets and map them into snapshots."""
+        client = self._client if self._client is not None else KalshiClient()
+        payload = client.get_markets(limit=self._limit, status="open")
+        if not isinstance(payload, dict):
+            return []
+        raw_markets = payload.get("markets")
+        if not isinstance(raw_markets, list):
+            return []
+        snapshots: list[MarketSnapshot] = []
+        for market in raw_markets:
+            if not isinstance(market, dict):
+                continue
+            snapshot = self._parse_market(market)
+            if snapshot is not None:
+                snapshots.append(snapshot)
+        return snapshots
+
+    def get_snapshot(self, market_id: str) -> MarketSnapshot | None:
+        """Return the live snapshot for an id, or None when it is not found."""
+        for snapshot in self.list_markets():
+            if snapshot.market_id == market_id:
+                return snapshot
+        return None
