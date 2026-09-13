@@ -44,3 +44,49 @@ def default_scenarios() -> list[StressScenario]:
         StressScenario(name="shock_up", yes_price_shift=0.10),
         StressScenario(name="crash", yes_price_shift=-0.30),
     ]
+
+
+def _shifted_prices(
+    prices: Mapping[str, float], yes_price_shift: float
+) -> dict[str, float]:
+    """Clamp every supplied price after shifting, preserving the original key set."""
+    return {
+        market_id: min(MAX_PRICE, max(MIN_PRICE, price + yes_price_shift))
+        for market_id, price in prices.items()
+    }
+
+
+def _worst_market_id(
+    positions: Sequence[Position],
+    prices: Mapping[str, float],
+    shifted: Mapping[str, float],
+) -> str | None:
+    """Return the market with the most negative per-position change, if any.
+
+    Ties on the change are broken by ascending market id so the choice is stable.
+    """
+    worst: tuple[float, str] | None = None
+    for position in positions:
+        before = portfolio_value([position], prices)
+        after = portfolio_value([position], shifted)
+        change = after - before
+        if change >= 0.0:
+            continue
+        candidate = (change, position.market_id)
+        if worst is None or candidate < worst:
+            worst = candidate
+    return None if worst is None else worst[1]
+
+
+def apply_stress(
+    positions: Sequence[Position],
+    prices: Mapping[str, float],
+    scenario: StressScenario,
+) -> StressResult:
+    """Mark ``positions`` under one additive YES-price scenario.
+
+    ``yes_price_shift`` is added in probability points; each shifted price is
+    clamped to ``[0.0, 1.0]`` and the price key set is left unchanged. ``change`` is
+    the stressed minus start value, and ``worst_market_id`` names the position with
+    the most negative change, or None when nothing loses value.
+    """
