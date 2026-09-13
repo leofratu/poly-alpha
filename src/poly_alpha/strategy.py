@@ -308,12 +308,19 @@ def acceleration_config() -> StrategyConfig:
 # ---------------------------------------------------------------------------
 
 
+def _matches_keyword(text: str, keyword: str) -> bool:
+    """Match single-word keywords on word boundaries; multi-word phrases as substrings."""
+    if keyword.isalnum():
+        return re.search(rf"\b{re.escape(keyword)}\b", text) is not None
+    return keyword in text
+
+
 def classify_category(question: str) -> str:
     """Classify a market question into a category."""
     q = question.lower()
 
     if any(
-        w in q
+        _matches_keyword(q, w)
         for w in [
             "bitcoin",
             "ethereum",
@@ -342,7 +349,7 @@ def classify_category(question: str) -> str:
         return "crypto"
 
     if any(
-        w in q
+        _matches_keyword(q, w)
         for w in [
             "temperature",
             "weather",
@@ -358,7 +365,7 @@ def classify_category(question: str) -> str:
         return "weather"
 
     if any(
-        w in q
+        _matches_keyword(q, w)
         for w in [
             "lol",
             "valorant",
@@ -383,7 +390,7 @@ def classify_category(question: str) -> str:
         return "esports"
 
     if any(
-        w in q
+        _matches_keyword(q, w)
         for w in [
             "win on",
             "vs.",
@@ -446,7 +453,7 @@ def classify_category(question: str) -> str:
         "fidesz",
         "reza pahlavi",
     ]
-    if any(w in q for w in politics_keywords) or re.search(r"\bwar\b", q):
+    if any(_matches_keyword(q, w) for w in politics_keywords) or re.search(r"\bwar\b", q):
         return "politics"
 
     return "other"

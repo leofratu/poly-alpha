@@ -12,6 +12,11 @@ class TestClassifyCategory:
         assert classify_category("Will Ethereum reach $5000 by June?") == "crypto"
         assert classify_category("Solana market cap above $50B?") == "crypto"
 
+    def test_keywords_do_not_match_unrelated_substrings(self) -> None:
+        assert classify_category("Will the Netherlands advance to the next round?") == "other"
+        assert classify_category("Will the Secretary of State visit Taiwan?") == "politics"
+        assert classify_category("Will the candidate's training pay off?") != "weather"
+
     def test_sports_keywords(self) -> None:
         assert classify_category("Lakers vs. Warriors: O/U 220.5") == "sports"
         assert classify_category("Will Arsenal win on Saturday?") == "sports"
