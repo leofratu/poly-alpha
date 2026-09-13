@@ -228,3 +228,49 @@ def research_market(snapshot: MarketSnapshot, *, now: datetime | None = None) ->
         n_observations=0,
         simulated=True,
     )
+
+    heuristic_used = has_book or implied is not None
+    claims = _build_claims(
+        snapshot,
+        implied,
+        estimate,
+        edge_center,
+        method,
+        imbalance,
+        depth,
+        liquidity_confidence,
+        book_confidence,
+        heuristic_used,
+    )
+
+    if snapshot.provenance.kind is DataSourceKind.REAL:
+        data_caveat = (
+            f"Market data is real observed data from {snapshot.provenance.source}."
+        )
+    else:
+        data_caveat = (
+            f"Market data is {snapshot.provenance.kind.value} "
+            f"({snapshot.provenance.source}) and is not a real observation."
+        )
+    caveats = (
+        data_caveat,
+        "This is research and paper-trading output only, not investment advice.",
+        "The model estimate is a simulated heuristic and is not a calibrated forecast.",
+    )
+    if not has_book:
+        caveats = caveats + ("No order book was available, so the interval is widened.",)
+
+    market_part = f"{implied:.1%}" if implied is not None else "n/a"
+    summary = (
+        f"{snapshot.question} | model {estimate:.1%} YES vs market {market_part}, "
+        f"edge {estimate - edge_center:+.1%} | {method}"
+    )
+
+    return ResearchNote(
+        market_id=snapshot.market_id,
+        question=snapshot.question,
+        summary=summary,
+        claims=claims,
+        market_implied_yes=implied,
+        model_yes=model_yes,
+        edge=edge,
