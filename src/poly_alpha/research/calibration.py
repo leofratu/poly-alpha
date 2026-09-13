@@ -48,7 +48,7 @@ def interval_coverage(
     covered = 0
     width_sum = 0.0
     simulated = False
-    for note, outcome in zip(notes, resolved_yes):
+    for note, outcome in zip(notes, resolved_yes, strict=True):
         realized = 1.0 if outcome else 0.0
         if note.model_yes.contains(realized):
             covered += 1
