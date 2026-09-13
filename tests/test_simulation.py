@@ -90,3 +90,17 @@ def test_max_drawdown_within_bounds() -> None:
 def test_simulation_is_deterministic() -> None:
     first = simulate_portfolio(MARKETS, oracle(RESOLUTIONS))
     second = simulate_portfolio(MARKETS, oracle(RESOLUTIONS))
+    assert isinstance(first, SimulationResult)
+    assert first == second
+
+
+@pytest.mark.parametrize("bankroll", [0.0, -1.0])
+def test_invalid_bankroll_raises(bankroll: float) -> None:
+    with pytest.raises(ValueError):
+        simulate_portfolio(MARKETS, oracle(RESOLUTIONS), starting_bankroll=bankroll)
+
+
+@pytest.mark.parametrize("cap", [0.0, -0.1, 1.5])
+def test_invalid_cap_raises(cap: float) -> None:
+    with pytest.raises(ValueError):
+        simulate_portfolio(MARKETS, oracle(RESOLUTIONS), cap=cap)
