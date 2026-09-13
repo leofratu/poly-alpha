@@ -7,7 +7,7 @@ and never requires network access.
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, cast
 
 import typer
 from rich.console import Console
@@ -620,7 +620,7 @@ def costs(
     opportunities = rank_opportunities(
         research_markets(_fixture_markets()), min_edge_low=float("-inf")
     )
-    rows = []
+    rows: list[dict[str, float | str]] = []
     for opportunity in opportunities:
         implied = opportunity.note.market_implied_yes
         if implied is None:
@@ -653,9 +653,9 @@ def costs(
     table.add_column("Net", justify="right")
     for row in rows:
         table.add_row(
-            row["market_id"],
-            f"{row['gross_edge']:+.4f}",
-            f"{row['net_edge']:+.4f}",
+            str(row["market_id"]),
+            f"{float(row['gross_edge']):+.4f}",
+            f"{float(row['net_edge']):+.4f}",
         )
     console.print(table)
     console.print(
@@ -758,7 +758,7 @@ def run(
 
     bundle = run_pipeline(bankroll=bankroll)
     if json_out:
-        payload = to_jsonable(bundle)
+        payload = cast("dict[str, object]", to_jsonable(bundle))
         payload["simulated"] = True
         _print_json(payload)
         return
