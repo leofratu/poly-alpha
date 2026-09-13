@@ -96,3 +96,34 @@ class OpenAICompatibleProvider:
             return self._note_from(snapshot, payload, now)
         except (requests.RequestException, ValueError, KeyError, TypeError, IndexError):
             return self._fallback.research_market(snapshot, now=now)
+
+    def _request(self, snapshot: MarketSnapshot) -> dict[str, Any]:
+        """POST one JSON-object chat completion and return the decoded response body."""
+        implied = snapshot.implied_yes()
+        implied_text = f"{implied:.4f}" if implied is not None else "n/a"
+        user_content = (
+            f"Market ID: {snapshot.market_id}\n"
+            f"Question: {snapshot.question}\n"
+            f"Implied YES probability: {implied_text}\n"
+            f"YES price: {snapshot.yes_price}\n"
+            f"NO price: {snapshot.no_price}\n"
+            f"Liquidity: {snapshot.liquidity}\n"
+            f"Volume: {snapshot.volume}"
+        )
+        body: dict[str, Any] = {
+            "model": self._model,
+            "messages": [
+                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "user", "content": user_content},
+            ],
+            "temperature": 0,
+            "response_format": {"type": "json_object"},
+        }
+        resp = self._session.post(
+            f"{self._base_url.rstrip('/')}/chat/completions",
+            headers={"Authorization": f"Bearer {self._api_key}"},
+            json=body,
+            timeout=self._timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()  # type: ignore[no-any-return]
