@@ -136,3 +136,44 @@ class MarketHistory:
 
     asset: AssetRef
     snapshots: tuple[MarketSnapshot, ...]
+    provenance: Provenance
+
+    @property
+    def market_id(self) -> str:
+        """Return the last snapshot's market id, raising when there are none."""
+        if not self.snapshots:
+            raise ValueError("MarketHistory has no snapshots")
+        return self.snapshots[-1].market_id
+
+    @property
+    def latest(self) -> MarketSnapshot | None:
+        """Return the newest snapshot, or None when the history is empty."""
+        return self.snapshots[-1] if self.snapshots else None
+
+
+def fixture_histories(steps: int = 24) -> list[MarketHistory]:
+    """Return deterministic fixture histories, each with exactly `steps` snapshots."""
+    if steps < _MIN_STEPS:
+        raise ValueError(f"steps must be >= {_MIN_STEPS}, got {steps}")
+    histories: list[MarketHistory] = []
+    for spec in _SPECS:
+        provenance = Provenance(
+            source=_PROVENANCE_SOURCE,
+            kind=DataSourceKind.FIXTURE,
+            note=_HISTORY_NOTE,
+        )
+        snapshots = tuple(_snapshot(spec, index, steps, provenance) for index in range(steps))
+        histories.append(
+            MarketHistory(asset=_asset(spec), snapshots=snapshots, provenance=provenance)
+        )
+    return histories
+
+
+def histories_to_markets(histories: Sequence[MarketHistory]) -> list[MarketSnapshot]:
+    """Flatten every history to ALL of its snapshots, oldest to newest, order preserved."""
+    return [snapshot for history in histories for snapshot in history.snapshots]
+
+
+def latest_snapshots(histories: Sequence[MarketHistory]) -> list[MarketSnapshot]:
+    """Return just the last snapshot of each non-empty history, order preserved."""
+    return [history.snapshots[-1] for history in histories if history.snapshots]
