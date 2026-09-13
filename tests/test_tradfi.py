@@ -109,3 +109,26 @@ def test_black_scholes_d2_is_d1_minus_sigma_root_t() -> None:
         dividend_yield=0.0,
     )
     assert calculate_d2(inputs) == pytest.approx(calculate_d1(inputs) - 0.2)
+
+
+def test_extract_direction_uses_the_nearest_clause() -> None:
+    from poly_alpha.data.tradfi import PriceDirection, extract_financial_target
+
+    result = extract_financial_target("Will BTC fall to $80k after reaching above $100k?")
+    assert result is not None
+    assert result.direction is PriceDirection.BELOW
+    assert result.target_price == 80_000.0
+
+
+def test_extract_requires_a_real_separator_token() -> None:
+    from poly_alpha.data.tradfi import extract_financial_target
+
+    assert extract_financial_target("Will SPY cover 500?") is None
+
+
+def test_extract_scales_units_and_matches_case_insensitively() -> None:
+    from poly_alpha.data.tradfi import extract_financial_target
+
+    million = extract_financial_target("Will Bitcoin Reach $1 million?")
+    assert million is not None
+    assert million.target_price == 1_000_000.0

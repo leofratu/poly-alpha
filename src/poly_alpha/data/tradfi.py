@@ -136,12 +136,13 @@ _ESCAPED_KEYS = [re.escape(k) for k in sorted(ASSET_MAPPING.keys(), key=len, rev
 ASSET_PATTERN: Final[str] = r"\b(" + "|".join(_ESCAPED_KEYS) + r")\b"
 
 _PRICE_PATTERN: Final[str] = (
-    r"(above|below|reaches|hit|hits|reach|to|under|over|at least|>|<|=)"
+    r"(?<!\w)(above|below|reaches|hit|hits|reach|to|under|over|at least|>|<|=)"
     r"\s*\$?\s*(\d+(?:,\d{3})*(?:\.\d+)?)\s*"
     r"(k|m|b|thousand|million|billion|trillion)?\b"
 )
 _ABOVE_KEYWORDS: Final[str] = r"\b(above|over|higher|greater|exceed|surpass|reach|hit)\b"
 _BELOW_KEYWORDS: Final[str] = r"\b(below|under|lower|less|crash|down|drop|fall)\b"
+_DIRECTION_WINDOW: Final[int] = 40
 
 
 class PriceDirection(Enum):
@@ -357,11 +358,17 @@ def extract_financial_target(question: str) -> FinancialTarget | None:
     elif token in {"below", "under", "<"}:
         direction = PriceDirection.BELOW
     else:
-        above_match = re.search(_ABOVE_KEYWORDS, question, re.IGNORECASE)
-        below_match = re.search(_BELOW_KEYWORDS, question, re.IGNORECASE)
-        direction = (
-            PriceDirection.BELOW if below_match and not above_match else PriceDirection.ABOVE
-        )
+        clause = question[max(0, price_match.start() - _DIRECTION_WINDOW) : price_match.start()]
+        if re.search(_BELOW_KEYWORDS, clause, re.IGNORECASE):
+            direction = PriceDirection.BELOW
+        elif re.search(_ABOVE_KEYWORDS, clause, re.IGNORECASE):
+            direction = PriceDirection.ABOVE
+        else:
+            above_match = re.search(_ABOVE_KEYWORDS, question, re.IGNORECASE)
+            below_match = re.search(_BELOW_KEYWORDS, question, re.IGNORECASE)
+            direction = (
+                PriceDirection.BELOW if below_match and not above_match else PriceDirection.ABOVE
+            )
     return FinancialTarget(ticker=ticker, target_price=price, direction=direction)
 
 
