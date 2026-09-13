@@ -173,3 +173,12 @@ def test_stress_json_reports_scenarios() -> None:
     names = [row["scenario"] for row in payload]
     assert "base" in names
     assert any(row["change"] < 0 for row in payload)
+
+
+def test_allocate_json_reports_plan() -> None:
+    result = _invoke(["research", "allocate", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["bankroll"] == 1000.0
+    assert "allocations" in payload
+    assert abs(payload["cash"] + payload["total_stake"] - payload["bankroll"]) < 1e-6

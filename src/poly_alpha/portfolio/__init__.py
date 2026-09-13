@@ -1,5 +1,5 @@
 """Portfolio construction and risk analysis."""
 
-from poly_alpha.portfolio import risk
+from poly_alpha.portfolio import allocate, risk
 
-__all__ = ["risk"]
+__all__ = ["allocate", "risk"]
