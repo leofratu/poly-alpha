@@ -170,3 +170,50 @@ class OpenAICompatibleProvider:
             direction = "bearish_yes"
         else:
             direction = "neutral"
+
+        model_yes = Uncertainty(
+            estimate=estimate,
+            low=low,
+            high=high,
+            basis=f"ai:{self._model}",
+            n_observations=0,
+            simulated=True,
+        )
+        if implied is not None:
+            edge_basis = "ai estimate minus de-vigged market implied"
+        else:
+            edge_basis = "ai estimate minus neutral 0.5 prior (no market price)"
+        edge = Uncertainty(
+            estimate=estimate - center,
+            low=low - center,
+            high=high - center,
+            basis=edge_basis,
+            n_observations=0,
+            simulated=True,
+        )
+
+        if citations:
+            sources = tuple(
+                Provenance(
+                    source=f"AI-asserted reference ({self._model})",
+                    kind=DataSourceKind.SIMULATED,
+                    url=url,
+                    note="Model-provided citation; unverified, not an observed source.",
+                )
+                for url in citations
+            )
+        else:
+            sources = (
+                Provenance(
+                    source=f"AI model {self._model}",
+                    kind=DataSourceKind.SIMULATED,
+                    note="Model-generated estimate (simulated).",
+                ),
+            )
+
+        claim = ResearchClaim(
+            text=rationale or "AI model estimate.",
+            direction=direction,
+            support=0.5,
+            sources=sources,
+        )
