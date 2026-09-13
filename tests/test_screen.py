@@ -132,7 +132,13 @@ def test_summarize_empty_returns_zeroes() -> None:
 def test_summarize_counts_and_edge_statistics() -> None:
     real = research_market(make_snapshot(market_id="real"), now=NOW)
     fixture = research_market(
-        make_snapshot(market_id="fixture", yes_price=0.90, no_price=0.10, orderbook=HIGH_BOOK),
+        make_snapshot(
+            market_id="fixture",
+            yes_price=0.90,
+            no_price=0.10,
+            orderbook=HIGH_BOOK,
+            kind=DataSourceKind.FIXTURE,
+        ),
         now=NOW,
     )
     opportunities = rank_opportunities([real, fixture])

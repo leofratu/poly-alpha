@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from itertools import pairwise
 
 import pytest
 
@@ -44,7 +45,7 @@ def test_final_close_time_is_fixed_and_earlier_steps_back_one_day() -> None:
         final = history.snapshots[-1]
         assert final.close_time is not None
         assert final.close_time.tzinfo is not None
-        for earlier, later in zip(history.snapshots, history.snapshots[1:], strict=True):
+        for earlier, later in pairwise(history.snapshots):
             assert earlier.close_time is not None and later.close_time is not None
             assert later.close_time - earlier.close_time == timedelta(days=1)
     assert fixture_histories()[0].snapshots[-1].close_time == _FIXED_FINAL_CLOSE
