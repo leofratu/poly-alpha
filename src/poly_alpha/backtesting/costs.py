@@ -27,6 +27,23 @@ def _normalize_side(side: str) -> str:
 
 
 @dataclass(frozen=True)
+class DepthFill:
+    """Result of walking resting levels for a requested size."""
+
+    shares: float
+    notional: float
+    average_price: float
+    levels_consumed: int
+    unfilled: float
+
+    @property
+    def is_complete(self) -> bool:
+        return self.unfilled <= 0.0
+
+
+
+
+@dataclass(frozen=True)
 class CostModel:
     """Per-trade fee and slippage applied to an entry price, in basis points.
 
