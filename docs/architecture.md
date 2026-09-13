@@ -59,5 +59,4 @@ API. Nothing places orders: `--real` only reads Polymarket market data.
 |---|---|---|
 | `POLY_ALPHA_PRESET` | Strategy preset | `strict` |
 | `POLY_ALPHA_DB` | SQLite path | `~/.poly_alpha/paper_wallet.sqlite` |
-| `GEMINI_API_KEY` | Gemini AI risk filter (optional) | empty |
 | `POLY_*` live-execution keys | Local `.env` only; **untracked** and unused by the research platform | empty |

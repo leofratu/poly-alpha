@@ -1,8 +1,7 @@
-"""Live executor with Gemini AI risk filtering and CLOB execution."""
+"""Live executor scaffold: deterministic risk filtering and CLOB execution helpers."""
 
 from __future__ import annotations
 
-import os
 from datetime import UTC, datetime
 from typing import Any
 
@@ -19,7 +18,6 @@ from poly_alpha.strategy import (
 )
 
 console = Console()
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 MAX_DAYS = 1.0
 MIN_YES_PRICE = 0.05
