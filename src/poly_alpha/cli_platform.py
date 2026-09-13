@@ -516,3 +516,51 @@ def calibration(json_out: bool = JSON_OPTION) -> None:
         console.print(f"[yellow]{note}[/yellow]")
 
 
+@app.command()
+def costs(
+    fee_bps: float = typer.Option(0.0, help="Fee in basis points."),
+    slippage_bps: float = typer.Option(0.0, help="Slippage in basis points."),
+    json_out: bool = JSON_OPTION,
+) -> None:
+    """Show fee/slippage-adjusted edges for the fixture markets."""
+    from poly_alpha.backtesting.costs import CostModel
+    from poly_alpha.research.analyst import research_markets
+    from poly_alpha.research.screen import rank_opportunities
+
+    model = CostModel(fee_bps=fee_bps, slippage_bps=slippage_bps)
+    opportunities = rank_opportunities(
+        research_markets(_fixture_markets()), min_edge_low=float("-inf")
+    )
+    rows = []
+    for opportunity in opportunities:
+        implied = opportunity.note.market_implied_yes
+        if implied is None:
+            continue
+        rows.append(
+            {
+                "market_id": opportunity.note.market_id,
+                "gross_edge": opportunity.note.edge.estimate,
+                "net_edge": model.net_edge(
+                    fair_probability=opportunity.note.model_yes.estimate,
+                    price=implied,
+                    side="buy",
+                ),
+            }
+        )
+    if json_out:
+        _print_json({"total_bps": model.total_bps, "rows": rows})
+        return
+    table = Table(title="Cost-adjusted buy edges (SIMULATED; gross vs net)")
+    table.add_column("Market", style="cyan")
+    table.add_column("Gross", justify="right")
+    table.add_column("Net", justify="right")
+    for row in rows:
+        table.add_row(
+            row["market_id"],
+            f"{row['gross_edge']:+.4f}",
+            f"{row['net_edge']:+.4f}",
+        )
+    console.print(table)
+    console.print(
+        f"[yellow]Assumed cost {model.total_bps:.0f} bps. Not investment advice.[/yellow]"
+    )
