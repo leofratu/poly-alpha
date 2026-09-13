@@ -33,6 +33,7 @@ CAPABILITIES: tuple[str, ...] = (
     "allocate",
     "run",
     "experiments",
+    "sources",
 )
 
 INDEX_HTML = """<!doctype html>
@@ -405,6 +406,24 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                         "data": [experiment_to_dict(record) for record in records],
                         "count": len(records),
                         "simulated": True,
+                    },
+                )
+            elif path == "/sources":
+                from poly_alpha.adapters.registry import default_adapters, real_adapters
+
+                adapters = [*default_adapters(), *real_adapters()]
+                self._send(
+                    200,
+                    {
+                        "data": [
+                            {
+                                "name": adapter.name,
+                                "kind": adapter.source_kind.value,
+                                "network": adapter.source_kind.value == "real",
+                            }
+                            for adapter in adapters
+                        ],
+                        "simulated": False,
                     },
                 )
             else:

@@ -28,6 +28,7 @@ JSON_ROUTES = (
     "/allocate",
     "/run",
     "/experiments",
+    "/sources",
 )
 
 SIMULATED_ROUTES = (
@@ -145,3 +146,12 @@ def test_experiments_route_reports_recorded_count(
     assert body["simulated"] is True
     assert body["count"] == 1
     assert body["data"][0]["run_id"] == record.run_id
+
+
+def test_sources_lists_configured_adapters() -> None:
+    with _served() as port:
+        _, body = _get(port, "/sources")
+    assert body["simulated"] is False
+    names = {row["name"] for row in body["data"]}
+    assert {"fixture", "series", "polymarket", "kalshi"} <= names
+    assert any(row["network"] is True for row in body["data"])
