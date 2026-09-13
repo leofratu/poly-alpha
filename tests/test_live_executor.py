@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+import pytest
+
 from poly_alpha.execution.live_executor import (
     _has_date_mismatch,
+    _is_long_term,
     risk_filter_and_cluster,
 )
 
@@ -49,3 +52,18 @@ def test_risk_filter_drops_low_edge_and_sets_fields() -> None:
     assert result == [good]
     assert good["shin_edge"] > 0
     assert "shin_no_prob" in good and "category" in good
+
+
+def test_risk_filter_clusters_near_duplicates() -> None:
+    a = _market("Will the test market resolve yes?", no_price=0.80)
+    b = _market("Will the test market resolve?", no_price=0.82)
+    distinct = _market("Will Bitcoin hit 100k?", no_price=0.80)
+    result = risk_filter_and_cluster([a, b, distinct])
+    assert len(result) == 2
+    kept = next(market for market in result if "test market" in market["question"])
+    assert kept["shin_edge"] == pytest.approx(max(a["shin_edge"], b["shin_edge"]))
+
+
+def test_is_long_term_detects_championship_phrasing() -> None:
+    assert _is_long_term("will manchester united win the premier league?") is True
+    assert _is_long_term("will it rain tomorrow?") is False
