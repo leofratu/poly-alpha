@@ -116,3 +116,24 @@ def experiment_to_dict(experiment: Experiment) -> dict[str, object]:
         "total_stake": experiment.total_stake,
         "cash": experiment.cash,
     }
+
+
+def _require_str(data: Mapping[str, object], key: str) -> str:
+    value = data.get(key)
+    if not isinstance(value, str):
+        raise ValueError(f"{key} must be a string")
+    return value
+
+
+def _require_int(data: Mapping[str, object], key: str) -> int:
+    value = data.get(key)
+    if not isinstance(value, int):
+        raise ValueError(f"{key} must be an int")
+    return value
+
+
+def _require_number(data: Mapping[str, object], key: str) -> float:
+    value = data.get(key)
+    if not isinstance(value, (int, float)):
+        raise ValueError(f"{key} must be a number")
+    return float(value)
