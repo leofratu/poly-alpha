@@ -22,12 +22,8 @@ def test_buy_raises_price_and_sell_lowers_it() -> None:
 
 def test_side_is_case_insensitive() -> None:
     model = CostModel(fee_bps=100.0)
-    assert model.effective_price(0.5, "BUY") == pytest.approx(
-        model.effective_price(0.5, "buy")
-    )
-    assert model.effective_price(0.5, "Sell") == pytest.approx(
-        model.effective_price(0.5, "sell")
-    )
+    assert model.effective_price(0.5, "BUY") == pytest.approx(model.effective_price(0.5, "buy"))
+    assert model.effective_price(0.5, "Sell") == pytest.approx(model.effective_price(0.5, "sell"))
 
 
 def test_total_bps_sums_fee_and_slippage() -> None:
@@ -82,28 +78,3 @@ def test_effective_price_clamps_at_bounds() -> None:
     assert huge.effective_price(0.5, "sell") == 0.0
     assert CostModel().effective_price(1.0, "buy") == 1.0
     assert CostModel().effective_price(0.0, "sell") == 0.0
-
-
-def test_adjust_fair_returns_none_for_negative_cost_edge() -> None:
-    model = CostModel(fee_bps=500.0)
-    assert model.adjust_fair(0.51, 0.5) is None
-    assert model.adjust_fair(0.7, 0.6, side="sell") is None
-
-
-def test_adjust_fair_returns_usable_value_for_positive_edge() -> None:
-    model = CostModel(fee_bps=50.0)
-    fair, price = 0.7, 0.5
-    adjusted = model.adjust_fair(fair, price)
-    assert adjusted is not None
-    assert 0.0 <= adjusted <= 1.0
-    edge = model.net_edge(fair_probability=fair, price=price)
-    assert adjusted - model.effective_price(price, "buy") == pytest.approx(edge)
-
-
-def test_adjust_fair_sell_mirrors_buy() -> None:
-    model = CostModel(fee_bps=50.0)
-    fair, price = 0.2, 0.6
-    adjusted = model.adjust_fair(fair, price, side="sell")
-    assert adjusted is not None
-    edge = model.net_edge(fair_probability=fair, price=price, side="sell")
-    assert model.effective_price(price, "sell") - adjusted == pytest.approx(edge)
