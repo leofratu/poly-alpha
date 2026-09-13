@@ -51,3 +51,27 @@ def test_expired_contract_is_a_step_function() -> None:
 def test_implied_probability_rejects_bad_inputs(args: tuple[float, ...]) -> None:
     with pytest.raises(ValueError):
         calculate_implied_probability(*args)
+
+
+def test_risk_free_rate_interpolates_and_clamps(monkeypatch: pytest.MonkeyPatch) -> None:
+    from poly_alpha.data import tradfi
+
+    monkeypatch.setattr(tradfi, "get_yield_curve", lambda: {30: 4.0, 90: 5.0})
+    assert tradfi.get_risk_free_rate(10) == pytest.approx(4.0)
+    assert tradfi.get_risk_free_rate(30) == pytest.approx(4.0)
+    assert tradfi.get_risk_free_rate(60) == pytest.approx(4.5)
+    assert tradfi.get_risk_free_rate(200) == pytest.approx(5.0)
+
+
+def test_risk_free_rate_falls_back_without_a_curve(monkeypatch: pytest.MonkeyPatch) -> None:
+    from poly_alpha.data import tradfi
+
+    monkeypatch.setattr(tradfi, "get_yield_curve", lambda: {})
+    assert tradfi.get_risk_free_rate(90) == pytest.approx(tradfi.FALLBACK_YIELDS[90])
+
+
+def test_risk_free_rate_rejects_nonpositive_days(monkeypatch: pytest.MonkeyPatch) -> None:
+    from poly_alpha.data import tradfi
+
+    with pytest.raises(ValueError):
+        tradfi.get_risk_free_rate(0)
