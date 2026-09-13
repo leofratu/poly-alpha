@@ -163,3 +163,23 @@ def test_entry_to_dict_sorts_kind_counts_keys() -> None:
     )
     counts = entry_to_dict(entry)["kind_counts"]
     assert list(counts) == ["fixture", "real", "synthetic"]
+
+
+def test_append_after_torn_line_does_not_merge(tmp_path: Path) -> None:
+    path = tmp_path / "journal.jsonl"
+    entry = build_entry([make_note("m1", 0.1)], now=NOW)
+    path.write_text('{"torn":', encoding="utf-8")
+    append_entry(path, entry)
+    assert read_entries(path) == [entry]
+
+
+def test_read_entries_tolerates_undecodable_lines(tmp_path: Path) -> None:
+    path = tmp_path / "journal.jsonl"
+    entry = build_entry([make_note("m1", 0.1)], now=NOW)
+    valid = json.dumps(entry_to_dict(entry)).encode("utf-8")
+    path.write_bytes(b"{\xff\xfe bad}\n" + valid + b"\n")
+    assert read_entries(path) == [entry]
+
+
+def test_read_entries_directory_returns_empty(tmp_path: Path) -> None:
+    assert read_entries(tmp_path) == []
