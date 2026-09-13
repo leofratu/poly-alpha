@@ -93,7 +93,7 @@ def run(
             days_to_expiry = np.random.randint(7, 45)
             basis_profit = basis_capital * 0.12 * (days_to_expiry / 365.0)
 
-            trade_gross = pm_shares * 1.0
+            trade_gross = 0.0 if trade["resolution_yes"] else pm_shares * 1.0
             net = trade_gross - pm_capital - hedge_cost + basis_profit
             total_profit += net
 
