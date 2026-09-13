@@ -90,3 +90,22 @@ def test_no_negative_change_yields_none() -> None:
 def test_empty_positions_are_zero_with_no_worst() -> None:
     result = apply_stress([], {"m1": 0.5}, StressScenario("crash", -0.30))
     assert result.start_value == pytest.approx(0.0)
+    assert result.stressed_value == pytest.approx(0.0)
+    assert result.change == pytest.approx(0.0)
+    assert result.worst_market_id is None
+
+
+def test_run_scenarios_is_deterministic() -> None:
+    positions = [make_position("m1", 100.0, yes_probability=0.5)]
+    prices = {"m1": 0.5}
+    first = run_scenarios(positions, prices)
+    second = run_scenarios(positions, prices)
+    assert first == second
+
+
+def test_default_scenarios_contain_base_with_zero_shift() -> None:
+    scenarios = default_scenarios()
+    names = [scenario.name for scenario in scenarios]
+    assert "base" in names
+    base = next(scenario for scenario in scenarios if scenario.name == "base")
+    assert base.yes_price_shift == 0.0
