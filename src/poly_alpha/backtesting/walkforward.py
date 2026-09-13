@@ -90,3 +90,17 @@ def walk_forward(
             if stake > 0.0:
                 shares = stake / no_price
                 cash -= stake
+                trades += 1
+        if index == final_index:
+            cash += shares if yes_price < 0.5 else 0.0
+            shares = 0.0
+        equity_curve.append(cash + shares * no_price)
+    return WalkForwardResult(
+        market_id=history.market_id,
+        starting_bankroll=starting_bankroll,
+        ending_bankroll=equity_curve[-1],
+        equity_curve=tuple(equity_curve),
+        max_drawdown=max_drawdown(equity_curve),
+        trades=trades,
+        caveat=CAVEAT,
+    )
