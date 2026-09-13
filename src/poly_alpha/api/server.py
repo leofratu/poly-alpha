@@ -189,7 +189,11 @@ def snapshot_to_dict(s: MarketSnapshot) -> dict:
 
 
 def _markets_are_simulated(provider: DataProvider) -> bool:
-    """True when any served market is not real observed data."""
+    """True when any served market is not real observed data.
+
+    This labels the served market stream; the packaged provider also derives risk and
+    comparison figures from the labeled demo dataset, so the flag is conservative there.
+    """
     return any(not market.provenance.kind.is_real for market in provider.markets())
 
 
@@ -236,7 +240,11 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                 rows = build_overview(provider.markets())
                 self._send(
                     200,
-                    {"data": [to_jsonable(row) for row in rows], "dimensions": dimensions(rows)},
+                    {
+                        "data": [to_jsonable(row) for row in rows],
+                        "dimensions": dimensions(rows),
+                        "simulated": _markets_are_simulated(provider),
+                    },
                 )
             elif path == "/validation":
                 from poly_alpha.validation import validate_snapshot

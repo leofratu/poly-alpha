@@ -342,7 +342,9 @@ def overview(json_out: bool = JSON_OPTION) -> None:
     for row in overview_rows(rows):
         table.add_row(*row)
     console.print(table)
-    console.print("[yellow]Model estimates are simulated heuristics; not investment advice.[/yellow]")
+    console.print(
+        "[yellow]Model estimates are simulated heuristics; not investment advice.[/yellow]"
+    )
 
 
 @app.command()
