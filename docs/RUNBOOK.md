@@ -95,3 +95,5 @@ data, not the injected provider.
 The project uses pytest (`uv run pytest tests/`). On the authoring workstation test suites were
 not executed; behavior was verified with bounded import/smoke checks. Run the suite in a normal
 development environment before merging.
+
+Open work and deliberate gaps are listed in `docs/ROADMAP.md`.
