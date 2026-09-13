@@ -101,9 +101,7 @@ def test_ordering_is_deterministic_with_market_id_tie_break() -> None:
     tie_a = make_snapshot(market_id="a")
     tie_b = make_snapshot(market_id="b")
     low = make_snapshot(market_id="d", yes_price=0.80, no_price=0.20, orderbook=LOW_EDGE_BOOK)
-    notes = [
-        research_market(snapshot, now=NOW) for snapshot in (tie_b, low, tie_a, high)
-    ]
+    notes = [research_market(snapshot, now=NOW) for snapshot in (tie_b, low, tie_a, high)]
 
     ranked = rank_opportunities(notes)
     assert [opportunity.note.market_id for opportunity in ranked] == ["c", "a", "b", "d"]
@@ -134,9 +132,7 @@ def test_summarize_empty_returns_zeroes() -> None:
 def test_summarize_counts_and_edge_statistics() -> None:
     real = research_market(make_snapshot(market_id="real"), now=NOW)
     fixture = research_market(
-        make_snapshot(
-            market_id="fixture", yes_price=0.90, no_price=0.10, orderbook=HIGH_BOOK
-        ),
+        make_snapshot(market_id="fixture", yes_price=0.90, no_price=0.10, orderbook=HIGH_BOOK),
         now=NOW,
     )
     opportunities = rank_opportunities([real, fixture])

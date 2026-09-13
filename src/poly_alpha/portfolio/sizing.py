@@ -49,6 +49,8 @@ def kelly_fraction(
     raw = uncertainty.low if lower_bound_used else probability
     effective = _clamp_probability(raw)
     bound_note = "lower bound used" if lower_bound_used else "point estimate used"
+    if not 0.0 < cap <= 1.0:
+        raise ValueError(f"cap must be in (0, 1], got {cap!r}")
     if not 0.0 < price < 1.0:
         return SizingDecision(
             fraction=0.0,
@@ -67,7 +69,6 @@ def kelly_fraction(
         )
     full = edge / (1.0 - price)
     fraction = min(full, cap)
-    fraction = max(0.0, min(cap, fraction))
     capped = full > cap
     rationale = (
         f"effective probability {effective:.4f} ({bound_note}), price {price:.4f}, "

@@ -53,9 +53,7 @@ def test_below_cap_is_not_capped() -> None:
 def test_lower_bound_reduces_fraction() -> None:
     uncertainty = make_uncertainty(low=0.53, estimate=0.56)
     point = kelly_fraction(probability=0.56, price=0.52, cap=0.05)
-    conservative = kelly_fraction(
-        probability=0.56, price=0.52, uncertainty=uncertainty, cap=0.05
-    )
+    conservative = kelly_fraction(probability=0.56, price=0.52, uncertainty=uncertainty, cap=0.05)
     assert conservative.fraction < point.fraction
     assert conservative.probability_used == pytest.approx(0.53)
 

@@ -54,8 +54,7 @@ def rank_opportunities(
             requires_real_data=not note.provenance.kind.is_real,
         )
         for note in notes
-        if note.edge.low > min_edge_low
-        and (not require_real or note.provenance.kind.is_real)
+        if note.edge.low > min_edge_low and (not require_real or note.provenance.kind.is_real)
     ]
     opportunities.sort(key=lambda opportunity: (-opportunity.score, opportunity.note.market_id))
     return opportunities
