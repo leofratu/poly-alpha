@@ -192,3 +192,13 @@ def test_validation_route_includes_note_interval_checks() -> None:
     assert body["invalid_note_count"] == 0
     assert body["note_issues"]
     assert all(note["issues"] == [] for note in body["note_issues"])
+
+
+def test_health_capabilities_cover_every_route() -> None:
+    with _served() as port:
+        _, health = _get(port, "/health")
+    capabilities = set(health["capabilities"])
+    for route in JSON_ROUTES:
+        name = route.strip("/")
+        if name and name != "health":
+            assert name in capabilities, name
