@@ -10,7 +10,10 @@ because a binary share cannot cost less than 0 or more than 1.
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
+
+from poly_alpha.contracts import PriceLevel
 
 _BPS_PER_UNIT: float = 10000.0
 
@@ -41,6 +44,38 @@ class DepthFill:
         return self.unfilled <= 0.0
 
 
+def walk_book(levels: Sequence[PriceLevel], size: float, *, side: str = _BUY) -> DepthFill:
+    """Walk resting levels to estimate the fill for ``size`` shares.
+
+    A buy consumes the cheapest levels first; a sell consumes the highest bids first.
+    The average price is notional-weighted. A request larger than the available depth
+    is partially filled and reports the shortfall in ``unfilled``.
+    """
+    normalized = _normalize_side(side)
+    if not math.isfinite(size) or size <= 0.0:
+        raise ValueError(f"size must be finite and > 0, got {size!r}")
+    ordered = sorted(levels, key=lambda level: level.price, reverse=normalized == _SELL)
+    remaining = size
+    notional = 0.0
+    filled = 0.0
+    consumed = 0
+    for level in ordered:
+        if remaining <= 0.0:
+            break
+        take = min(remaining, max(0.0, level.size))
+        if take <= 0.0:
+            continue
+        notional += take * level.price
+        filled += take
+        remaining -= take
+        consumed += 1
+    return DepthFill(
+        shares=filled,
+        notional=notional,
+        average_price=notional / filled if filled > 0.0 else 0.0,
+        levels_consumed=consumed,
+        unfilled=max(0.0, remaining),
+    )
 
 
 @dataclass(frozen=True)
