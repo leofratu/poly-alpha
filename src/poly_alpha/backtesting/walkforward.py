@@ -66,6 +66,8 @@ def walk_forward(
     if not 0.0 < cap <= 1.0:
         raise ValueError(f"cap must be in (0, 1], got {cap!r}")
     snapshots = history.snapshots
+    if not snapshots:
+        raise ValueError("history must contain at least one snapshot")
     final_index = len(snapshots) - 1
     cash = starting_bankroll
     shares = 0.0
@@ -74,6 +76,12 @@ def walk_forward(
     for index, snapshot in enumerate(snapshots):
         yes_price = snapshot.yes_price
         no_price = snapshot.no_price
+        if index == final_index:
+            if yes_price is not None:
+                cash += shares if yes_price < 0.5 else 0.0
+                shares = 0.0
+                equity_curve.append(cash)
+            continue
         if yes_price is None or no_price is None:
             continue
         fair = strategy(snapshot)
@@ -91,9 +99,6 @@ def walk_forward(
                 shares = stake / no_price
                 cash -= stake
                 trades += 1
-        if index == final_index:
-            cash += shares if yes_price < 0.5 else 0.0
-            shares = 0.0
         equity_curve.append(cash + shares * no_price)
     return WalkForwardResult(
         market_id=history.market_id,
