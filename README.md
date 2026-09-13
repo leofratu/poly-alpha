@@ -381,6 +381,7 @@ uv run poly-alpha research journal            # append a provenance summary of a
 uv run poly-alpha research history            # list recorded research journal entries
 uv run poly-alpha research risk               # demo concentration + historical risk
 uv run poly-alpha research stress             # deterministic price-shock scenarios
+uv run poly-alpha research allocate           # budgeted allocation over screened markets
 uv run poly-alpha research serve --port 8000  # read-only JSON API + dashboard at /
 ```
 

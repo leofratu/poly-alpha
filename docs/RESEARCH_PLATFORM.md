@@ -32,6 +32,7 @@ resolved markets, summarizes portfolio risk, and serves the results over a small
 | `research/report.py` | `render_markdown` / `write_markdown`: composes notes, opportunities, comparison metrics, and risk into one provenance-labeled Markdown dossier. |
 | `research/journal.py` | `JournalEntry`, `build_entry`, `append_entry`, `read_entries`: append-only JSONL audit trail of research runs (counts by kind, mean edge, simulated flag). |
 | `portfolio/sizing.py` | `SizingDecision`, `kelly_fraction`: conservative fractional-Kelly sizing that uses the uncertainty lower bound and a hard cap. |
+| `portfolio/allocate.py` | `Allocation`, `AllocationPlan`, `allocate`: turns ranked opportunities into a budgeted portfolio under position and deploy caps. |
 | `portfolio/stress.py` | `StressScenario`, `StressResult`, `run_scenarios`: additive price-shock scenarios over a labeled portfolio; deterministic and caveated by the CLI. |
 | `backtesting/comparison.py` | `ResolvedMarket`, `StrategyMetrics`, `compare_strategies`: replays resolved markets through supplied strategies and ranks the No-side ledger by total PnL. |
 | `backtesting/strategies.py` | Named heuristic strategies (`market_implied`, `shin_debiased`, `constant_half`, `uncertainty_gated`) plus `describe`; no strategy claims validated performance. |
@@ -39,10 +40,10 @@ resolved markets, summarizes portfolio risk, and serves the results over a small
 | `backtesting/walkforward.py` | `WalkForwardResult`, `walk_forward`: holds one No-side position across a deterministic snapshot history and settles at the final snapshot; caveated. |
 | `backtesting/costs.py` | `CostModel`: fee/slippage-adjusted effective price and net edge for a buy or sell side. |
 | `portfolio/risk.py` | `Position`, `RiskReport`, `analyze_portfolio`, `portfolio_value`: concentration (HHI, max position fraction) and, when a return series is supplied, historical VaR and drawdown. |
-| `api/server.py` | Stdlib-only read-only JSON API: `DataProvider`, `StaticProvider`, `default_provider`, `create_server`; endpoints `/health`, `/markets`, `/research`, `/risk`, `/compare`, `/overview`, `/validation`, `/curves`, `/calibration`, `/stress`, plus a read-only HTML dashboard at `/`. |
+| `api/server.py` | Stdlib-only read-only JSON API: `DataProvider`, `StaticProvider`, `default_provider`, `create_server`; endpoints `/health`, `/markets`, `/research`, `/risk`, `/compare`, `/overview`, `/validation`, `/curves`, `/calibration`, `/stress`, `/allocate`, plus a read-only HTML dashboard at `/`. |
 | `strategy.py` | Shared strategy primitives used by the engine (`classify_category`, `shin_debiasing`). |
 | `cli.py` | Typer entry point (`scan`, `status`, `init`, `step`, `live`, `backtest`); the research modules are imported lazily by the commands. |
-| `cli_platform.py` | Typer group mounted as `poly-alpha research`: `markets`, `research`, `screen`, `report`, `size`, `strategy`, `compare`, `simulate`, `curves`, `calibration`, `costs`, `stress`, `overview`, `validate`, `journal`, `history`, `risk`, `serve`. |
+| `cli_platform.py` | Typer group mounted as `poly-alpha research`: `markets`, `research`, `screen`, `report`, `size`, `strategy`, `compare`, `simulate`, `curves`, `calibration`, `costs`, `stress`, `allocate`, `overview`, `validate`, `journal`, `history`, `risk`, `serve`. |
 
 ## End-to-end flow
 

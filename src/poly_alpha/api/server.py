@@ -27,6 +27,7 @@ CAPABILITIES: tuple[str, ...] = (
     "curves",
     "calibration",
     "stress",
+    "allocate",
 )
 
 INDEX_HTML = """<!doctype html>
@@ -314,6 +315,24 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                 self._send(
                     200,
                     {"data": [to_jsonable(result) for result in results], "simulated": True},
+                )
+            elif path == "/allocate":
+                from poly_alpha.adapters.fixtures import fixture_adapter
+                from poly_alpha.portfolio.allocate import allocate
+                from poly_alpha.research.analyst import research_markets
+                from poly_alpha.research.screen import rank_opportunities
+
+                markets = fixture_adapter().list_markets()
+                opportunities = rank_opportunities(
+                    research_markets(markets), min_edge_low=float("-inf")
+                )
+                prices = {
+                    market.market_id: market.yes_price if market.yes_price is not None else 0.5
+                    for market in markets
+                }
+                self._send(
+                    200,
+                    {"data": to_jsonable(allocate(opportunities, prices)), "simulated": True},
                 )
             else:
                 self._send(404, {"error": "not found", "path": path})

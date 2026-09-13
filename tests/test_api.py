@@ -187,3 +187,11 @@ def test_stress_route() -> None:
     assert body["simulated"] is True
     assert body["data"]
     assert any(row["change"] < 0 for row in body["data"])
+
+
+def test_allocate_route() -> None:
+    with _served(_provider()) as port:
+        _, body = _get(port, "/allocate")
+    assert body["simulated"] is True
+    assert "allocations" in body["data"]
+    assert "caveat" in body["data"]
