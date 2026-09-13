@@ -44,3 +44,33 @@ def validate_snapshot(snapshot: MarketSnapshot) -> tuple[str, ...]:
         if not math.isfinite(level.size) or level.size < 0.0:
             issues.append(f"orderbook[{index}].size must be finite and >= 0, got {level.size!r}")
     return tuple(issues)
+
+
+def is_valid(snapshot: MarketSnapshot) -> bool:
+    """Return True when a snapshot has no validation issues."""
+    return not validate_snapshot(snapshot)
+
+
+def validate_uncertainty(uncertainty: Uncertainty) -> tuple[str, ...]:
+    """Return readable issues found in an uncertainty band, or an empty tuple."""
+    issues: list[str] = []
+    bounds: dict[str, float] = {
+        "estimate": uncertainty.estimate,
+        "low": uncertainty.low,
+        "high": uncertainty.high,
+    }
+    for name, value in bounds.items():
+        if not math.isfinite(value):
+            issues.append(f"{name} must be finite, got {value!r}")
+    for name in ("low", "high"):
+        value = bounds[name]
+        if math.isfinite(value) and not 0.0 <= value <= 1.0:
+            issues.append(f"{name} must be within [0, 1], got {value!r}")
+    if all(math.isfinite(value) for value in bounds.values()) and not (
+        uncertainty.low <= uncertainty.estimate <= uncertainty.high
+    ):
+        issues.append(
+            f"estimate {uncertainty.estimate!r} must lie within "
+            f"[{uncertainty.low!r}, {uncertainty.high!r}]"
+        )
+    return tuple(issues)
