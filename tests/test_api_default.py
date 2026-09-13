@@ -8,6 +8,9 @@ import urllib.error
 import urllib.request
 from collections.abc import Iterator
 from contextlib import contextmanager
+from pathlib import Path
+
+import pytest
 
 from poly_alpha.api.server import create_server
 
@@ -123,11 +126,22 @@ def test_health_lists_capabilities() -> None:
     assert isinstance(body["version"], str)
 
 
-def test_experiments_route_reports_recorded_count() -> None:
-    """The experiments route returns the recorded list and its count."""
+def test_experiments_route_reports_recorded_count(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The experiments route returns the list recorded at the configured path."""
+    from poly_alpha.adapters.registry import default_markets
+    from poly_alpha.research import experiments as experiments_module
+    from poly_alpha.research.experiments import append_experiment, build_experiment
+    from poly_alpha.research.pipeline import run_pipeline
+
+    path = tmp_path / "experiments.jsonl"
+    record = build_experiment(run_pipeline(), default_markets(), {"bankroll": 1000.0})
+    append_experiment(path, record)
+    monkeypatch.setattr(experiments_module, "DEFAULT_EXPERIMENTS_PATH", path)
     with _served() as port:
         _, body = _get(port, "/experiments")
     assert isinstance(body, dict)
     assert body["simulated"] is True
-    assert isinstance(body["count"], int)
-    assert isinstance(body["data"], list)
+    assert body["count"] == 1
+    assert body["data"][0]["run_id"] == record.run_id
