@@ -101,3 +101,18 @@ def build_experiment(
         total_stake=bundle.total_stake,
         cash=bundle.cash,
     )
+
+
+def experiment_to_dict(experiment: Experiment) -> dict[str, object]:
+    """Convert an experiment to a JSON-serializable dict."""
+    return {
+        "run_id": experiment.run_id,
+        "created_at": experiment.created_at,
+        "params": dict(experiment.params),
+        "market_count": experiment.market_count,
+        "note_count": experiment.note_count,
+        "opportunity_count": experiment.opportunity_count,
+        "allocation_ids": list(experiment.allocation_ids),
+        "total_stake": experiment.total_stake,
+        "cash": experiment.cash,
+    }
