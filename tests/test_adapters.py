@@ -44,3 +44,49 @@ def _valid_market() -> dict[str, Any]:
         "volume": 5678.0,
         "endDate": "2026-06-15T12:00:00Z",
     }
+
+
+def test_fixture_adapter_snapshots() -> None:
+    markets = FixtureMarketAdapter().list_markets()
+    assert len(markets) >= 10
+    assert all(market.provenance.kind is DataSourceKind.FIXTURE for market in markets)
+    assert all(market.is_tradeable for market in markets)
+    assert len({market.market_id for market in markets}) == len(markets)
+    for market in markets:
+        assert market.yes_price is not None and 0.0 < market.yes_price < 1.0
+        assert market.no_price is not None and 0.0 < market.no_price < 1.0
+        assert market.orderbook
+        assert all(0.0 < level.price < 1.0 for level in market.orderbook)
+
+
+def test_fixture_factory_is_fresh() -> None:
+    first = fixture_adapter()
+    second = fixture_adapter()
+    assert first is not second
+    assert first.list_markets() == second.list_markets()
+
+
+def test_fixture_get_snapshot_round_trip() -> None:
+    adapter = FixtureMarketAdapter()
+    market = adapter.list_markets()[0]
+    assert adapter.get_snapshot(market.market_id) == market
+    assert adapter.get_snapshot("does-not-exist") is None
+
+
+def test_polymarket_adapter_maps_market() -> None:
+    client = _StubPolymarketClient([{"markets": [_valid_market()]}])
+    markets = PolymarketAdapter(client=client).list_markets()
+    assert len(markets) == 1
+    snapshot = markets[0]
+    assert snapshot.market_id == "poly-1"
+    assert snapshot.yes_price == 0.70
+    assert snapshot.no_price == 0.30
+    assert snapshot.provenance.kind is DataSourceKind.REAL
+    assert snapshot.close_time is not None
+
+
+def test_polymarket_adapter_accepts_list_outcomes() -> None:
+    market = _valid_market()
+    market["outcomes"] = ["Yes", "No"]
+    market["outcomePrices"] = [0.2, 0.8]
+    client = _StubPolymarketClient([{"markets": [market]}])
