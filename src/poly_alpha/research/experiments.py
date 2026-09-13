@@ -165,3 +165,12 @@ def experiment_from_dict(data: dict[str, object]) -> Experiment:
         total_stake=_require_number(data, "total_stake"),
         cash=_require_number(data, "cash"),
     )
+
+
+def append_experiment(path: str | Path, experiment: Experiment) -> None:
+    """Append ``experiment`` as one UTF-8 JSON line, creating parent directories."""
+    experiments_path = Path(path)
+    experiments_path.parent.mkdir(parents=True, exist_ok=True)
+    line = json.dumps(experiment_to_dict(experiment), sort_keys=True)
+    with experiments_path.open("a", encoding="utf-8") as handle:
+        handle.write(line + "\n")
