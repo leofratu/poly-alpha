@@ -44,3 +44,49 @@ class RiskReport:
 
 def _drawdown_from_returns(returns: np.ndarray) -> float:
     equity = np.cumprod(1.0 + returns)
+    if equity.size == 0:
+        return 0.0
+    peaks = np.maximum.accumulate(equity)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        drawdowns = np.where(peaks > 0.0, (peaks - equity) / peaks, 0.0)
+    return float(min(1.0, max(0.0, float(np.max(drawdowns)))))
+
+
+def analyze_portfolio(
+    positions: Sequence[Position],
+    returns: Sequence[float] | None = None,
+) -> RiskReport:
+    """Summarize concentration and, when supplied, historical return risk.
+
+    HHI is the sum of squared stake fractions and ``max_position_fraction`` is the
+    largest stake divided by total stake. ``historical_var_95`` is the 5th
+    percentile of the supplied return series, an empirical rather than parametric
+    estimate, and ``max_drawdown`` is read off the equity curve built from that
+    same series. When ``returns`` is None or empty, VaR is None and a note records
+    that a return series is required.
+    """
+    stakes = [position.stake for position in positions]
+    total_stake = float(sum(stakes))
+    exposure_by_class: dict[str, float] = {}
+    for position in positions:
+        exposure_by_class[position.asset_class] = (
+            exposure_by_class.get(position.asset_class, 0.0) + position.stake
+        )
+    if total_stake > 0.0:
+        hhi = float(sum((stake / total_stake) ** 2 for stake in stakes))
+        max_position_fraction = max(stakes) / total_stake
+    else:
+        hhi = 0.0
+        max_position_fraction = 0.0
+    notes: list[str] = []
+    if returns is None or len(returns) == 0:
+        historical_var_95 = None
+        max_drawdown = 0.0
+        notes.append("historical VaR requires a return series; none was supplied")
+    else:
+        series = np.asarray(returns, dtype=float)
+        historical_var_95 = float(np.percentile(series, VAR_QUANTILE))
+        max_drawdown = _drawdown_from_returns(series)
+        notes.append(
+            "historical VaR is the empirical 5th percentile of supplied returns, "
+            "not a parametric estimate"
