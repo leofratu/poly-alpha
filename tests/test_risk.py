@@ -44,3 +44,49 @@ def test_equal_split_lowers_hhi() -> None:
     report = analyze_portfolio(
         [make_position("m1", "sports", 100.0), make_position("m2", "politics", 100.0)]
     )
+    assert report.hhi == pytest.approx(0.5)
+    assert report.max_position_fraction == pytest.approx(0.5)
+    assert report.hhi < 1.0
+
+
+def test_exposure_sums_to_total() -> None:
+    positions = [
+        make_position("m1", "sports", 100.0),
+        make_position("m2", "sports", 50.0),
+        make_position("m3", "politics", 25.0),
+    ]
+    report = analyze_portfolio(positions)
+    assert sum(report.exposure_by_class.values()) == pytest.approx(report.total_stake)
+    assert report.exposure_by_class["sports"] == pytest.approx(150.0)
+    assert report.exposure_by_class["politics"] == pytest.approx(25.0)
+
+
+def test_missing_returns_yields_none_var_with_note() -> None:
+    report = analyze_portfolio([make_position("m1", "sports", 100.0)])
+    assert report.historical_var_95 is None
+    assert any("VaR" in note for note in report.notes)
+
+
+def test_supplied_returns_yield_finite_var_and_drawdown() -> None:
+    returns = [-0.10, 0.05, 0.02, -0.03, 0.01, 0.04]
+    report = analyze_portfolio([make_position("m1", "sports", 100.0)], returns)
+    assert report.historical_var_95 is not None
+    assert math.isfinite(report.historical_var_95)
+    assert report.max_drawdown >= 0.0
+    assert report.max_drawdown <= 1.0
+    assert any("parametric" in note for note in report.notes)
+
+
+def test_drawdown_from_returns_is_deterministic() -> None:
+    report = analyze_portfolio([make_position("m1", "sports", 100.0)], [0.10, -0.50, 0.10])
+    assert report.max_drawdown == pytest.approx(0.5)
+
+
+def test_empty_returns_treated_as_missing() -> None:
+    report = analyze_portfolio([make_position("m1", "sports", 100.0)], [])
+    assert report.historical_var_95 is None
+    assert any("VaR" in note for note in report.notes)
+
+
+def test_portfolio_value_marks_to_price() -> None:
+    positions = [make_position("m1", "sports", 100.0, yes_probability=0.4)]
