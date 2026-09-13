@@ -90,3 +90,49 @@ def test_provenance_summary_reports_real_data() -> None:
 
 
 def test_every_note_question_appears() -> None:
+    notes = make_notes()
+    output = render_markdown(notes, generated_at=NOW)
+    for note in notes:
+        assert note.question in output
+        assert note.market_id in output
+
+
+def test_uncertainty_interval_and_edge_numbers_appear() -> None:
+    notes = make_notes()
+    output = render_markdown(notes, generated_at=NOW)
+    for note in notes:
+        assert f"{note.model_yes.estimate:.1%}" in output
+        assert f"{note.model_yes.low:.1%}" in output
+        assert f"{note.model_yes.high:.1%}" in output
+        assert f"{note.edge.estimate:+.1%}" in output
+
+
+def test_claims_show_direction_support_and_sources() -> None:
+    note = make_notes()[0]
+    output = render_markdown([note], generated_at=NOW)
+    for claim in note.claims:
+        assert claim.text in output
+        assert claim.direction in output
+        assert f"support: {claim.support:.0%}" in output
+    assert "demo-fixture (fixture)" in output
+
+
+def test_caveats_are_rendered() -> None:
+    note = make_notes()[0]
+    output = render_markdown([note], generated_at=NOW)
+    for caveat in note.caveats:
+        assert caveat in output
+
+
+def test_optional_sections_render_without_crashing() -> None:
+    positions = [
+        Position("m1", "sports", 150.0, 0.55, Provenance("demo", DataSourceKind.FIXTURE)),
+        Position("m2", "politics", 50.0, 0.35, Provenance("demo", DataSourceKind.FIXTURE)),
+    ]
+    risk = analyze_portfolio(positions, [-0.10, 0.05, 0.02, -0.03, 0.04])
+    markets = [
+        ResolvedMarket(make_snapshot(market_id="r1", question="Resolved one?"), resolved_yes=False),
+        ResolvedMarket(make_snapshot(market_id="r2", question="Resolved two?"), resolved_yes=True),
+    ]
+    metrics = compare_strategies(markets, {"half": half})
+    notes = make_notes()
