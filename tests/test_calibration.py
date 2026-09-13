@@ -44,3 +44,49 @@ def _note(
 def test_length_mismatch_raises() -> None:
     with pytest.raises(ValueError):
         interval_coverage([_note()], [])
+
+
+def test_all_covered_yields_full_coverage() -> None:
+    notes = [_note(market_id="a", low=0.0, high=1.0), _note(market_id="b", low=0.0, high=1.0)]
+    report = interval_coverage(notes, [True, False])
+    assert report.n == 2
+    assert report.coverage == 1.0
+
+
+def test_all_missed_yields_zero_coverage() -> None:
+    notes = [_note(market_id="a", low=0.4, high=0.6), _note(market_id="b", low=0.4, high=0.6)]
+    report = interval_coverage(notes, [True, False])
+    assert report.n == 2
+    assert report.coverage == 0.0
+
+
+def test_mean_width_matches_manual_computation() -> None:
+    notes = [
+        _note(market_id="a", low=0.4, high=0.6),
+        _note(market_id="b", low=0.2, high=0.6),
+        _note(market_id="c", low=0.1, high=0.2),
+    ]
+    report = interval_coverage(notes, [True, False, True])
+    expected = (0.2 + 0.4 + 0.1) / 3
+    assert report.mean_width == pytest.approx(expected)
+
+
+def test_empty_input_is_zeroed() -> None:
+    report = interval_coverage([], [])
+    assert report.n == 0
+    assert report.coverage == 0.0
+    assert report.mean_width == 0.0
+    assert report.simulated is False
+
+
+def test_simulated_flag_true_for_fixture_notes() -> None:
+    report = interval_coverage([_note(kind=DataSourceKind.FIXTURE, simulated=False)], [True])
+    assert report.simulated is True
+
+
+def test_simulated_flag_true_when_intervals_are_simulated() -> None:
+    report = interval_coverage([_note(kind=DataSourceKind.REAL, simulated=True)], [True])
+    assert report.simulated is True
+
+
+def test_calibration_by_kind_groups_and_sums_to_n() -> None:
