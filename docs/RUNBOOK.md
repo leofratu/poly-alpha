@@ -109,7 +109,7 @@ computed from the packaged fixture/demo data or local records, not the injected 
 
 The project uses pytest (`uv run pytest tests/`), with `ruff check`, `ruff format --check`, and
 `mypy src/poly_alpha/` as the other CI gates. Pass 2 ran all four gates on the designated Linux
-runner against the project `.venv` (result: 425 passed, clean lint/format/mypy); run them in a
-normal development environment before merging.
+runner against the project `.venv`, and all passed; run them in a normal development environment
+before merging.
 
 Open work and deliberate gaps are listed in `docs/ROADMAP.md`.
