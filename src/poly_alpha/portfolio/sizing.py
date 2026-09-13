@@ -90,3 +90,22 @@ def portfolio_fractions(
     cap: float = 0.05,
 ) -> list[SizingDecision]:
     """Size each market independently, with no cross-position normalization.
+
+    Fractions are produced pairwise from ``probabilities`` and ``prices``. They are
+    not scaled to sum to one or to any budget, because the total is whatever the
+    individual conservative edges support; callers apply portfolio limits on top.
+    """
+    if len(probabilities) != len(prices):
+        raise ValueError(
+            "probabilities and prices must have equal length, got "
+            f"{len(probabilities)} and {len(prices)}"
+        )
+    return [
+        kelly_fraction(probability=probability, price=price, cap=cap)
+        for probability, price in zip(probabilities, prices, strict=True)
+    ]
+
+
+def total_fraction(decisions: Sequence[SizingDecision]) -> float:
+    """Return the sum of the fractions in ``decisions``."""
+    return sum(decision.fraction for decision in decisions)
