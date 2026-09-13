@@ -156,3 +156,14 @@ def test_overview_and_validation_routes() -> None:
     assert overview_body["dimensions"]["source_kind"] == {"fixture": 1}
     assert validation_body["invalid_count"] == 0
     assert validation_body["data"][0]["market_id"] == "m1"
+
+
+def test_root_serves_html_dashboard() -> None:
+    with _served(_provider()) as port:
+        url = f"http://127.0.0.1:{port}/"
+        with urllib.request.urlopen(url, timeout=5) as response:
+            status = response.status
+            body = response.read().decode("utf-8")
+    assert status == 200
+    assert "Poly-Alpha Research" in body
+    assert "not investment advice" in body.lower()
