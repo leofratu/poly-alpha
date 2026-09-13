@@ -597,15 +597,16 @@ def candidate_from_market(
     if len(outcomes) != 2:
         return None, "not_binary"
 
+    lowered = [str(outcome).strip().lower() for outcome in outcomes]
+    if "yes" in lowered and "no" in lowered:
+        yes_index, no_index = lowered.index("yes"), lowered.index("no")
+    else:
+        yes_index, no_index = 0, 1
     try:
-        yes_price = float(tokens[0])
+        yes_price = float(tokens[yes_index])
+        no_price = float(tokens[no_index])
     except (ValueError, IndexError):
         return None, "parse_error"
-
-    try:
-        no_price = float(tokens[1])
-    except (ValueError, IndexError):
-        no_price = 1.0 - yes_price
     if not 0.0 < no_price < 1.0:
         no_price = 1.0 - yes_price
     if yes_price < cfg.min_yes_price or yes_price > cfg.max_yes_price:

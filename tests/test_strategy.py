@@ -157,6 +157,16 @@ class TestCandidateFromMarket:
         assert candidate is None
         assert reason == "low_edge"
 
+    def test_respects_outcome_order(self) -> None:
+        market = make_market("Spread: Team A (-1.5)")
+        market["outcomePrices"] = '["0.90", "0.10"]'
+        market["outcomes"] = '["No", "Yes"]'
+        candidate, reason = candidate_from_market(market, NOW, CFG)
+        assert reason is None
+        assert candidate is not None
+        assert candidate["yes_price"] == pytest.approx(0.10)
+        assert candidate["no_price"] == pytest.approx(0.90)
+
 
 class TestDescribeMarket:
     def test_emotional_headline(self) -> None:
