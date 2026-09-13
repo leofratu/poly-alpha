@@ -90,6 +90,17 @@ Adding an adapter:
 Other extension points: add a new `strategy` callable for `compare_strategies`, or a new
 `DataProvider` to serve a different composition of the same contracts.
 
+## Reproducible experiments
+
+`research/experiments.py` stores one JSON Line per pipeline run with a deterministic
+`run_id`: a sha256 fingerprint of the exact market inputs (id, prices, provenance kind,
+liquidity, volume) and parameters, plus the resulting counts, allocations, stake, and
+cash. Because the fixtures are deterministic, re-running the same parameters yields the
+same `run_id`, so `reproduce(experiment)` detects any drift in inputs or parameters.
+`poly-alpha research experiment` records a run and `research experiments` lists them.
+Journal entries remain the lightweight aggregate audit trail; experiment records are
+the reproducible artifacts.
+
 ## Optional AI research provider
 
 The default engine stays the offline heuristic. `research/provider.py` adds an optional,

@@ -381,6 +381,8 @@ uv run poly-alpha research overview           # cross-market ranking by research
 uv run poly-alpha research validate           # contract invariant check on all markets
 uv run poly-alpha research journal            # append a provenance summary of a run
 uv run poly-alpha research history            # list recorded research journal entries
+uv run poly-alpha research experiment         # record a reproducible run (fingerprint + outputs)
+uv run poly-alpha research experiments        # list recorded reproducible experiments
 uv run poly-alpha research risk               # demo concentration + historical risk
 uv run poly-alpha research stress             # deterministic price-shock scenarios
 uv run poly-alpha research allocate           # budgeted allocation over screened markets
