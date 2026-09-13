@@ -364,6 +364,7 @@ calls. Every value carries `Provenance`; outputs are tagged `FIXTURE`, `SIMULATE
 uv run poly-alpha research markets --all      # labeled fixture + synthetic markets
 uv run poly-alpha research research --json    # research notes with uncertainty + sources
 uv run poly-alpha research screen             # rank by the conservative edge lower bound
+uv run poly-alpha research strategy           # list the named heuristic strategy ideas
 uv run poly-alpha research size               # conservative fractional-Kelly sizing
 uv run poly-alpha research report             # provenance-labeled Markdown dossier
 uv run poly-alpha research compare            # in-sample strategy comparison (demo data)
