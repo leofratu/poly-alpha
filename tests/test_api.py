@@ -179,3 +179,11 @@ def test_curves_and_calibration_routes() -> None:
     assert curves["simulated"] is True
     assert calibration["by_kind"]["fixture"]["n"] >= 1
     assert "coverage" in calibration["data"]
+
+
+def test_stress_route() -> None:
+    with _served(_provider()) as port:
+        _, body = _get(port, "/stress")
+    assert body["simulated"] is True
+    assert body["data"]
+    assert any(row["change"] < 0 for row in body["data"])

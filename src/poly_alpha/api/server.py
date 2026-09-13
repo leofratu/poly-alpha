@@ -26,6 +26,7 @@ CAPABILITIES: tuple[str, ...] = (
     "validation",
     "curves",
     "calibration",
+    "stress",
 )
 
 INDEX_HTML = """<!doctype html>
@@ -301,6 +302,22 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                         "by_kind": {kind: to_jsonable(report) for kind, report in groups.items()},
                         "simulated": True,
                     },
+                )
+            elif path == "/stress":
+                from poly_alpha.adapters.fixtures import fixture_adapter
+                from poly_alpha.backtesting.demo_data import demo_positions
+                from poly_alpha.portfolio.stress import run_scenarios
+
+                prices = {
+                    market.market_id: (
+                        market.yes_price if market.yes_price is not None else 0.5
+                    )
+                    for market in fixture_adapter().list_markets()
+                }
+                results = run_scenarios(demo_positions(), prices)
+                self._send(
+                    200,
+                    {"data": [to_jsonable(result) for result in results], "simulated": True},
                 )
             else:
                 self._send(404, {"error": "not found", "path": path})
