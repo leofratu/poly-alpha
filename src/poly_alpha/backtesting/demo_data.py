@@ -47,10 +47,10 @@ def demo_resolved_markets() -> list[ResolvedMarket]:
 
     The outcome is decided by SHA-256 hashing the ``market_id`` and comparing the
     first four digest bytes, read as a big-endian fraction in ``[0, 1)``, against
-    the snapshot's ``yes_price``. This is fully deterministic and deliberately not
-    the naive ``yes_price > 0.5`` rule, so a market can resolve against its quoted
-    favorite. Each ``ResolvedMarket`` keeps the fixture snapshot, whose provenance
-    is ``DataSourceKind.FIXTURE``.
+    the snapshot's de-vigged ``implied_yes()``. This is fully deterministic and
+    deliberately not the naive ``yes_price > 0.5`` rule, so a market can resolve
+    against its quoted favorite. Each ``ResolvedMarket`` keeps the fixture snapshot,
+    whose provenance is ``DataSourceKind.FIXTURE``.
     """
     return [
         ResolvedMarket(snapshot=snapshot, resolved_yes=_resolve(snapshot))
