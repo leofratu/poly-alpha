@@ -145,6 +145,11 @@ def snapshot_to_dict(s: MarketSnapshot) -> dict:
     return cast(dict, _to_jsonable(s))
 
 
+def _markets_are_simulated(provider: DataProvider) -> bool:
+    """True when any served market is not real observed data."""
+    return any(not market.provenance.kind.is_real for market in provider.markets())
+
+
 def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
@@ -157,17 +162,29 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                 self._send(200, {"data": data, "count": len(data)})
             elif path == "/research":
                 research = provider.research()
-                simulated = any(
-                    not market.provenance.kind.is_real for market in provider.markets()
-                ) or any(bool(note.get("model_yes", {}).get("simulated")) for note in research)
+                simulated = _markets_are_simulated(provider) or any(
+                    bool(note.get("model_yes", {}).get("simulated")) for note in research
+                )
                 self._send(
                     200,
                     {"data": research, "count": len(research), "simulated": simulated},
                 )
             elif path == "/risk":
-                self._send(200, {"data": provider.risk()})
+                self._send(
+                    200,
+                    {"data": provider.risk(), "simulated": _markets_are_simulated(provider)},
+                )
             elif path == "/compare":
-                self._send(200, {"data": provider.compare()})
+                from poly_alpha.backtesting.comparison import CAVEAT
+
+                self._send(
+                    200,
+                    {
+                        "data": provider.compare(),
+                        "simulated": _markets_are_simulated(provider),
+                        "caveat": CAVEAT,
+                    },
+                )
             else:
                 self._send(404, {"error": "not found", "path": path})
 
