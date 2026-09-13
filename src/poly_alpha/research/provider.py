@@ -217,3 +217,46 @@ class OpenAICompatibleProvider:
             support=0.5,
             sources=sources,
         )
+
+        if snapshot.provenance.kind is DataSourceKind.REAL:
+            data_caveat = f"Market data is real observed data from {snapshot.provenance.source}."
+        else:
+            data_caveat = (
+                f"Market data is {snapshot.provenance.kind.value} "
+                f"({snapshot.provenance.source}) and is not a real observation."
+            )
+        caveats = (
+            data_caveat,
+            "AI-generated model estimate (simulated): not a calibrated forecast.",
+            "Model-provided citations are unverified.",
+            "Research and paper-trading output only, not investment advice.",
+        )
+
+        market_part = f"{implied:.1%}" if implied is not None else "n/a"
+        summary = (
+            f"{snapshot.question} | {self._model} estimate {estimate:.1%} YES vs market "
+            f"{market_part}, edge {estimate - center:+.1%}"
+        )
+
+        return ResearchNote(
+            market_id=snapshot.market_id,
+            question=snapshot.question,
+            summary=summary,
+            claims=(claim,),
+            market_implied_yes=implied,
+            model_yes=model_yes,
+            edge=edge,
+            provenance=snapshot.provenance,
+            generated_at=now if now is not None else datetime.now(UTC),
+            caveats=caveats,
+        )
+
+
+def select_provider(*, session: Any = None) -> ResearchProvider:
+    """Return the AI provider when an API key is configured, else the heuristic."""
+    api_key = os.environ.get(API_KEY_ENV, "").strip()
+    if not api_key:
+        return HeuristicProvider()
+    model = os.environ.get(AI_MODEL_ENV, "").strip() or DEFAULT_AI_MODEL
+    base_url = os.environ.get(AI_BASE_URL_ENV, "").strip() or DEFAULT_AI_BASE_URL
+    return OpenAICompatibleProvider(api_key, model=model, base_url=base_url, session=session)
