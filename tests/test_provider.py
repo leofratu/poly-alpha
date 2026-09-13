@@ -58,3 +58,45 @@ class _FakeSession:
         if isinstance(item, Exception):
             raise item
         return item
+
+
+def _snapshot() -> MarketSnapshot:
+    """A tradeable, real-provenance snapshot with a two-sided price."""
+    return MarketSnapshot(
+        market_id="prov-1",
+        question="Will it rain tomorrow?",
+        asset=AssetRef(symbol="RAIN", asset_class="prediction"),
+        yes_price=0.60,
+        no_price=0.40,
+        liquidity=500.0,
+        volume=1000.0,
+        provenance=Provenance(
+            source="test fixture",
+            kind=DataSourceKind.REAL,
+            retrieved_at=_NOW,
+        ),
+    )
+
+
+def _content_response(content: str) -> dict[str, Any]:
+    return {"choices": [{"message": {"content": content, "refusal": None}}]}
+
+
+def _model_response(
+    *,
+    estimate: float,
+    low: float,
+    high: float,
+    rationale: str = "Model rationale.",
+    citations: Sequence[str] = (),
+) -> dict[str, Any]:
+    content = json.dumps(
+        {
+            "estimate": estimate,
+            "low": low,
+            "high": high,
+            "rationale": rationale,
+            "citations": list(citations),
+        }
+    )
+    return _content_response(content)
