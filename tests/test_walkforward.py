@@ -59,7 +59,7 @@ def test_none_strategy_yields_flat_result() -> None:
     assert result.trades == 0
     assert result.starting_bankroll == pytest.approx(500.0)
     assert result.ending_bankroll == pytest.approx(500.0)
-    assert result.equity_curve == (500.0,)
+    assert result.equity_curve == (500.0, 500.0)
     assert result.max_drawdown == 0.0
     assert result.caveat == CAVEAT
 
@@ -117,3 +117,26 @@ def test_at_most_one_trade_across_many_steps() -> None:
     history = make_history("wf9", [0.30, 0.30, 0.30, 0.30, 0.30])
     result = walk_forward(history, strategy_returning(0.20))
     assert result.trades == 1
+
+
+def test_position_settles_even_when_later_steps_have_no_signal() -> None:
+    calls = {"n": 0}
+
+    def strategy(snapshot: MarketSnapshot) -> float | None:
+        calls["n"] += 1
+        return 0.20 if calls["n"] == 1 else None
+
+    history = make_history("wf10", [0.30, 0.30, 0.30])
+    result = walk_forward(history, strategy)
+    assert result.trades == 1
+    assert result.ending_bankroll > result.starting_bankroll
+
+
+def test_empty_history_raises() -> None:
+    empty = MarketHistory(
+        asset=make_snapshot("wf11", 0.3).asset,
+        snapshots=(),
+        provenance=PROVENANCE,
+    )
+    with pytest.raises(ValueError):
+        walk_forward(empty, strategy_returning(0.20))
