@@ -45,7 +45,7 @@ th:first-child,td:first-child{text-align:left}
 <p class="note">Read-only research and paper-trading view. Fixture, simulated, and synthetic
 data are labeled and are not real. Not investment advice.</p>
 <h2>Capabilities</h2><div id="health"></div>
-<h2>Cross-market overview</h2><div id="overview"></div>
+<h2>Cross-market overview (top 10 by |edge|)</h2><div id="overview"></div>
 <h2>Portfolio risk (demo)</h2><div id="risk"></div>
 <h2>Allocation (demo)</h2><div id="allocation"></div>
 <h2>Uncertainty coverage (demo)</h2><div id="calibration"></div>
@@ -54,7 +54,7 @@ async function load(){
   const h = await (await fetch('/health')).json();
   document.getElementById('health').textContent = (h.capabilities || []).join(', ');
   const o = await (await fetch('/overview')).json();
-  const rows = (o.data || []).map(r => '<tr><td>' + r.market_id + '</td><td>' +
+  const rows = (o.data || []).slice(0, 10).map(r => '<tr><td>' + r.market_id + '</td><td>' +
     r.asset_class + '</td><td>' + r.source_kind + '</td><td>' + (r.implied_yes ?? 'n/a') +
     '</td><td>' + r.model_yes.toFixed(3) + '</td><td>' + (r.edge >= 0 ? '+' : '') +
     r.edge.toFixed(3) + '</td><td>' + (r.simulated ? 'yes' : 'no') + '</td></tr>').join('');
