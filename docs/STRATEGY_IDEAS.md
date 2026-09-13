@@ -90,3 +90,31 @@ Only the Shin (1992) reference is used here, as cited in code (`strategy.py`).
   impose portfolio limits; and a cap is a risk control, not an edge claim.
 
 ## How ideas are compared
+
+`compare_strategies` in `src/poly_alpha/backtesting/comparison.py` replays a fixed sequence of
+`ResolvedMarket` objects (a `MarketSnapshot` plus its known YES/NO resolution) through each
+supplied strategy. A strategy returns a fair YES probability or `None` to skip. The harness buys
+the No side only when `no_price < (1 - fair_yes) - min_edge` (default `min_edge = 0.01`), stakes
+`stake_fraction` of the running bankroll (default `0.02`), and settles at 1.0 per share on a No
+resolution, else 0.0. It emits `StrategyMetrics` (trades, hit rate, total stake, total PnL, ROI,
+max drawdown), sorts best-total-PnL first, and attaches a fixed `CAVEAT` stating the metrics are
+in-sample, non-annualized, and not a forecast.
+
+`simulate_portfolio` in `src/poly_alpha/backtesting/simulation.py` runs the same No-side idea but
+sizes with `kelly_fraction` (`use_lower_bound=False`, default `cap = 0.05`) and requires a
+two-sided market and `(1 - fair) - no_price > min_edge`. It returns a `SimulationResult`
+(start/end bankroll, equity curve, max drawdown, trades) with its own `CAVEAT`.
+
+Both are exercised by the `research` CLI group in `src/poly_alpha/cli_platform.py` (`compare`,
+`simulate`) over `demo_resolved_markets()` from `demo_data.py`: fixture markets resolved by a
+deterministic SHA-256 hash of `market_id` against `yes_price`, provenance `DataSourceKind.FIXTURE`,
+labeled simulated and not real. Identical inputs yield identical output.
+
+## Honesty notes
+
+- These are research and paper-trading artifacts. Nothing here places orders or reads live keys.
+- In-sample comparison and simulation metrics describe the supplied resolved set only and are not
+  forecasts of future performance.
+- Fixture, simulated, and synthetic inputs are labeled via `DataSourceKind` / `Provenance`; the
+  analyst's own intervals are marked `simulated=True`. None of it is real market data.
+- No strategy in this repository has a validated result. This file states none.
