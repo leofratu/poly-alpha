@@ -44,3 +44,49 @@ def make_snapshot(
         volume=5000.0,
         provenance=Provenance(source="test-fixture", kind=kind, retrieved_at=NOW),
         orderbook=orderbook,
+    )
+
+
+def test_research_market_is_deterministic() -> None:
+    first = research_market(make_snapshot(), now=NOW)
+    second = research_market(make_snapshot(), now=NOW)
+    assert first.model_yes.estimate == second.model_yes.estimate
+    assert first.model_yes.basis == second.model_yes.basis
+    assert first.summary == second.summary
+
+
+def test_uncertainty_brackets_estimate() -> None:
+    note = research_market(make_snapshot(), now=NOW)
+    assert note.model_yes.low <= note.model_yes.estimate <= note.model_yes.high
+    assert note.model_yes.contains(note.model_yes.estimate)
+
+
+def test_uncertainty_widens_when_liquidity_drops() -> None:
+    rich = research_market(make_snapshot(liquidity=2000.0), now=NOW)
+    poor = research_market(make_snapshot(liquidity=20.0), now=NOW)
+    assert poor.model_yes.width > rich.model_yes.width
+
+
+def test_uncertainty_widens_when_book_is_thin() -> None:
+    deep = research_market(make_snapshot(orderbook=(PriceLevel(0.6, 200.0),)), now=NOW)
+    thin = research_market(make_snapshot(orderbook=(PriceLevel(0.6, 1.0),)), now=NOW)
+    assert thin.model_yes.width > deep.model_yes.width
+
+
+def test_claim_sources_are_non_empty() -> None:
+    note = research_market(make_snapshot(), now=NOW)
+    assert note.claims
+    assert all(claim.sources for claim in note.claims)
+
+
+def test_is_simulated_for_fixture_provenance() -> None:
+    note = research_market(make_snapshot(kind=DataSourceKind.FIXTURE), now=NOW)
+    assert note.is_simulated() is True
+    assert DataSourceKind.FIXTURE in note.source_kinds()
+
+
+def test_caveats_mention_non_real_data_and_advice() -> None:
+    note = research_market(make_snapshot(kind=DataSourceKind.SIMULATED), now=NOW)
+    assert any("simulat" in caveat.lower() for caveat in note.caveats)
+    assert any("not investment advice" in caveat.lower() for caveat in note.caveats)
+
