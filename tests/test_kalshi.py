@@ -48,3 +48,41 @@ def _valid_market() -> dict[str, Any]:
         "status": "open",
         "result": "",
     }
+
+
+def _adapter(markets: list[dict[str, Any]]) -> KalshiAdapter:
+    return KalshiAdapter(client=_StubKalshiClient({"markets": markets, "cursor": ""}))
+
+
+def _stable_fields(snapshot: MarketSnapshot) -> tuple[Any, ...]:
+    return (
+        snapshot.market_id,
+        snapshot.question,
+        snapshot.yes_price,
+        snapshot.no_price,
+        snapshot.liquidity,
+        snapshot.volume,
+        snapshot.close_time,
+        snapshot.asset.symbol,
+        snapshot.provenance.source,
+        snapshot.provenance.kind,
+        snapshot.provenance.url,
+    )
+
+
+def test_kalshi_adapter_maps_market() -> None:
+    markets = _adapter([_valid_market()]).list_markets()
+    assert len(markets) == 1
+    snapshot = markets[0]
+    assert snapshot.market_id == TICKER
+    assert snapshot.question == "Will it rain tomorrow?"
+    assert snapshot.yes_price == pytest.approx(0.65)
+    assert snapshot.no_price == pytest.approx(0.35)
+    assert snapshot.liquidity == 1234.0
+    assert snapshot.volume == 5678.0
+    assert snapshot.asset.symbol == EVENT_TICKER
+    assert snapshot.asset.asset_class == "prediction"
+    assert snapshot.provenance.kind is DataSourceKind.REAL
+    assert snapshot.provenance.source == "Kalshi public API"
+    assert snapshot.close_time is not None
+    assert snapshot.close_time.tzinfo is not None
