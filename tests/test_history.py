@@ -90,3 +90,4 @@ def test_provenance_is_fixture_and_not_real() -> None:
     for history in fixture_histories():
         assert history.provenance.kind is DataSourceKind.FIXTURE
         assert history.provenance.source == "poly-alpha fixture history"
+        assert history.provenance.note
