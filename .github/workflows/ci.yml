@@ -32,7 +32,7 @@ jobs:
         run: uv run ruff format --check src/ tests/
 
       - name: Type check with mypy
-        run: uv run mypy src/poly_alpha/strategy.py
+        run: uv run mypy src/poly_alpha/
 
       - name: Run tests
         run: uv run pytest tests/ -v --tb=short
