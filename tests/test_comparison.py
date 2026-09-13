@@ -11,6 +11,7 @@ from poly_alpha.backtesting.comparison import (
     MIN_EDGE,
     ResolvedMarket,
     compare_strategies,
+    max_drawdown,
 )
 from poly_alpha.contracts import AssetRef, DataSourceKind, MarketSnapshot, Provenance
 
@@ -111,3 +112,7 @@ def test_caveat_discloses_annualization_and_forecast() -> None:
     assert "not annualized" in metrics.caveat
     assert "in-sample" in metrics.caveat
     assert "not a forecast" in metrics.caveat
+
+
+def test_max_drawdown_of_empty_curve_is_zero() -> None:
+    assert max_drawdown([]) == 0.0

@@ -82,6 +82,16 @@ def test_drawdown_from_returns_is_deterministic() -> None:
     assert report.max_drawdown == pytest.approx(0.5)
 
 
+def test_total_loss_drawdown_is_one() -> None:
+    report = analyze_portfolio([make_position("m1", "sports", 100.0)], [-1.0])
+    assert report.max_drawdown == pytest.approx(1.0)
+
+
+def test_monotone_decline_counts_from_initial_capital() -> None:
+    report = analyze_portfolio([make_position("m1", "sports", 100.0)], [-0.1, -0.1, -0.1])
+    assert report.max_drawdown == pytest.approx(1.0 - 0.9**3, abs=1e-6)
+
+
 def test_empty_returns_treated_as_missing() -> None:
     report = analyze_portfolio([make_position("m1", "sports", 100.0)], [])
     assert report.historical_var_95 is None

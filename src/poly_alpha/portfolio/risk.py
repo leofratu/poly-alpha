@@ -16,6 +16,11 @@ from poly_alpha.contracts import Provenance
 
 VAR_QUANTILE: float = 5.0
 
+DEMO_CAVEAT: str = (
+    "Risk figures are descriptive over the supplied positions and returns; the packaged "
+    "demo inputs are simulated. This is not a forecast or investment advice."
+)
+
 
 @dataclass(frozen=True)
 class Position:
@@ -43,7 +48,7 @@ class RiskReport:
 
 
 def _drawdown_from_returns(returns: np.ndarray) -> float:
-    equity = np.cumprod(1.0 + returns)
+    equity = np.concatenate(([1.0], np.cumprod(1.0 + returns)))
     if equity.size == 0:
         return 0.0
     peaks = np.maximum.accumulate(equity)

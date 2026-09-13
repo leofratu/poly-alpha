@@ -49,6 +49,8 @@ class StrategyMetrics:
 
 
 def max_drawdown(equity_curve: Sequence[float]) -> float:
+    if not equity_curve:
+        return 0.0
     peak = equity_curve[0]
     worst = 0.0
     for equity in equity_curve:
