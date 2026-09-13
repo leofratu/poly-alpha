@@ -50,3 +50,28 @@ class Experiment:
     allocation_ids: tuple[str, ...]
     total_stake: float
     cash: float
+
+
+def fingerprint(markets: Sequence[MarketSnapshot], params: Mapping[str, float]) -> str:
+    """Return a deterministic sha256 fingerprint of the market inputs and ``params``.
+
+    The payload is a canonical JSON object of each market's ``[market_id, yes_price,
+    no_price, provenance kind, liquidity, volume]`` (markets sorted by ``market_id``)
+    plus the sorted ``params`` items, so identical inputs share a fingerprint.
+    """
+    payload = {
+        "markets": [
+            [
+                market.market_id,
+                market.yes_price,
+                market.no_price,
+                market.provenance.kind.value,
+                market.liquidity,
+                market.volume,
+            ]
+            for market in sorted(markets, key=lambda market: market.market_id)
+        ],
+        "params": sorted(params.items()),
+    }
+    canonical = json.dumps(payload, sort_keys=True, default=str)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
