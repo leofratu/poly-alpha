@@ -136,3 +136,49 @@ def _build_claims(
             ResearchClaim(method_text, _direction(estimate), liquidity_confidence, method_sources)
         )
     else:
+        claims.append(
+            ResearchClaim(
+                "No order book or market price is available; the neutral prior is retained.",
+                "neutral",
+                liquidity_confidence,
+                method_sources,
+            )
+        )
+
+    model_text = (
+        f"Model YES estimate is {estimate:.1%} against a {edge_center:.1%} reference "
+        f"(edge {estimate - edge_center:+.1%}) via {method}."
+    )
+    claims.append(
+        ResearchClaim(
+            model_text,
+            _direction(estimate),
+            _clamp(0.5 + 0.5 * liquidity_confidence),
+            method_sources,
+        )
+    )
+
+    liquidity_text = (
+        f"Liquidity of {snapshot.liquidity:.1f} yields {liquidity_confidence:.0%} "
+        "confidence; the estimate is shrunk toward 0.5 accordingly."
+    )
+    claims.append(
+        ResearchClaim(
+            liquidity_text,
+            _direction(estimate),
+            _clamp(1.0 - liquidity_confidence),
+            method_sources,
+        )
+    )
+    return tuple(claims)
+
+
+def research_market(snapshot: MarketSnapshot, *, now: datetime | None = None) -> ResearchNote:
+    """Build a deterministic, provenance-tagged research note for one snapshot."""
+    implied = snapshot.implied_yes()
+    orderbook = snapshot.orderbook
+    has_book = bool(orderbook)
+
+    liquidity_confidence = _clamp(snapshot.liquidity / _LIQUIDITY_REFERENCE)
+    depth = _orderbook_depth(orderbook)
+    book_confidence = _clamp(depth / _DEPTH_REFERENCE)
