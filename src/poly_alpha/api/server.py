@@ -13,7 +13,14 @@ from urllib.parse import urlsplit
 
 from poly_alpha.contracts import MarketSnapshot
 
-CAPABILITIES: tuple[str, ...] = ("markets", "research", "risk", "compare")
+CAPABILITIES: tuple[str, ...] = (
+    "markets",
+    "research",
+    "risk",
+    "compare",
+    "overview",
+    "validation",
+)
 
 
 class DataProvider(Protocol):
@@ -185,6 +192,23 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                         "caveat": CAVEAT,
                     },
                 )
+            elif path == "/overview":
+                from poly_alpha.research.overview import build_overview, dimensions
+
+                rows = build_overview(provider.markets())
+                self._send(
+                    200,
+                    {"data": [_to_jsonable(row) for row in rows], "dimensions": dimensions(rows)},
+                )
+            elif path == "/validation":
+                from poly_alpha.validation import validate_snapshot
+
+                checks = [
+                    {"market_id": market.market_id, "issues": list(validate_snapshot(market))}
+                    for market in provider.markets()
+                ]
+                invalid = sum(1 for check in checks if check["issues"])
+                self._send(200, {"data": checks, "invalid_count": invalid})
             else:
                 self._send(404, {"error": "not found", "path": path})
 
