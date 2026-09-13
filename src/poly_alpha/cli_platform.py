@@ -29,13 +29,31 @@ def _fixture_markets() -> list[Any]:
     return fixture_adapter().list_markets()
 
 
+def _real_markets() -> list[Any]:
+    import requests
+
+    from poly_alpha.adapters.polymarket import PolymarketAdapter
+
+    try:
+        return PolymarketAdapter().list_markets()
+    except requests.RequestException as exc:
+        console.print(f"[red]Could not fetch real markets: {exc}[/red]")
+        return []
+
+
+REAL_OPTION = typer.Option(False, "--real", help="Fetch real Polymarket markets (network).")
+
+
 @app.command()
 def markets(
     json_out: bool = JSON_OPTION,
     all_kinds: bool = typer.Option(False, "--all", help="Include synthetic asset markets."),
+    real: bool = REAL_OPTION,
 ) -> None:
     """List labeled offline markets (fixtures, plus synthetic with --all)."""
-    if all_kinds:
+    if real:
+        snapshots = _real_markets()
+    elif all_kinds:
         from poly_alpha.adapters.registry import default_markets
 
         snapshots = default_markets()
@@ -67,16 +85,16 @@ def markets(
 
 
 @app.command()
-def research(json_out: bool = JSON_OPTION) -> None:
-    """Generate deterministic research notes for the fixture markets."""
+def research(json_out: bool = JSON_OPTION, real: bool = REAL_OPTION) -> None:
+    """Generate deterministic research notes for the selected markets."""
     from poly_alpha.api.server import to_jsonable
     from poly_alpha.research.analyst import model_vs_market, research_markets
 
-    notes = research_markets(_fixture_markets())
+    notes = research_markets(_real_markets() if real else _fixture_markets())
     if json_out:
         _print_json([to_jsonable(note) for note in notes])
         return
-    table = Table(title="Fixture research (SIMULATED heuristic, not advice)")
+    table = Table(title="Research notes (SIMULATED heuristic; check provenance)")
     table.add_column("Market", style="cyan")
     table.add_column("Mkt", justify="right")
     table.add_column("Model", justify="right")
