@@ -692,7 +692,9 @@ def run(
 
     bundle = run_pipeline(bankroll=bankroll)
     if json_out:
-        _print_json(to_jsonable(bundle))
+        payload = to_jsonable(bundle)
+        payload["simulated"] = True
+        _print_json(payload)
         return
     table = Table(title="Research pipeline (SIMULATED, in-sample; not advice)")
     table.add_column("Metric", style="cyan")

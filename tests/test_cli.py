@@ -189,4 +189,5 @@ def test_run_json_reports_bundle() -> None:
     assert result.exit_code == 0
     payload = json.loads(result.output)
     assert payload["market_count"] >= 1
+    assert payload["simulated"] is True
     assert abs(payload["total_stake"] + payload["cash"] - 1000.0) < 1e-6

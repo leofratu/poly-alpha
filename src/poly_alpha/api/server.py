@@ -1,7 +1,8 @@
 """Standard-library-only read-only JSON API over the poly-alpha data contracts.
 
-Most endpoints read from the injected DataProvider; `/curves`, `/calibration`, and `/stress` are
-computed from the packaged fixture/demo datasets and are intentionally not provider-injected.
+Most endpoints read from the injected DataProvider; `/curves`, `/calibration`, `/stress`,
+`/allocate`, and `/run` are computed from the packaged fixture/demo datasets and are
+intentionally not provider-injected.
 """
 
 from __future__ import annotations
