@@ -62,3 +62,37 @@ class HeuristicProvider:
     ) -> ResearchNote:
         """Build a deterministic offline note; no network and no AI model is involved."""
         return _heuristic_research_market(snapshot, now=now)
+
+
+class OpenAICompatibleProvider:
+    """Optional AI provider speaking the OpenAI Chat Completions JSON-object shape."""
+
+    name = "openai-compatible"
+    is_ai = True
+
+    def __init__(
+        self,
+        api_key: str,
+        *,
+        model: str = DEFAULT_AI_MODEL,
+        base_url: str = DEFAULT_AI_BASE_URL,
+        timeout: int = DEFAULT_TIMEOUT,
+        session: Any = None,
+        fallback: ResearchProvider | None = None,
+    ) -> None:
+        self._api_key = api_key
+        self._model = model
+        self._base_url = base_url
+        self._timeout = timeout
+        self._session = session if session is not None else requests.Session()
+        self._fallback = fallback if fallback is not None else HeuristicProvider()
+
+    def research_market(
+        self, snapshot: MarketSnapshot, *, now: datetime | None = None
+    ) -> ResearchNote:
+        """Ask the model for an estimate, falling back to the heuristic on any error."""
+        try:
+            payload = self._request(snapshot)
+            return self._note_from(snapshot, payload, now)
+        except (requests.RequestException, ValueError, KeyError, TypeError, IndexError):
+            return self._fallback.research_market(snapshot, now=now)
