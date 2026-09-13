@@ -90,3 +90,18 @@ def test_render_markdown_includes_disclaimer_and_is_deterministic() -> None:
     )
     second = render_markdown(
         notes,
+        opportunities=opportunities,
+        metrics=metrics,
+        risk=risk,
+        generated_at=NOW,
+    )
+    assert "not investment advice" in first
+    assert "## Provenance summary" in first
+    assert first == second
+
+
+def test_pipeline_is_deterministic_across_rebuilds() -> None:
+    assert build_overview(default_markets()) == build_overview(default_markets())
+    first = compare_strategies(demo_resolved_markets(), default_strategies())
+    second = compare_strategies(demo_resolved_markets(), default_strategies())
+    assert first == second
