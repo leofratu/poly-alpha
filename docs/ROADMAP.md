@@ -5,22 +5,25 @@ none of it is validated performance.
 
 ## Near term
 
-- **Run CI and record a receipt.** `pytest`, `ruff check`, `ruff format --check`, and `mypy`
-  were not executed on the authoring host (host rule). Run them in a normal environment before
-  merging and paste the output into the PR.
 - **Rotate the leaked `.env` credentials.** `master` tracked a `.env` with Polymarket keys;
   this branch stops tracking it, but the values remain in git history. Rotate and rewrite
-  history, then remove the working-tree copy.
-- **Widen the type gate.** CI type-checks only `strategy.py`. Point `mypy` at `src/poly_alpha`
-  once the new modules are clean under `--strict`.
+  history, then remove the working-tree copy. (Owner action; out of scope for the code passes.)
+- **Publish the pass-2 PR stack.** The branch stack and draft PR bodies are ready; publication
+  awaits a valid `gh` token.
+
+Completed in the second improvement pass (2026-09-14): all four CI gates were run and recorded
+on the designated Linux runner (`pytest`, `ruff check`, `ruff format --check`, `mypy`);
+the type gate was widened from `strategy.py` to `src/poly_alpha/`; Kalshi was added as a second
+real venue; and reproducible experiment records were added alongside the journal.
 
 ## Adapters and data
 
-- **Second real venue.** Only Polymarket is implemented (`PolymarketAdapter`). A Kalshi or
-  Manifold adapter would broaden coverage; both need an injectable client plus fixture-mapped
-  tests so nothing hits the network in CI.
-- **Persist research runs.** The journal is JSONL; a SQLite-backed history would support richer
-  queries. Keep provenance labels on every stored row.
+- **Third real venue.** Polymarket and Kalshi are implemented; Manifold (or another venue)
+  would broaden coverage further. It needs an injectable client plus fixture-mapped tests so
+  nothing hits the network in CI.
+- **Richer run storage.** Experiments are persisted as fingerprinted JSONL and the journal
+  remains the aggregate audit trail; a SQLite-backed history for richer queries is still open.
+  Keep provenance labels on every stored row.
 - **Wire `validation.py` into ingestion** so adapters reject malformed snapshots at the source.
 
 ## Research and evaluation
