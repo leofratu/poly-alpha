@@ -440,6 +440,11 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                                 "name": adapter.name,
                                 "kind": adapter.source_kind.value,
                                 "network": adapter.source_kind.value == "real",
+                                "symbols": sorted(
+                                    {market.asset.symbol for market in adapter.list_markets()}
+                                )
+                                if adapter.source_kind.is_real is False
+                                else [],
                             }
                             for adapter in adapters
                         ],

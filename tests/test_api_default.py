@@ -180,3 +180,7 @@ def test_sources_lists_configured_adapters() -> None:
     names = {row["name"] for row in body["data"]}
     assert {"fixture", "series", "polymarket", "kalshi"} <= names
     assert any(row["network"] is True for row in body["data"])
+    series_symbols = [row["symbols"] for row in body["data"] if row["name"] == "series"]
+    assert sorted(series_symbols) == [["BTC", "ETH"], ["SPY"]]
+    real = next(row for row in body["data"] if row["name"] == "polymarket")
+    assert real["symbols"] == []
