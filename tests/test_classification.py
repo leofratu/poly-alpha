@@ -120,6 +120,28 @@ class TestExtractFinancialTarget:
         assert result.ticker == "ETH-USD"
         assert result.direction == PriceDirection.BELOW
 
+    def test_direction_comes_from_the_matched_token(self) -> None:
+        result = extract_financial_target(
+            "Will ETH stay below $3,000 while BTC trades above $60,000?"
+        )
+        assert result is not None
+        assert result.ticker == "ETH-USD"
+        assert result.target_price == 3000.0
+        assert result.direction == PriceDirection.BELOW
+
+    def test_scales_spelled_out_and_large_units(self) -> None:
+        million = extract_financial_target("Will Bitcoin hit $1 million by 2030?")
+        assert million is not None
+        assert million.target_price == 1_000_000.0
+        billion = extract_financial_target("Will Ethereum reach 1 billion?")
+        assert billion is not None
+        assert billion.target_price == 1_000_000_000.0
+
+    def test_price_separator_is_case_insensitive(self) -> None:
+        result = extract_financial_target("Will SPY Reach $500?")
+        assert result is not None
+        assert result.target_price == 500.0
+
     def test_no_match(self) -> None:
         result = extract_financial_target("Will it rain tomorrow?")
         assert result is None
