@@ -90,3 +90,34 @@ def test_polymarket_adapter_accepts_list_outcomes() -> None:
     market["outcomes"] = ["Yes", "No"]
     market["outcomePrices"] = [0.2, 0.8]
     client = _StubPolymarketClient([{"markets": [market]}])
+    markets = PolymarketAdapter(client=client).list_markets()
+    assert len(markets) == 1
+    assert markets[0].yes_price == 0.2
+
+
+def test_polymarket_adapter_skips_malformed() -> None:
+    malformed = _valid_market()
+    malformed["outcomes"] = '["Yes"]'
+    client = _StubPolymarketClient([{"markets": [malformed]}])
+    assert PolymarketAdapter(client=client).list_markets() == []
+
+
+def test_series_adapter_is_deterministic() -> None:
+    series = {"BTC": [100.0, 105.0, 110.0], "ETH": [50.0, 45.0, 40.0]}
+    first = BinaryFromSeriesAdapter(series)
+    second = BinaryFromSeriesAdapter(series)
+    assert first.list_markets() == second.list_markets()
+
+
+def test_series_adapter_probabilities() -> None:
+    series = {"BTC": [100.0, 120.0], "ETH": [100.0, 80.0]}
+    markets = {
+        market.market_id: market for market in BinaryFromSeriesAdapter(series).list_markets()
+    }
+    assert set(markets) == {"series:BTC", "series:ETH"}
+    for market in markets.values():
+        assert market.yes_price is not None and 0.0 < market.yes_price < 1.0
+        assert market.no_price is not None and 0.0 < market.no_price < 1.0
+        assert abs(market.yes_price + market.no_price - 1.0) < 1e-9
+    assert markets["series:BTC"].yes_price > 0.5
+    assert markets["series:ETH"].yes_price < 0.5
