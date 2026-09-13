@@ -136,3 +136,36 @@ def _risk_lines(risk: RiskReport) -> list[str]:
 def render_markdown(
     notes: Sequence[ResearchNote],
     *,
+    opportunities: Sequence[Opportunity] | None = None,
+    metrics: Sequence[StrategyMetrics] | None = None,
+    risk: RiskReport | None = None,
+    generated_at: datetime | None = None,
+    title: str = "Poly-Alpha Research Dossier",
+) -> str:
+    """Render research notes and optional analysis sections as Markdown.
+
+    The output opens with the title and a bold disclaimer, summarizes provenance,
+    renders every note, then appends each optional section only when its argument is
+    supplied. Passing ``generated_at`` makes the rendering fully deterministic; when it
+    is omitted no timestamp is emitted and no clock is read.
+    """
+    lines: list[str] = [f"# {title}", ""]
+    lines.extend(_DISCLAIMER_LINES)
+    lines.append("")
+    if generated_at is not None:
+        lines.extend([f"Generated at: {generated_at.isoformat()}", ""])
+    lines.extend(_provenance_lines(notes))
+    for note in notes:
+        lines.extend(_note_lines(note))
+    if opportunities is not None:
+        lines.extend(_opportunity_lines(opportunities))
+    if metrics is not None:
+        lines.extend(_metrics_lines(metrics))
+    if risk is not None:
+        lines.extend(_risk_lines(risk))
+    return "\n".join(lines).rstrip("\n") + "\n"
+
+
+def write_markdown(path: str | Path, content: str) -> None:
+    """Write ``content`` to ``path`` as UTF-8; the module's only file write."""
+    Path(path).write_text(content, encoding="utf-8")
