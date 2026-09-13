@@ -280,3 +280,38 @@ def size(json_out: bool = JSON_OPTION) -> None:
         )
     console.print(table)
 
+
+@app.command()
+def simulate(json_out: bool = JSON_OPTION) -> None:
+    """Paper-simulate strategies over labeled demo resolutions (in-sample)."""
+    from poly_alpha.api.server import _to_jsonable
+    from poly_alpha.backtesting.demo_data import demo_resolved_markets
+    from poly_alpha.backtesting.simulation import simulate_portfolio
+    from poly_alpha.backtesting.strategies import default_strategies
+
+    markets = demo_resolved_markets()
+    results = [
+        (name, simulate_portfolio(markets, strategy))
+        for name, strategy in default_strategies().items()
+    ]
+    if json_out:
+        payload = [
+            {"strategy": name, "result": _to_jsonable(result)} for name, result in results
+        ]
+        _print_json(payload)
+        return
+    table = Table(title="Paper simulation (DEMO resolutions, in-sample, simulated)")
+    table.add_column("Strategy", style="cyan")
+    table.add_column("Trades", justify="right")
+    table.add_column("Ending", justify="right")
+    table.add_column("Max DD", justify="right")
+    for name, result in results:
+        table.add_row(
+            name,
+            str(result.trades),
+            f"{result.ending_bankroll:,.2f}",
+            f"{result.max_drawdown:.1%}",
+        )
+    console.print(table)
+    if results:
+        console.print(f"[yellow]{results[0][1].caveat}[/yellow]")
