@@ -103,7 +103,7 @@ def _shin_debiased(snapshot: MarketSnapshot) -> float | None:
 def default_provider() -> DataProvider:
     """Build the offline research provider over labeled fixture and demo data."""
     try:
-        from poly_alpha.adapters.fixtures import fixture_adapter
+        from poly_alpha.adapters.registry import default_markets
         from poly_alpha.backtesting.comparison import compare_strategies
         from poly_alpha.backtesting.demo_data import (
             demo_positions,
@@ -116,7 +116,7 @@ def default_provider() -> DataProvider:
         note = f"research modules unavailable: {exc}"
         return StaticProvider(risk={"status": "unavailable", "note": note})
     return _ModuleProvider(
-        markets_fn=lambda: fixture_adapter().list_markets(),
+        markets_fn=default_markets,
         research_fn=research_markets,
         risk_fn=lambda: analyze_portfolio(demo_positions(), demo_returns()),
         compare_fn=lambda: compare_strategies(

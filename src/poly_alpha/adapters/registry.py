@@ -31,8 +31,17 @@ def sample_series() -> dict[str, list[float]]:
 
 
 def default_adapters() -> list[MarketAdapter]:
-    """Return the standard fixture plus synthetic-series adapters."""
-    return [fixture_adapter(), BinaryFromSeriesAdapter(sample_series())]
+    """Return the fixture adapter plus crypto and equity synthetic-series adapters."""
+    series = sample_series()
+    crypto = {symbol: prices for symbol, prices in series.items() if symbol in {"BTC", "ETH"}}
+    equities = {
+        symbol: prices for symbol, prices in series.items() if symbol not in {"BTC", "ETH"}
+    }
+    return [
+        fixture_adapter(),
+        BinaryFromSeriesAdapter(crypto, asset_class="crypto"),
+        BinaryFromSeriesAdapter(equities, asset_class="equity"),
+    ]
 
 
 def aggregate_markets(adapters: Sequence[MarketAdapter]) -> list[MarketSnapshot]:
