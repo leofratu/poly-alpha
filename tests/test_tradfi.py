@@ -75,3 +75,37 @@ def test_risk_free_rate_rejects_nonpositive_days(monkeypatch: pytest.MonkeyPatch
 
     with pytest.raises(ValueError):
         tradfi.get_risk_free_rate(0)
+
+
+def test_trading_days_classification() -> None:
+    from poly_alpha.data import tradfi
+
+    assert tradfi._is_crypto_ticker("BTC-USD") is True
+    assert tradfi._is_crypto_ticker("GC=F") is True
+    assert tradfi._is_crypto_ticker("SPY") is False
+    assert tradfi._get_trading_days("BTC-USD") == tradfi.TRADING_DAYS_CRYPTO
+    assert tradfi._get_trading_days("SPY") == tradfi.TRADING_DAYS_EQUITY
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [(None, None), ("3.5", 3.5), (7, 7.0), ("nope", None), (object(), None)],
+)
+def test_safe_float(value: object, expected: float | None) -> None:
+    from poly_alpha.data import tradfi
+
+    assert tradfi._safe_float(value) == expected
+
+
+def test_black_scholes_d2_is_d1_minus_sigma_root_t() -> None:
+    from poly_alpha.data.tradfi import BlackScholesInputs, calculate_d1, calculate_d2
+
+    inputs = BlackScholesInputs(
+        spot=100.0,
+        strike=100.0,
+        time_to_maturity_years=1.0,
+        risk_free_rate=0.05,
+        volatility=0.2,
+        dividend_yield=0.0,
+    )
+    assert calculate_d2(inputs) == pytest.approx(calculate_d1(inputs) - 0.2)
