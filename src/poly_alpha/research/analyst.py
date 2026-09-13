@@ -90,3 +90,49 @@ def _build_claims(
     estimate: float,
     edge_center: float,
     method: str,
+    imbalance: float,
+    depth: float,
+    liquidity_confidence: float,
+    book_confidence: float,
+    heuristic_used: bool,
+) -> tuple[ResearchClaim, ...]:
+    snapshot_source = snapshot.provenance
+    heuristic = _heuristic_source(snapshot)
+    method_sources = (snapshot_source, heuristic) if heuristic_used else (snapshot_source,)
+
+    claims: list[ResearchClaim] = []
+    if implied is not None:
+        market_text = (
+            f"De-vigged market implies {implied:.1%} YES from listed "
+            f"YES/NO prices {snapshot.yes_price:.3f}/{snapshot.no_price:.3f}."
+        )
+        claims.append(
+            ResearchClaim(market_text, _direction(implied), liquidity_confidence, (snapshot_source,))
+        )
+    else:
+        claims.append(
+            ResearchClaim(
+                "No two-sided price is available; a neutral 0.5 prior is used.",
+                "neutral",
+                _clamp(1.0 - liquidity_confidence),
+                (snapshot_source,),
+            )
+        )
+
+    if snapshot.orderbook:
+        method_text = (
+            f"Best {len(_best_levels(snapshot.orderbook))} order-book levels are "
+            f"{imbalance:+.1%} depth-weighted toward YES; book depth {depth:.1f}."
+        )
+        claims.append(
+            ResearchClaim(method_text, _sign_direction(imbalance), book_confidence, method_sources)
+        )
+    elif implied is not None:
+        method_text = (
+            "No order book is available; Shin (1992) debiasing is applied to the "
+            "de-vigged YES price."
+        )
+        claims.append(
+            ResearchClaim(method_text, _direction(estimate), liquidity_confidence, method_sources)
+        )
+    else:
