@@ -22,6 +22,42 @@ CAPABILITIES: tuple[str, ...] = (
     "validation",
 )
 
+INDEX_HTML = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Poly-Alpha Research</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:2rem;max-width:1100px}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid #ccc;padding:.35rem .5rem;text-align:right}
+th:first-child,td:first-child{text-align:left}
+.note{color:#7a4b00;background:#fff7e6;padding:.5rem .75rem;border-radius:4px}
+</style></head><body>
+<h1>Poly-Alpha Research</h1>
+<p class="note">Read-only research and paper-trading view. Fixture, simulated, and synthetic
+data are labeled and are not real. Not investment advice.</p>
+<h2>Capabilities</h2><div id="health"></div>
+<h2>Cross-market overview</h2><div id="overview"></div>
+<h2>Portfolio risk (demo)</h2><div id="risk"></div>
+<script>
+async function load(){
+  const h = await (await fetch('/health')).json();
+  document.getElementById('health').textContent = (h.capabilities || []).join(', ');
+  const o = await (await fetch('/overview')).json();
+  const rows = (o.data || []).map(r => '<tr><td>' + r.market_id + '</td><td>' +
+    r.asset_class + '</td><td>' + r.source_kind + '</td><td>' + (r.implied_yes ?? 'n/a') +
+    '</td><td>' + r.model_yes.toFixed(3) + '</td><td>' + (r.edge >= 0 ? '+' : '') +
+    r.edge.toFixed(3) + '</td><td>' + (r.simulated ? 'yes' : 'no') + '</td></tr>').join('');
+  document.getElementById('overview').innerHTML =
+    '<table><thead><tr><th>Market</th><th>Class</th><th>Kind</th><th>Implied</th>' +
+    '<th>Model</th><th>Edge</th><th>Sim</th></tr></thead><tbody>' + rows + '</tbody></table>';
+  const rk = await (await fetch('/risk')).json();
+  const d = rk.data || {};
+  document.getElementById('risk').textContent =
+    'positions=' + d.n_positions + ' stake=' + d.total_stake + ' hhi=' + d.hhi +
+    ' simulated=' + rk.simulated;
+}
+load();
+</script></body></html>"""
+
 
 class DataProvider(Protocol):
     """Source of the data the API serves."""
@@ -161,7 +197,9 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
             path = urlsplit(self.path).path
-            if path == "/health":
+            if path in ("/", "/index.html"):
+                self._send_html(200, INDEX_HTML)
+            elif path == "/health":
                 self._send(200, {"status": "ok", "capabilities": list(CAPABILITIES)})
             elif path == "/markets":
                 markets = provider.markets()
@@ -224,6 +262,14 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
             body = json.dumps(payload).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _send_html(self, status: int, html: str) -> None:
+            body = html.encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
