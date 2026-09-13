@@ -30,7 +30,7 @@ resolved markets, summarizes portfolio risk, and serves the results over a small
 | `research/calibration.py` | `CalibrationReport`, `interval_coverage`, `calibration_by_kind`, `demo_calibration`: measures uncertainty-interval coverage against supplied outcomes (labeled; not real-world evidence). |
 | `research/pipeline.py` | `ResearchBundle`, `run_pipeline`: composes registry -> research -> screen -> allocate -> risk + calibration into one deterministic bundle. |
 | `validation.py` | `validate_snapshot`, `is_valid`, `validate_uncertainty`: dependency-free contract invariant checks (no exceptions on bad data). |
-| `research/report.py` | `render_markdown` / `write_markdown`: composes notes, opportunities, comparison metrics, and risk into one provenance-labeled Markdown dossier. |
+| `research/report.py` | `render_markdown` / `write_markdown`: composes notes, opportunities, allocations, comparison metrics, risk, and uncertainty coverage into one provenance-labeled Markdown dossier. |
 | `research/journal.py` | `JournalEntry`, `build_entry`, `append_entry`, `read_entries`: append-only JSONL audit trail of research runs (counts by kind, mean edge, simulated flag). |
 | `portfolio/sizing.py` | `SizingDecision`, `kelly_fraction`: conservative fractional-Kelly sizing that uses the uncertainty lower bound and a hard cap. |
 | `portfolio/allocate.py` | `Allocation`, `AllocationPlan`, `allocate`: turns ranked opportunities into a budgeted portfolio under position and deploy caps. |
