@@ -100,6 +100,24 @@ def position_size_pct(candidate: dict[str, Any], deployed_count: int) -> float:
     return POSITION_SIZE_PCT
 
 
+def available_deploy_budget(
+    total_portfolio: float,
+    locked: float,
+    total_deployed: float,
+    free_capital: float,
+    max_deploy: float,
+) -> float:
+    """Cash still deployable under the portfolio cap.
+
+    ``locked`` is capital committed before this run and ``total_deployed`` is what
+    this run has committed so far; both count against the cap, while
+    ``free_capital`` is the hard cash limit. Subtracting ``total_deployed`` from an
+    already-reduced ``free_capital`` would double-count the deployment.
+    """
+    cap_remaining = total_portfolio * max_deploy - locked - total_deployed
+    return max(0.0, min(cap_remaining, free_capital))
+
+
 def _api_get(url: str, retries: int = 3) -> Any:
     """GET request with retry logic."""
     session = requests.Session()
@@ -345,8 +363,14 @@ def deploy_trades() -> None:
             CFG.min_trade_size,
             total_portfolio * position_size_pct(m, deployed_count),
         )
-        available_budget = (free_capital * CFG.max_portfolio_deploy) - total_deployed
-        target_size = min(target_size, available_budget, free_capital - total_deployed)
+        budget = available_deploy_budget(
+            total_portfolio,
+            locked,
+            total_deployed,
+            free_capital,
+            CFG.max_portfolio_deploy,
+        )
+        target_size = min(target_size, budget)
         if target_size < CFG.min_trade_size:
             break
 
