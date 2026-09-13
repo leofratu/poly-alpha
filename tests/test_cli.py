@@ -119,3 +119,15 @@ def test_validate_reports_no_issues_for_fixtures() -> None:
     payload = json.loads(result.output)
     assert payload["invalid_count"] == 0
     assert payload["checks"]
+
+
+def test_journal_and_history_round_trip(tmp_path: Path) -> None:
+    log = tmp_path / "journal.jsonl"
+    wrote = _invoke(["research", "journal", "--path", str(log), "--json"])
+    assert wrote.exit_code == 0
+    assert json.loads(wrote.output)["market_count"] >= 1
+    read = _invoke(["research", "history", "--path", str(log), "--json"])
+    assert read.exit_code == 0
+    entries = json.loads(read.output)
+    assert len(entries) == 1
+    assert entries[0]["simulated"] is True
