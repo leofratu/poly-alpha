@@ -86,6 +86,11 @@ def _note_lines(note: ResearchNote) -> list[str]:
 def _opportunity_lines(opportunities: Sequence[Opportunity]) -> list[str]:
     """Render the screened-opportunities section."""
     lines = ["## Screened opportunities", ""]
+    lines.append(
+        "Model edges are simulated heuristic estimates; `real` describes market-data "
+        "provenance only."
+    )
+    lines.append("")
     if not opportunities:
         lines.extend(["(none)", ""])
         return lines
@@ -102,6 +107,11 @@ def _opportunity_lines(opportunities: Sequence[Opportunity]) -> list[str]:
 def _metrics_lines(metrics: Sequence[StrategyMetrics]) -> list[str]:
     """Render the strategy-comparison section with the first metric's caveat."""
     lines = ["## Strategy comparison", ""]
+    lines.append(
+        "Computed from caller-supplied resolved markets (possibly simulated/demo); "
+        "in-sample and not annualized."
+    )
+    lines.append("")
     if not metrics:
         lines.extend(["(none)", ""])
         return lines
@@ -121,6 +131,8 @@ def _risk_lines(risk: RiskReport) -> list[str]:
     notes_text = "; ".join(risk.notes) if risk.notes else "none"
     return [
         "## Portfolio risk",
+        "",
+        "Risk inputs are caller-supplied and may be simulated; inspect position provenance.",
         "",
         f"- Positions: {risk.n_positions}",
         f"- Total stake: {risk.total_stake:.2f}",

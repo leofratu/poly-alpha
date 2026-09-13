@@ -205,6 +205,10 @@ def screen(
             "yes" if item.is_real else "no",
         )
     console.print(table)
+    console.print(
+        "[yellow]Edges are simulated heuristics; 'Real' is market-data provenance only. "
+        "Not investment advice.[/yellow]"
+    )
 
 
 @app.command()
@@ -224,7 +228,7 @@ def report(
     from poly_alpha.research.screen import rank_opportunities
 
     notes = research_markets(_fixture_markets())
-    opportunities = rank_opportunities(notes, min_edge_low=-1.0)
+    opportunities = rank_opportunities(notes, min_edge_low=float("-inf"))
     metrics = compare_strategies(demo_resolved_markets(), _strategies())
     risk = analyze_portfolio(demo_positions(), demo_returns())
     content = render_markdown(notes, opportunities=opportunities, metrics=metrics, risk=risk)
@@ -240,19 +244,19 @@ def size(json_out: bool = JSON_OPTION) -> None:
     """Size fixture opportunities with conservative fractional Kelly."""
     from poly_alpha.api.server import _to_jsonable
     from poly_alpha.portfolio.sizing import kelly_fraction
-    from poly_alpha.research.analyst import research_markets
+    from poly_alpha.research.analyst import research_market
 
     decisions = []
-    for note in research_markets(_fixture_markets()):
-        implied = note.market_implied_yes
-        if implied is None:
+    for snapshot in _fixture_markets():
+        if snapshot.yes_price is None or snapshot.no_price is None:
             continue
+        note = research_market(snapshot)
         decision = kelly_fraction(
             probability=note.model_yes.estimate,
-            price=implied,
+            price=snapshot.yes_price,
             uncertainty=note.model_yes,
         )
-        decisions.append((note.market_id, implied, decision))
+        decisions.append((note.market_id, snapshot.yes_price, decision))
     if json_out:
         payload = [
             {
