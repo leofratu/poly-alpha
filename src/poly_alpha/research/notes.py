@@ -44,3 +44,15 @@ class ResearchNote:
     edge: Uncertainty
     provenance: Provenance
     generated_at: datetime
+    caveats: tuple[str, ...]
+
+    def is_simulated(self) -> bool:
+        """True when the estimate or underlying data is not a real observation."""
+        return self.model_yes.simulated or self.provenance.kind is not DataSourceKind.REAL
+
+    def source_kinds(self) -> tuple[DataSourceKind, ...]:
+        """Every distinct provenance kind cited by this note, sorted for determinism."""
+        kinds = {self.provenance.kind}
+        for claim in self.claims:
+            kinds.update(source.kind for source in claim.sources)
+        return tuple(sorted(kinds, key=lambda kind: kind.value))
