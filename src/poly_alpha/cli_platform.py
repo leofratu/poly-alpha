@@ -365,3 +365,31 @@ def validate(json_out: bool = JSON_OPTION) -> None:
     for check in checks:
         for issue in check["issues"]:
             console.print(f"[yellow]{check['market_id']}: {issue}[/yellow]")
+
+
+JOURNAL_PATH = typer.Option(
+    "~/.poly_alpha/research_journal.jsonl", help="Append-only journal file path."
+)
+
+
+@app.command()
+def journal(path: str = JOURNAL_PATH, json_out: bool = JSON_OPTION) -> None:
+    """Append a provenance summary of a fixture research run to the journal."""
+    import os
+
+    from poly_alpha.research.analyst import research_markets
+    from poly_alpha.research.journal import append_entry, build_entry, entry_to_dict
+
+    entry = build_entry(research_markets(_fixture_markets()))
+    target = os.path.expanduser(path)
+    append_entry(target, entry)
+    payload = entry_to_dict(entry)
+    if json_out:
+        _print_json(payload)
+        return
+    console.print(f"[green]Appended research journal entry to {target}.[/green]")
+    console.print(
+        f"[white]{entry.market_count} markets | mean edge {entry.mean_edge:+.4f} "
+        f"| simulated={entry.simulated}[/white]"
+    )
+
