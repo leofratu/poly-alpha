@@ -44,3 +44,49 @@ def _market(**overrides: Any) -> dict[str, Any]:
     market.update(overrides)
     return market
 
+
+def _client(events: list[dict[str, Any]]) -> _StubPolymarketClient:
+    """Wrap canned events in an offline stub client."""
+    return _StubPolymarketClient(events)
+
+
+def test_polymarket_maps_reversed_outcome_order() -> None:
+    """The adapter selects prices by outcome name, not list position."""
+    market = _market(outcomes=["No", "Yes"], outcomePrices=["0.3", "0.7"])
+    markets = PolymarketAdapter(client=_client([{"markets": [market]}])).list_markets()
+    assert len(markets) == 1
+    assert markets[0].yes_price == 0.7
+    assert markets[0].no_price == 0.3
+
+
+def test_polymarket_skips_missing_question() -> None:
+    """A market without a non-empty question yields no snapshot."""
+    empty = _market(id="poly-empty", question="")
+    missing = _market(id="poly-missing")
+    missing.pop("question")
+    client = _client([{"markets": [empty, missing]}])
+    assert PolymarketAdapter(client=client).list_markets() == []
+
+
+def test_polymarket_skips_non_numeric_prices() -> None:
+    """Non-numeric price entries cause the market to be skipped."""
+    market = _market(outcomes=["Yes", "No"], outcomePrices=["abc", "0.4"])
+    client = _client([{"markets": [market]}])
+    assert PolymarketAdapter(client=client).list_markets() == []
+
+
+def test_polymarket_malformed_end_date_yields_no_close_time() -> None:
+    """A malformed endDate still maps the market with close_time unset."""
+    market = _market(endDate="not-a-date")
+    markets = PolymarketAdapter(client=_client([{"markets": [market]}])).list_markets()
+    assert len(markets) == 1
+    assert markets[0].close_time is None
+
+
+def test_polymarket_parses_top_level_market_event() -> None:
+    """An event without a nested markets list is parsed as a market itself."""
+    markets = PolymarketAdapter(client=_client([_market()])).list_markets()
+    assert len(markets) == 1
+    assert markets[0].market_id == "poly-edge"
+    assert markets[0].provenance.kind is DataSourceKind.REAL
+
