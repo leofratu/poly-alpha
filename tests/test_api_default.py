@@ -184,3 +184,11 @@ def test_sources_lists_configured_adapters() -> None:
     assert sorted(series_symbols) == [["BTC", "ETH"], ["SPY"]]
     real = next(row for row in body["data"] if row["name"] == "polymarket")
     assert real["symbols"] == []
+
+
+def test_validation_route_includes_note_interval_checks() -> None:
+    with _served() as port:
+        _, body = _get(port, "/validation")
+    assert body["invalid_note_count"] == 0
+    assert body["note_issues"]
+    assert all(note["issues"] == [] for note in body["note_issues"])

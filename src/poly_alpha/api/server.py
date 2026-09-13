@@ -309,18 +309,30 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                     },
                 )
             elif path == "/validation":
-                from poly_alpha.validation import validate_snapshot
+                from poly_alpha.research.analyst import research_markets
+                from poly_alpha.validation import validate_snapshot, validate_uncertainty
 
+                markets = provider.markets()
                 checks = [
                     {"market_id": market.market_id, "issues": list(validate_snapshot(market))}
-                    for market in provider.markets()
+                    for market in markets
                 ]
                 invalid = sum(1 for check in checks if check["issues"])
+                note_checks = [
+                    {
+                        "market_id": note.market_id,
+                        "issues": list(validate_uncertainty(note.model_yes)),
+                    }
+                    for note in research_markets(markets)
+                ]
+                invalid_notes = sum(1 for note in note_checks if note["issues"])
                 self._send(
                     200,
                     {
                         "data": checks,
                         "invalid_count": invalid,
+                        "note_issues": note_checks,
+                        "invalid_note_count": invalid_notes,
                         "simulated": _markets_are_simulated(provider),
                     },
                 )
