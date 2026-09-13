@@ -43,6 +43,13 @@ def test_base_scenario_change_is_zero() -> None:
     assert result.stressed_value == pytest.approx(result.start_value)
 
 
+def test_base_scenario_is_no_op_for_out_of_range_prices() -> None:
+    positions = [make_position("m1", 100.0, yes_probability=0.5)]
+    result = apply_stress(positions, {"m1": 1.2}, default_scenarios()[0])
+    assert result.change == pytest.approx(0.0)
+    assert result.stressed_value == pytest.approx(result.start_value)
+
+
 def test_negative_shift_lowers_long_yes_value() -> None:
     positions = [make_position("m1", 100.0, yes_probability=0.5)]
     result = apply_stress(positions, {"m1": 0.5}, StressScenario("shock_down", -0.10))

@@ -88,7 +88,8 @@ def apply_stress(
     the stressed minus start value, and ``worst_market_id`` names the position with
     the most negative change, or None when nothing loses value.
     """
-    start_value = portfolio_value(positions, prices)
+    baseline = _shifted_prices(prices, 0.0)
+    start_value = portfolio_value(positions, baseline)
     shifted = _shifted_prices(prices, scenario.yes_price_shift)
     stressed_value = portfolio_value(positions, shifted)
     return StressResult(
@@ -96,7 +97,7 @@ def apply_stress(
         start_value=start_value,
         stressed_value=stressed_value,
         change=stressed_value - start_value,
-        worst_market_id=_worst_market_id(positions, prices, shifted),
+        worst_market_id=_worst_market_id(positions, baseline, shifted),
     )
 
 
