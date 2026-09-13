@@ -90,3 +90,25 @@ def test_simulated_true_for_fixture_and_synthetic() -> None:
     assert overviews
     assert all(row.simulated for row in overviews)
     assert {row.source_kind for row in overviews} == {"fixture", "synthetic"}
+
+
+def test_dimensions_counts_sum_to_row_count() -> None:
+    overviews = build_overview(default_markets(), now=NOW)
+    nested = dimensions(overviews)
+    assert set(nested) == {"source_kind", "asset_class"}
+    for counts in nested.values():
+        assert sum(counts.values()) == len(overviews)
+
+
+def test_overview_rows_are_plain_strings() -> None:
+    overviews = build_overview([make_snapshot(market_id="m1")], now=NOW)
+    rows = overview_rows(overviews)
+    assert len(rows) == len(overviews)
+    assert all(len(row) == 8 for row in rows)
+    assert all(isinstance(cell, str) for row in rows for cell in row)
+
+
+def test_empty_input() -> None:
+    assert build_overview([], now=NOW) == []
+    assert dimensions([]) == {"source_kind": {}, "asset_class": {}}
+    assert overview_rows([]) == []
