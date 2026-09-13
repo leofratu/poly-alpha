@@ -187,25 +187,29 @@ def append_experiment(path: str | Path, experiment: Experiment) -> None:
 def read_experiments(path: str | Path) -> list[Experiment]:
     """Read experiments from a JSONL file, returning ``[]`` when it is missing.
 
-    Blank, malformed, or mistyped lines are skipped rather than raising, so a
-    partially written or externally edited file never blocks readers.
+    Blank, malformed, undecodable, or mistyped lines are skipped rather than raising,
+    so a partially written or externally edited file never blocks readers. A missing
+    path (or one that is not a regular file) returns ``[]``.
     """
     experiments_path = Path(path)
-    if not experiments_path.exists():
+    if not experiments_path.is_file():
         return []
     experiments: list[Experiment] = []
-    with experiments_path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            stripped = line.strip()
-            if not stripped:
-                continue
-            try:
-                data = json.loads(stripped)
-                if not isinstance(data, dict):
+    try:
+        with experiments_path.open("r", encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                stripped = line.strip()
+                if not stripped:
                     continue
-                experiments.append(experiment_from_dict(data))
-            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
-                continue
+                try:
+                    data = json.loads(stripped)
+                    if not isinstance(data, dict):
+                        continue
+                    experiments.append(experiment_from_dict(data))
+                except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                    continue
+    except OSError:
+        return experiments
     return experiments
 
 

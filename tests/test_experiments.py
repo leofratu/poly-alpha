@@ -91,6 +91,14 @@ def test_append_then_read_round_trips(tmp_path: Path) -> None:
 def test_read_experiments_missing_file_returns_empty(tmp_path: Path) -> None:
     assert read_experiments(tmp_path / "does-not-exist.jsonl") == []
     assert read_experiments(tmp_path / "no" / "parent" / "missing.jsonl") == []
+    assert read_experiments(tmp_path) == []
+
+
+def test_read_experiments_tolerates_undecodable_lines(tmp_path: Path) -> None:
+    path = tmp_path / "experiments.jsonl"
+    valid = json.dumps(experiment_to_dict(make_experiment())).encode("utf-8")
+    path.write_bytes(b"{\xff\xfe not utf8}\n" + valid + b"\n")
+    assert len(read_experiments(path)) == 1
 
 
 def test_read_experiments_skips_malformed_and_mistyped_lines(tmp_path: Path) -> None:
