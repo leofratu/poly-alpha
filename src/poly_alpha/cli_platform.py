@@ -359,13 +359,18 @@ def simulate(json_out: bool = JSON_OPTION) -> None:
 
 
 @app.command()
-def overview(json_out: bool = JSON_OPTION) -> None:
+def overview(
+    json_out: bool = JSON_OPTION,
+    limit: int = typer.Option(0, help="Show only the top N rows by absolute edge (0 = all)."),
+) -> None:
     """Rank labeled offline markets by absolute research edge."""
     from poly_alpha.adapters.registry import default_markets
     from poly_alpha.api.server import to_jsonable
     from poly_alpha.research.overview import build_overview, dimensions, overview_rows
 
     rows = build_overview(default_markets())
+    if limit > 0:
+        rows = rows[:limit]
     if json_out:
         payload = {
             "dimensions": dimensions(rows),
