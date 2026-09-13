@@ -538,7 +538,9 @@ def experiment(path: str = EXPERIMENTS_PATH, json_out: bool = JSON_OPTION) -> No
     target = os.path.expanduser(path)
     append_experiment(target, record)
     if json_out:
-        _print_json(experiment_to_dict(record))
+        payload = experiment_to_dict(record)
+        payload["simulated"] = True
+        _print_json(payload)
         return
     console.print(f"[green]Recorded experiment to {target}.[/green]")
     console.print(
@@ -557,7 +559,12 @@ def experiments(path: str = EXPERIMENTS_PATH, json_out: bool = JSON_OPTION) -> N
 
     records = read_experiments(os.path.expanduser(path))
     if json_out:
-        _print_json([to_jsonable(record) for record in records])
+        _print_json(
+            [
+                {**cast("dict[str, object]", to_jsonable(record)), "simulated": True}
+                for record in records
+            ]
+        )
         return
     table = Table(title="Recorded experiments (reproducible; simulated)")
     table.add_column("Run", style="cyan")

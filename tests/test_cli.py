@@ -259,9 +259,11 @@ def test_experiment_records_and_lists(tmp_path: Path) -> None:
     assert result.exit_code == 0
     payload = json.loads(result.output)
     assert payload["market_count"] >= 1
+    assert payload["simulated"] is True
 
     listed = _invoke(["research", "experiments", "--path", str(path), "--json"])
     assert listed.exit_code == 0
     records = json.loads(listed.output)
     assert len(records) == 1
     assert records[0]["run_id"] == payload["run_id"]
+    assert records[0]["simulated"] is True
