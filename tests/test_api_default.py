@@ -90,3 +90,29 @@ def test_default_provider_root_serves_dashboard() -> None:
 def test_default_provider_simulated_flags() -> None:
     """Every simulated route labels its payload as simulated."""
     with _served() as port:
+        for path in SIMULATED_ROUTES:
+            _, body = _get(port, path)
+            assert isinstance(body, dict)
+            assert body["simulated"] is True
+
+
+def test_default_provider_unknown_path_404() -> None:
+    """An unknown path raises an HTTP 404 error."""
+    with _served() as port:
+        try:
+            _get(port, "/nope")
+        except urllib.error.HTTPError as exc:
+            assert exc.code == 404
+        else:
+            raise AssertionError("expected HTTPError 404")
+
+
+def test_health_lists_capabilities() -> None:
+    """The health route reports the capability list and a version string."""
+    with _served() as port:
+        _, body = _get(port, "/health")
+    assert isinstance(body, dict)
+    capabilities = body["capabilities"]
+    assert "run" in capabilities
+    assert "allocate" in capabilities
+    assert isinstance(body["version"], str)
