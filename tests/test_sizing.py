@@ -97,3 +97,10 @@ def test_total_fraction_sums() -> None:
         SizingDecision(fraction=0.03, rationale="b", capped=True, probability_used=0.7),
     ]
     assert total_fraction(decisions) == pytest.approx(0.05)
+
+
+def test_invalid_cap_rejected() -> None:
+    with pytest.raises(ValueError):
+        kelly_fraction(probability=0.6, price=0.5, cap=0.0)
+    with pytest.raises(ValueError):
+        kelly_fraction(probability=0.6, price=0.5, cap=1.5)

@@ -137,3 +137,12 @@ def test_default_provider_exposes_simulated_research_and_demo_compare() -> None:
     metrics = provider.compare()
     assert metrics
     assert "roi" in metrics[0] and "trades" in metrics[0]
+
+
+def test_risk_and_compare_label_simulated_fixture_data() -> None:
+    with _served(_provider()) as port:
+        _, risk_body = _get(port, "/risk")
+        _, compare_body = _get(port, "/compare")
+    assert risk_body["simulated"] is True
+    assert compare_body["simulated"] is True
+    assert "not annualized" in compare_body["caveat"]

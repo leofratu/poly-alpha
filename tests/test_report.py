@@ -185,3 +185,10 @@ def test_write_markdown_writes_utf8(tmp_path: Path) -> None:
     target = tmp_path / "dossier.md"
     write_markdown(target, "# Dossier — ünïcode\n")
     assert target.read_text(encoding="utf-8") == "# Dossier — ünïcode\n"
+
+
+def test_empty_optional_sections_render_none_marker() -> None:
+    output = render_markdown(make_notes(), opportunities=[], metrics=[])
+    assert "## Screened opportunities" in output
+    assert "## Strategy comparison" in output
+    assert output.count("(none)") >= 2
