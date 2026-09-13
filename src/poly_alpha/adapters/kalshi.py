@@ -118,6 +118,10 @@ class KalshiAdapter:
         if yes_price is None:
             return None
         question = str(market.get("title") or market.get("yes_sub_title") or ticker).strip()
+        notional = _to_float(market.get("notional_value_dollars"))
+        contract_value = notional if notional is not None else 1.0
+        liquidity = (_to_float(market.get("open_interest_fp")) or 0.0) * contract_value
+        volume = (_to_float(market.get("volume_fp")) or 0.0) * contract_value
         provenance = Provenance(
             source="Kalshi public API",
             kind=DataSourceKind.REAL,
@@ -125,8 +129,8 @@ class KalshiAdapter:
             retrieved_at=datetime.now(UTC),
             note=(
                 "YES price is the bid/ask midpoint in dollars (or the last/one-sided quote "
-                "when a side is missing); liquidity and volume are contract counts "
-                "(open interest / volume), not dollar amounts."
+                "when a side is missing); liquidity and volume are open-interest and traded "
+                "notional in dollars (contract count x notional value)."
             ),
         )
         return MarketSnapshot(
@@ -139,8 +143,8 @@ class KalshiAdapter:
             ),
             yes_price=yes_price,
             no_price=1.0 - yes_price,
-            liquidity=_to_float(market.get("open_interest_fp")) or 0.0,
-            volume=_to_float(market.get("volume_fp")) or 0.0,
+            liquidity=liquidity,
+            volume=volume,
             provenance=provenance,
             close_time=_parse_datetime(market.get("close_time")),
         )

@@ -45,6 +45,7 @@ def _valid_market() -> dict[str, Any]:
         "last_price_dollars": "0.6500",
         "volume_fp": "5678.00",
         "open_interest_fp": "1234.00",
+        "notional_value_dollars": "1.00",
         "close_time": CLOSE_TIME,
         "status": "open",
         "result": "",
@@ -139,6 +140,14 @@ def test_kalshi_adapter_skips_non_binary_markets() -> None:
     scalar = _valid_market()
     scalar["market_type"] = "scalar"
     assert _adapter([scalar]).list_markets() == []
+
+
+def test_kalshi_adapter_scales_liquidity_by_notional_value() -> None:
+    market = _valid_market()
+    market["notional_value_dollars"] = "2.00"
+    snapshot = _adapter([market]).list_markets()[0]
+    assert snapshot.liquidity == 2468.0
+    assert snapshot.volume == 11356.0
 
 
 class _PagedKalshiClient(KalshiClient):
