@@ -90,3 +90,31 @@ def analyze_portfolio(
         notes.append(
             "historical VaR is the empirical 5th percentile of supplied returns, "
             "not a parametric estimate"
+        )
+    return RiskReport(
+        total_stake=total_stake,
+        exposure_by_class=exposure_by_class,
+        hhi=hhi,
+        max_position_fraction=max_position_fraction,
+        historical_var_95=historical_var_95,
+        max_drawdown=max_drawdown,
+        n_positions=len(positions),
+        notes=tuple(notes),
+    )
+
+
+def portfolio_value(positions: Sequence[Position], prices: Mapping[str, float]) -> float:
+    """Mark positions to supplied YES prices with a simple stake * price / p mark.
+
+    Each position with a known YES probability and a supplied price contributes
+    ``stake * (price / yes_probability)``; positions missing either are carried at
+    their original stake.
+    """
+    value = 0.0
+    for position in positions:
+        price = prices.get(position.market_id)
+        if price is None or position.yes_probability <= 0.0:
+            value += position.stake
+            continue
+        value += position.stake * (price / position.yes_probability)
+    return value
