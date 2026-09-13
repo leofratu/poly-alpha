@@ -38,9 +38,10 @@ def run(
 ) -> dict[str, float | str]:
     """Run a synthetic Monte Carlo with fabricated resolutions and returns.
 
-    The GitHub market list is only used to seed questions and a count; outcomes are
-    generated, so the output is not a backtest of observed markets. Returns a per-cycle
-    ROI (never annualized) plus p5, p95, win_rate, a synthetic marker, and a caveat.
+    The Polymarket Gamma market list is only used to seed questions and a count;
+    outcomes are generated, so the output is not a backtest of observed markets.
+    Returns a per-cycle ROI (never annualized) plus p5, p95, win_rate, a synthetic
+    marker, and a caveat.
     """
     banner = (
         "[bold red]SYNTHETIC Monte Carlo — resolutions and returns are fabricated, "

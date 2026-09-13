@@ -24,6 +24,6 @@ def test_run_is_deterministic_and_labeled_synthetic() -> None:
 
 def test_run_uses_category_adjustments(monkeypatch: pytest.MonkeyPatch) -> None:
     base = empirical.run(n_trials=2_000, trades_per_cycle=10, seed=1)["mean"]
-    monkeypatch.setattr(empirical, "CATEGORY_ADJ", dict.fromkeys(empirical.CATEGORY_ADJ, -0.30))
+    monkeypatch.setattr(empirical, "CATEGORY_ADJ", dict(empirical.CATEGORY_ADJ, sports=-0.30))
     lowered = empirical.run(n_trials=2_000, trades_per_cycle=10, seed=1)["mean"]
     assert lowered < base

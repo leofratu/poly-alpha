@@ -13,8 +13,8 @@ uv run poly-alpha research --help
 ```
 
 The research commands run offline by default. `--real` flags reach the read-only Polymarket
-Gamma and Kalshi Trade APIs and tag results `DataSourceKind.REAL`; `--limit N` bounds how many
-markets each source returns.
+Gamma and Kalshi Trade APIs and tag results `DataSourceKind.REAL`; `--limit N` caps each
+source's request/page size (Polymarket caps events, Kalshi caps markets).
 
 ## Market data
 
