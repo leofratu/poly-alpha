@@ -90,3 +90,23 @@ def run_pipeline(
     positions = [
         _position_for(
             allocation,
+            note_by_id[allocation.market_id],
+            asset_class_by_id[allocation.market_id],
+        )
+        for allocation in plan.allocations
+    ]
+    risk = analyze_portfolio(positions, demo_returns())
+    calibration = demo_calibration()
+
+    return ResearchBundle(
+        market_count=len(markets),
+        note_count=len(notes),
+        opportunity_count=len(opportunities),
+        allocations=plan.allocations,
+        total_fraction=plan.total_fraction,
+        total_stake=plan.total_stake,
+        cash=plan.cash,
+        risk=risk,
+        calibration=calibration,
+        caveat=_CAVEAT,
+    )
