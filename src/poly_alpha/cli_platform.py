@@ -30,18 +30,15 @@ def _fixture_markets() -> list[Any]:
 
 
 def _real_markets() -> list[Any]:
-    import requests
+    from poly_alpha.adapters.registry import real_markets
 
-    from poly_alpha.adapters.polymarket import PolymarketAdapter
-
-    try:
-        return PolymarketAdapter().list_markets()
-    except requests.RequestException as exc:
-        console.print(f"[red]Could not fetch real markets: {exc}[/red]")
-        return []
+    snapshots = real_markets()
+    if not snapshots:
+        console.print("[red]Could not fetch real markets from Polymarket or Kalshi.[/red]")
+    return snapshots
 
 
-REAL_OPTION = typer.Option(False, "--real", help="Fetch real Polymarket markets (network).")
+REAL_OPTION = typer.Option(False, "--real", help="Fetch real Polymarket/Kalshi markets (network).")
 
 
 @app.command()
@@ -65,7 +62,7 @@ def markets(
         _print_json([snapshot_to_dict(snapshot) for snapshot in snapshots])
         return
     title = (
-        "Real Polymarket markets (network; not investment advice)"
+        "Real Polymarket + Kalshi markets (network; not investment advice)"
         if real
         else "Labeled markets (not real market data)"
     )

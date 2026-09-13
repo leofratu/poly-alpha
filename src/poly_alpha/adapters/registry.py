@@ -13,6 +13,8 @@ import requests
 
 from poly_alpha.adapters.base import AdapterError, MarketAdapter
 from poly_alpha.adapters.fixtures import fixture_adapter
+from poly_alpha.adapters.kalshi import KalshiAdapter
+from poly_alpha.adapters.polymarket import PolymarketAdapter
 from poly_alpha.adapters.series import BinaryFromSeriesAdapter
 from poly_alpha.contracts import MarketSnapshot
 
@@ -71,3 +73,13 @@ def markets_by_kind(adapters: Sequence[MarketAdapter]) -> dict[str, int]:
 def default_markets() -> list[MarketSnapshot]:
     """Return the snapshots produced by `default_adapters()`."""
     return aggregate_markets(default_adapters())
+
+
+def real_adapters() -> list[MarketAdapter]:
+    """Return the live, read-only market adapters: Polymarket and Kalshi."""
+    return [PolymarketAdapter(), KalshiAdapter()]
+
+
+def real_markets() -> list[MarketSnapshot]:
+    """Aggregate real snapshots; a source that fails is skipped, not fatal."""
+    return aggregate_markets(real_adapters())
