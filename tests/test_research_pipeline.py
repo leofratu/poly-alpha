@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import pytest
 
+from poly_alpha.adapters.registry import default_markets
+from poly_alpha.research.analyst import research_markets
 from poly_alpha.research.pipeline import run_pipeline
+from poly_alpha.research.screen import rank_opportunities
 
 _EPSILON = 1e-9
 
@@ -14,6 +17,13 @@ def test_pipeline_counts_are_consistent() -> None:
     assert bundle.market_count > 0
     assert bundle.note_count == bundle.market_count
     assert bundle.opportunity_count <= bundle.note_count
+
+
+def test_opportunity_count_is_the_conservative_screen() -> None:
+    notes = research_markets(default_markets())
+    expected = len(rank_opportunities(notes))
+    assert run_pipeline().opportunity_count == expected
+    assert expected < len(notes)
 
 
 def test_stakes_cash_and_fractions_reconcile() -> None:

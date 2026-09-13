@@ -69,7 +69,7 @@ def run_pipeline(
     """
     markets = default_markets()
     notes = research_markets(markets)
-    opportunities = rank_opportunities(notes, min_edge_low=float("-inf"))
+    opportunities = rank_opportunities(notes)
 
     prices = {
         market.market_id: market.yes_price for market in markets if market.yes_price is not None
