@@ -94,7 +94,7 @@ def run(
 
     lifecycle_draws = rng.choice(lifecycles, size=(n_trials, trades_per_cycle), p=life_w)
     price_draws = rng.choice(prices, size=(n_trials, trades_per_cycle), p=price_w)
-    _category_draws = rng.choice(categories, size=(n_trials, trades_per_cycle), p=cat_w)  # noqa: F841
+    _ = rng.choice(categories, size=(n_trials, trades_per_cycle), p=cat_w)
     outcome_draws = rng.random((n_trials, trades_per_cycle))
 
     win_rates = np.zeros((n_trials, trades_per_cycle))

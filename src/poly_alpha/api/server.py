@@ -217,8 +217,8 @@ def snapshot_to_dict(s: MarketSnapshot) -> dict:
 def _markets_are_simulated(provider: DataProvider) -> bool:
     """True when any served market is not real observed data.
 
-    Only /research and /overview use this. /risk and /compare are always computed from the
-    packaged demo dataset, so they report simulated=True directly.
+    Used by /markets, /validation, /research, and /overview. /risk and /compare are always
+    computed from the packaged demo dataset, so they report simulated=True directly.
     """
     return any(not market.provenance.kind.is_real for market in provider.markets())
 
@@ -243,7 +243,14 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
             elif path == "/markets":
                 markets = provider.markets()
                 data = [snapshot_to_dict(market) for market in markets]
-                self._send(200, {"data": data, "count": len(data)})
+                self._send(
+                    200,
+                    {
+                        "data": data,
+                        "count": len(data),
+                        "simulated": _markets_are_simulated(provider),
+                    },
+                )
             elif path == "/research":
                 research = provider.research()
                 simulated = _markets_are_simulated(provider) or any(
@@ -287,7 +294,14 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                     for market in provider.markets()
                 ]
                 invalid = sum(1 for check in checks if check["issues"])
-                self._send(200, {"data": checks, "invalid_count": invalid})
+                self._send(
+                    200,
+                    {
+                        "data": checks,
+                        "invalid_count": invalid,
+                        "simulated": _markets_are_simulated(provider),
+                    },
+                )
             elif path == "/curves":
                 from poly_alpha.adapters.history import fixture_histories
                 from poly_alpha.backtesting.strategies import default_strategies
