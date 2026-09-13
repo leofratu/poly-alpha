@@ -90,3 +90,49 @@ def test_constant_half_always_half() -> None:
     snapshots = (
         make_snapshot(yes_price=0.10, no_price=0.90),
         make_snapshot(yes_price=0.90, no_price=0.10),
+        make_snapshot(yes_price=None, no_price=None),
+        fixture_adapter().list_markets()[0],
+    )
+    assert all(constant_half(snapshot) == 0.5 for snapshot in snapshots)
+
+
+def test_uncertainty_gated_returns_none_when_lower_edge_not_positive() -> None:
+    snapshot = make_snapshot(
+        question="Will the test event resolve YES?",
+        yes_price=0.60,
+        no_price=0.40,
+        liquidity=1000.0,
+    )
+    assert uncertainty_gated(snapshot) is None
+
+
+def test_uncertainty_gated_returns_value_when_lower_edge_positive() -> None:
+    bullish_book = (
+        PriceLevel(price=0.95, size=200.0),
+        PriceLevel(price=0.95, size=200.0),
+        PriceLevel(price=0.95, size=200.0),
+    )
+    snapshot = make_snapshot(
+        yes_price=0.70,
+        no_price=0.30,
+        liquidity=5000.0,
+        orderbook=bullish_book,
+    )
+    result = uncertainty_gated(snapshot)
+    assert result is not None
+    assert 0.0 <= result <= 1.0
+
+
+def test_uncertainty_gated_is_deterministic() -> None:
+    snapshot = make_snapshot(yes_price=0.70, no_price=0.30, liquidity=5000.0)
+    assert uncertainty_gated(snapshot) == uncertainty_gated(snapshot)
+    assert uncertainty_gated(fixture_adapter().list_markets()[0]) == uncertainty_gated(
+        fixture_adapter().list_markets()[0]
+    )
+
+
+def test_default_strategies_has_four_callable_entries() -> None:
+    strategies = default_strategies()
+    assert set(strategies) == STRATEGY_NAMES
+    assert all(callable(strategy) for strategy in strategies.values())
+
