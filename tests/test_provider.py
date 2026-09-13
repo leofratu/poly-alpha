@@ -141,6 +141,7 @@ def test_ai_provider_parses_response() -> None:
     assert all(source.kind is DataSourceKind.SIMULATED for source in sources)
     assert any(source.url == "https://example.com/forecast" for source in sources)
     assert any("AI" in caveat for caveat in note.caveats)
+    assert note.claims[0].support == pytest.approx(0.80)
 
     assert session.calls[0]["url"] == "https://api.openai.com/v1/chat/completions"
     assert session.calls[0]["headers"] == {"Authorization": f"Bearer {_SENTINEL_KEY}"}
@@ -161,6 +162,9 @@ def test_ai_provider_falls_back_on_bad_content() -> None:
     out_of_range = _FakeSession(
         [_FakeResponse(_model_response(estimate=0.90, low=0.40, high=1.20))]
     )
+    refused = _FakeSession(
+        [_FakeResponse({"choices": [{"message": {"content": None, "refusal": "no"}}]})]
+    )
 
     assert (
         OpenAICompatibleProvider(_SENTINEL_KEY, session=malformed).research_market(
@@ -172,6 +176,10 @@ def test_ai_provider_falls_back_on_bad_content() -> None:
         OpenAICompatibleProvider(_SENTINEL_KEY, session=out_of_range).research_market(
             snapshot, now=_NOW
         )
+        == expected
+    )
+    assert (
+        OpenAICompatibleProvider(_SENTINEL_KEY, session=refused).research_market(snapshot, now=_NOW)
         == expected
     )
 

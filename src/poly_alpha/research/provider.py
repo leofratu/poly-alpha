@@ -214,7 +214,7 @@ class OpenAICompatibleProvider:
         claim = ResearchClaim(
             text=rationale or "AI model estimate.",
             direction=direction,
-            support=0.5,
+            support=1.0 - (high - low),
             sources=sources,
         )
 
