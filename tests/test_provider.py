@@ -100,3 +100,48 @@ def _model_response(
         }
     )
     return _content_response(content)
+
+
+def test_heuristic_provider_matches_analyst() -> None:
+    snapshot = _snapshot()
+    provider = HeuristicProvider()
+    assert provider.is_ai is False
+    assert provider.name == "offline-heuristic"
+    assert provider.research_market(snapshot, now=_NOW) == research_market(snapshot, now=_NOW)
+
+
+def test_ai_provider_parses_response() -> None:
+    snapshot = _snapshot()
+    session = _FakeSession(
+        [
+            _FakeResponse(
+                _model_response(
+                    estimate=0.70,
+                    low=0.60,
+                    high=0.80,
+                    rationale="Rain is likely.",
+                    citations=["https://example.com/forecast"],
+                )
+            )
+        ]
+    )
+    provider = OpenAICompatibleProvider(_SENTINEL_KEY, session=session)
+    note = provider.research_market(snapshot, now=_NOW)
+
+    assert provider.is_ai is True
+    assert note.model_yes.simulated is True
+    assert note.model_yes.estimate == pytest.approx(0.70)
+    assert note.model_yes.low == pytest.approx(0.60)
+    assert note.model_yes.high == pytest.approx(0.80)
+    assert note.model_yes.basis.startswith("ai:")
+    assert note.edge.estimate == pytest.approx(0.10)
+
+    assert len(note.claims) == 1
+    sources = note.claims[0].sources
+    assert all(source.kind is DataSourceKind.SIMULATED for source in sources)
+    assert any(source.url == "https://example.com/forecast" for source in sources)
+    assert any("AI" in caveat for caveat in note.caveats)
+
+    assert session.calls[0]["url"] == "https://api.openai.com/v1/chat/completions"
+    assert session.calls[0]["headers"] == {"Authorization": f"Bearer {_SENTINEL_KEY}"}
+    assert session.calls[0]["json"]["response_format"] == {"type": "json_object"}
