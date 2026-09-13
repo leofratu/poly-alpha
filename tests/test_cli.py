@@ -103,3 +103,19 @@ def test_report_writes_markdown_dossier(tmp_path: Path) -> None:
 def test_help_succeeds() -> None:
     result = _invoke(["--help"])
     assert result.exit_code == 0
+
+
+def test_overview_json_has_dimensions_and_rows() -> None:
+    result = _invoke(["research", "overview", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["rows"]
+    assert payload["dimensions"]["source_kind"]["fixture"] >= 1
+
+
+def test_validate_reports_no_issues_for_fixtures() -> None:
+    result = _invoke(["research", "validate", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["invalid_count"] == 0
+    assert payload["checks"]
