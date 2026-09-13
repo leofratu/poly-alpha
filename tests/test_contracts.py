@@ -44,3 +44,12 @@ def test_implied_yes_none_without_both_sides() -> None:
     assert _snapshot(0.6, None).is_tradeable is False
 
 
+def test_zero_total_probability_is_none() -> None:
+    assert _snapshot(0.0, 0.0).implied_yes() is None
+
+
+def test_uncertainty_bounds_and_membership() -> None:
+    band = Uncertainty(estimate=0.5, low=0.4, high=0.6, basis="fixture", simulated=True)
+    assert band.width == pytest.approx(0.2)
+    assert band.contains(0.5) is True
+    assert band.contains(0.7) is False
