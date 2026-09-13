@@ -111,29 +111,40 @@ def append_entry(path: str | Path, entry: JournalEntry) -> None:
     """Append ``entry`` as one UTF-8 JSON line, creating parent directories."""
     journal_path = Path(path)
     journal_path.parent.mkdir(parents=True, exist_ok=True)
+    needs_separator = False
+    if journal_path.exists() and journal_path.stat().st_size > 0:
+        with journal_path.open("rb") as handle:
+            handle.seek(-1, 2)
+            needs_separator = handle.read(1) != b"\n"
     line = json.dumps(entry_to_dict(entry), sort_keys=True)
+    separator = "\n" if needs_separator else ""
     with journal_path.open("a", encoding="utf-8") as handle:
-        handle.write(line + "\n")
+        handle.write(separator + line + "\n")
 
 
 def read_entries(path: str | Path) -> list[JournalEntry]:
     """Read entries from a journal, returning ``[]`` when missing.
 
-    Malformed or unreadable lines are skipped rather than raising, so a partially written
-    or externally edited journal never blocks readers.
+    Malformed, undecodable, or unreadable lines are skipped rather than raising, so a
+    partially written or externally edited journal never blocks readers.
     """
     journal_path = Path(path)
-    if not journal_path.exists():
+    if not journal_path.is_file():
         return []
     entries: list[JournalEntry] = []
-    with journal_path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            stripped = line.strip()
-            if not stripped:
-                continue
-            try:
-                data = json.loads(stripped)
-                entries.append(entry_from_dict(data))
-            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
-                continue
+    try:
+        with journal_path.open("r", encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    data = json.loads(stripped)
+                    if not isinstance(data, dict):
+                        continue
+                    entries.append(entry_from_dict(data))
+                except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                    continue
+    except OSError:
+        return entries
     return entries
