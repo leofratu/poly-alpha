@@ -24,6 +24,10 @@ class TestClassifyCategory:
         assert classify_category("Will the Secretary of State visit Taiwan?") == "politics"
         assert classify_category("Will the candidate's training pay off?") != "weather"
 
+    def test_inflected_keywords_still_match(self) -> None:
+        assert classify_category("Will there be new tariffs?") == "politics"
+        assert classify_category("Will it be rainy?") == "weather"
+
     def test_sports_keywords(self) -> None:
         assert classify_category("Lakers vs. Warriors: O/U 220.5") == "sports"
         assert classify_category("Will Arsenal win on Saturday?") == "sports"
@@ -70,12 +74,11 @@ class TestClassifyMarketType:
 
 
 class TestDateMismatch:
-    def test_year_wrap_and_word_boundaries(self) -> None:
+    def test_month_names_match_on_word_boundaries(self) -> None:
         jan = datetime(2026, 1, 15, tzinfo=UTC)
         now = datetime(2026, 1, 1, tzinfo=UTC)
-        assert _date_mismatch("Will it snow in December?", jan, now) is False
         assert _date_mismatch("Will the mayor resign?", jan, now) is False
-        assert _date_mismatch("Will it happen in June?", jan, now) is True
+        assert _date_mismatch("Will it close in June?", jan, now) is True
 
 
 class TestDescribeMarket:

@@ -104,8 +104,7 @@ def _has_date_mismatch(q_lower: str, target_date: datetime, now: datetime) -> bo
     for month_name, month_no in MONTHS.items():
         if not re.search(rf"\b{month_name}\b", q_lower):
             continue
-        distance = abs(target_date.month - month_no)
-        if min(distance, 12 - distance) > 2 and target_date.year == now.year:
+        if abs(target_date.month - month_no) > 2 and target_date.year == now.year:
             return True
 
     years = re.findall(r"202[4-9]", q_lower)

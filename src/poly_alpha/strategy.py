@@ -308,10 +308,19 @@ def acceleration_config() -> StrategyConfig:
 # ---------------------------------------------------------------------------
 
 
+_AMBIGUOUS_WORDS = frozenset({"eth", "sec", "defi", "rain", "snow", "lol", "strike", "kings"})
+_KEYWORD_SUFFIX = r"(?:s|es|ed|ing|y|ment|ian|an|i|n|r|rs|ial|\d+)?"
+
+
 def _matches_keyword(text: str, keyword: str) -> bool:
-    """Match single-word keywords on word boundaries; multi-word phrases as substrings."""
-    if keyword.isalnum():
-        return re.search(rf"\b{re.escape(keyword)}\b", text) is not None
+    """Match collision-prone short keywords as words, everything else as substrings.
+
+    Tokens like ``eth`` and ``sec`` would otherwise match inside "Netherlands" and
+    "Secretary"; longer keywords keep substring matching so inflections such as
+    "tariffs", "sanctions", and "impeachment" still match.
+    """
+    if keyword in _AMBIGUOUS_WORDS:
+        return re.search(rf"\b{re.escape(keyword)}{_KEYWORD_SUFFIX}\b", text) is not None
     return keyword in text
 
 
@@ -531,8 +540,7 @@ def _date_mismatch(question: str, target_date: datetime, now: datetime) -> bool:
     for month_name, month_no in MONTHS.items():
         if not re.search(rf"\b{month_name}\b", q_lower):
             continue
-        distance = abs(target_date.month - month_no)
-        if min(distance, 12 - distance) > 2 and target_date.year == now.year:
+        if abs(target_date.month - month_no) > 2 and target_date.year == now.year:
             return True
 
     years = re.findall(r"202[4-9]", q_lower)

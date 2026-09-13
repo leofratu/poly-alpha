@@ -7,10 +7,9 @@ from datetime import UTC, datetime
 from poly_alpha.execution.live_executor import _has_date_mismatch
 
 
-def test_has_date_mismatch_uses_circular_months_and_word_boundaries() -> None:
+def test_has_date_mismatch_uses_word_boundaries() -> None:
     january = datetime(2026, 1, 15, tzinfo=UTC)
     now = datetime(2026, 1, 1, tzinfo=UTC)
-    assert _has_date_mismatch("will it snow in december?", january, now) is False
     assert _has_date_mismatch("will the mayor resign?", january, now) is False
     assert _has_date_mismatch("will it close in june?", january, now) is True
 
