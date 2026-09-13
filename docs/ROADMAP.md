@@ -34,9 +34,9 @@ at the source.
   meaningful rather than illustrative.
 - **More uncertainty-aware strategies** and a portfolio-level backtest that feeds `allocate`
   into `simulate_portfolio`/`walk_forward` over real histories.
-- **Slippage/fee realism**: `costs.py` now exposes `walk_book` plus
-  `CostModel.depth_effective_price`/`depth_net_edge` for depth-aware fills over the shared
-  order-book contract; wiring them into the CLI `costs` command and the strategy simulations
+- **Slippage/fee realism**: `costs.py` exposes `walk_book` plus
+  `CostModel.depth_effective_price`/`depth_net_edge`, and `research costs --size N` reports a
+  depth-aware edge over the fixture order books. Feeding these into the strategy simulations
   is still open. A full L2 fill model reusing `execution/paper_engine.py` remains open.
 
 ## Interface
