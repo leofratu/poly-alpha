@@ -36,6 +36,7 @@ def _valid_market() -> dict[str, Any]:
     return {
         "ticker": TICKER,
         "event_ticker": EVENT_TICKER,
+        "market_type": "binary",
         "title": "Will it rain tomorrow?",
         "yes_sub_title": "Yes",
         "no_sub_title": "No",
@@ -132,3 +133,9 @@ def test_kalshi_adapter_is_deterministic() -> None:
     first = [_stable_fields(market) for market in adapter.list_markets()]
     second = [_stable_fields(market) for market in adapter.list_markets()]
     assert first == second
+
+
+def test_kalshi_adapter_skips_non_binary_markets() -> None:
+    scalar = _valid_market()
+    scalar["market_type"] = "scalar"
+    assert _adapter([scalar]).list_markets() == []

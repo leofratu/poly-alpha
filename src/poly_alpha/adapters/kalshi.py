@@ -104,6 +104,8 @@ class KalshiAdapter:
         ticker = str(market.get("ticker") or "").strip()
         if not ticker:
             return None
+        if market.get("market_type") not in (None, "binary"):
+            return None
         yes_price = _yes_price(market)
         if yes_price is None:
             return None
@@ -114,8 +116,9 @@ class KalshiAdapter:
             url=KALSHI_API_BASE,
             retrieved_at=datetime.now(UTC),
             note=(
-                "YES price is the bid/ask midpoint in dollars; liquidity and volume are "
-                "contract counts (open interest / volume), not dollar amounts."
+                "YES price is the bid/ask midpoint in dollars (or the last/one-sided quote "
+                "when a side is missing); liquidity and volume are contract counts "
+                "(open interest / volume), not dollar amounts."
             ),
         )
         return MarketSnapshot(
