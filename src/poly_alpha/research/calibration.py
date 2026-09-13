@@ -44,3 +44,49 @@ def interval_coverage(
             "notes and resolved_yes must have equal length, got "
             f"{len(notes)} and {len(resolved_yes)}"
         )
+    n = len(notes)
+    covered = 0
+    width_sum = 0.0
+    simulated = False
+    for note, outcome in zip(notes, resolved_yes):
+        realized = 1.0 if outcome else 0.0
+        if note.model_yes.contains(realized):
+            covered += 1
+        width_sum += note.model_yes.width
+        simulated = simulated or note.is_simulated()
+    return CalibrationReport(
+        n=n,
+        coverage=covered / n if n else 0.0,
+        mean_width=width_sum / n if n else 0.0,
+        simulated=simulated,
+        notes=(_SIMULATION_NOTE,),
+    )
+
+
+def calibration_by_kind(
+    notes: Sequence[ResearchNote], resolved_yes: Sequence[bool]
+) -> dict[str, CalibrationReport]:
+    """Compute one coverage report per provenance kind, in sorted kind order."""
+    if len(notes) != len(resolved_yes):
+        raise ValueError(
+            "notes and resolved_yes must have equal length, got "
+            f"{len(notes)} and {len(resolved_yes)}"
+        )
+    grouped: dict[str, list[int]] = {}
+    for index, note in enumerate(notes):
+        grouped.setdefault(note.provenance.kind.value, []).append(index)
+    reports: dict[str, CalibrationReport] = {}
+    for kind in sorted(grouped):
+        indexes = grouped[kind]
+        reports[kind] = interval_coverage(
+            [notes[index] for index in indexes],
+            [resolved_yes[index] for index in indexes],
+        )
+    return reports
+
+
+def demo_calibration() -> CalibrationReport:
+    """Run the research engine over demo resolved markets and score coverage."""
+    markets = demo_resolved_markets()
+    notes = [research_market(market.snapshot) for market in markets]
+    return interval_coverage(notes, [market.resolved_yes for market in markets])
