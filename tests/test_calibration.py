@@ -114,3 +114,8 @@ def test_interior_intervals_miss_point_outcomes() -> None:
     report = interval_coverage(notes, [True, False])
     assert report.coverage == 0.0
     assert any("point outcomes" in note for note in report.notes)
+
+
+def test_calibration_by_kind_length_mismatch_raises() -> None:
+    with pytest.raises(ValueError):
+        calibration_by_kind([_note(), _note(market_id="b")], [True])

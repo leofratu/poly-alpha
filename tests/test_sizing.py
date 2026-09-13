@@ -104,3 +104,8 @@ def test_invalid_cap_rejected() -> None:
         kelly_fraction(probability=0.6, price=0.5, cap=0.0)
     with pytest.raises(ValueError):
         kelly_fraction(probability=0.6, price=0.5, cap=1.5)
+
+
+def test_unit_cap_keeps_fraction_within_bounds() -> None:
+    decision = kelly_fraction(probability=0.9, price=0.5, cap=1.0)
+    assert 0.0 < decision.fraction <= 1.0

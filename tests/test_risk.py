@@ -116,3 +116,12 @@ def test_negative_stake_rejected() -> None:
 def test_non_finite_returns_rejected() -> None:
     with pytest.raises(ValueError):
         analyze_portfolio([make_position("m1", "sports", 100.0)], [0.1, float("nan")])
+
+
+def test_all_zero_stakes_yield_zero_concentration() -> None:
+    report = analyze_portfolio(
+        [make_position("m1", "sports", 0.0), make_position("m2", "politics", 0.0)]
+    )
+    assert report.total_stake == 0.0
+    assert report.hhi == 0.0
+    assert report.max_position_fraction == 0.0
