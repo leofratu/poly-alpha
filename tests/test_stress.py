@@ -114,3 +114,18 @@ def test_position_absent_from_prices_is_carried_at_stake() -> None:
     result = apply_stress(positions, {}, StressScenario("shock_down", -0.10))
     assert result.start_value == 100.0
     assert result.change == 0.0
+
+
+def test_run_scenarios_none_uses_default_scenarios() -> None:
+    positions = [make_position("m1", 100.0, yes_probability=0.5)]
+    results = run_scenarios(positions, {"m1": 0.5}, scenarios=None)
+    names = [result.scenario for result in results]
+    assert "base" in names
+    assert names == [scenario.name for scenario in default_scenarios()]
+
+
+def test_default_scenarios_are_at_least_four_with_unique_names() -> None:
+    scenarios = default_scenarios()
+    names = [scenario.name for scenario in scenarios]
+    assert len(scenarios) >= 4
+    assert len(set(names)) == len(names)

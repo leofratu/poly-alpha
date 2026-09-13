@@ -112,3 +112,11 @@ def test_empty_input() -> None:
     assert build_overview([], now=NOW) == []
     assert dimensions([]) == {"source_kind": {}, "asset_class": {}}
     assert overview_rows([]) == []
+
+
+def test_dimensions_empty_input_returns_empty_buckets() -> None:
+    assert dimensions([]) == {"source_kind": {}, "asset_class": {}}
+
+
+def test_overview_rows_empty_input_returns_empty_list() -> None:
+    assert overview_rows([]) == []

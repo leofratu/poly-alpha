@@ -119,3 +119,28 @@ def test_uncertainty_out_of_range_reports_issue() -> None:
 def test_uncertainty_non_finite_reports_issue() -> None:
     band = Uncertainty(estimate=0.5, low=0.4, high=math.inf)
     assert any("high" in issue for issue in validate_uncertainty(band))
+
+
+def test_real_provenance_snapshot_is_valid() -> None:
+    snapshot = replace(
+        _valid_snapshot(),
+        provenance=Provenance(source="real-feed", kind=DataSourceKind.REAL),
+    )
+    assert validate_snapshot(snapshot) == ()
+    assert is_valid(snapshot) is True
+
+
+def test_uncertainty_low_above_high_reports_issue() -> None:
+    band = Uncertainty(estimate=0.5, low=0.7, high=0.3)
+    assert any("estimate" in issue for issue in validate_uncertainty(band))
+
+
+def test_uncertainty_valid_band_returns_empty_tuple() -> None:
+    band = Uncertainty(estimate=0.5, low=0.45, high=0.55)
+    assert validate_uncertainty(band) == ()
+
+
+def test_orderbook_boundary_prices_report_issue() -> None:
+    for price in (0.0, 1.0):
+        snapshot = replace(_valid_snapshot(), orderbook=(PriceLevel(price=price, size=1.0),))
+        assert any("orderbook" in issue for issue in validate_snapshot(snapshot))
