@@ -69,3 +69,31 @@ def test_build_experiment_populates_fields_with_stable_run_id() -> None:
     assert first.total_stake == bundle.total_stake
     assert first.cash == bundle.cash
     assert first.params == params
+
+
+def test_append_then_read_round_trips(tmp_path: Path) -> None:
+    path = tmp_path / "nested" / "experiments.jsonl"
+    first = make_experiment()
+    second = make_experiment()
+    append_experiment(path, first)
+    append_experiment(path, second)
+    assert read_experiments(path) == [first, second]
+
+
+def test_read_experiments_missing_file_returns_empty(tmp_path: Path) -> None:
+    assert read_experiments(tmp_path / "does-not-exist.jsonl") == []
+
+
+def test_read_experiments_skips_malformed_and_mistyped_lines(tmp_path: Path) -> None:
+    path = tmp_path / "experiments.jsonl"
+    valid = experiment_to_dict(make_experiment())
+    wrong_type = dict(valid, market_count="4")
+    path.write_text(
+        json.dumps(valid) + "\n" + "not json at all\n" + json.dumps(wrong_type) + "\n",
+        encoding="utf-8",
+    )
+    experiments = read_experiments(path)
+    assert len(experiments) == 1
+    assert isinstance(experiments[0], Experiment)
+    assert experiments[0].market_count == valid["market_count"]
+
