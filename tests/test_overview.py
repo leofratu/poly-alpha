@@ -44,3 +44,49 @@ def make_snapshot(
         orderbook=orderbook,
     )
 
+
+def test_one_row_per_snapshot() -> None:
+    snapshots = default_markets()
+    overviews = build_overview(snapshots, now=NOW)
+    assert len(overviews) == len(snapshots)
+    assert {row.market_id for row in overviews} == {snap.market_id for snap in snapshots}
+
+
+def test_ordering_is_deterministic_with_market_id_tie_break() -> None:
+    tie_a = make_snapshot(market_id="a")
+    tie_b = make_snapshot(market_id="b")
+    empty_prices = make_snapshot(market_id="c", yes_price=0.70, no_price=0.30)
+    snapshots = [tie_b, empty_prices, tie_a]
+
+    first = build_overview(snapshots, now=NOW)
+    second = build_overview(snapshots, now=NOW)
+    assert first == second
+
+    edges = [row.edge for row in first]
+    assert edges == sorted(edges, key=abs, reverse=True)
+    tie_edges = {row.edge for row in first if row.market_id in {"a", "b"}}
+    assert len(tie_edges) == 1
+    ids = [row.market_id for row in first]
+    assert ids.index("a") < ids.index("b")
+
+
+def test_edge_equals_model_minus_implied() -> None:
+    overviews = build_overview([make_snapshot(market_id="m1")], now=NOW)
+    row = overviews[0]
+    assert row.implied_yes is not None
+    assert row.edge == pytest.approx(row.model_yes - row.implied_yes)
+
+
+def test_uncertainty_width_equals_high_minus_low() -> None:
+    snapshot = make_snapshot(market_id="m1")
+    row = build_overview([snapshot], now=NOW)[0]
+    note = research_market(snapshot, now=NOW)
+    assert row.uncertainty_width == pytest.approx(note.model_yes.high - note.model_yes.low)
+    assert row.uncertainty_width == pytest.approx(note.model_yes.width)
+
+
+def test_simulated_true_for_fixture_and_synthetic() -> None:
+    overviews = build_overview(default_markets(), now=NOW)
+    assert overviews
+    assert all(row.simulated for row in overviews)
+    assert {row.source_kind for row in overviews} == {"fixture", "synthetic"}
