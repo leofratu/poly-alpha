@@ -90,3 +90,9 @@ def test_empty_returns_treated_as_missing() -> None:
 
 def test_portfolio_value_marks_to_price() -> None:
     positions = [make_position("m1", "sports", 100.0, yes_probability=0.4)]
+    assert portfolio_value(positions, {"m1": 0.6}) == pytest.approx(150.0)
+
+
+def test_portfolio_value_falls_back_to_stake() -> None:
+    positions = [make_position("m1", "sports", 100.0, yes_probability=0.4)]
+    assert portfolio_value(positions, {}) == pytest.approx(100.0)
