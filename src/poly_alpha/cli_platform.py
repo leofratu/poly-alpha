@@ -87,16 +87,33 @@ def markets(
 
 
 @app.command()
-def research(json_out: bool = JSON_OPTION, real: bool = REAL_OPTION) -> None:
-    """Generate deterministic research notes for the selected markets."""
+def research(
+    json_out: bool = JSON_OPTION,
+    real: bool = REAL_OPTION,
+    ai: bool = typer.Option(
+        False,
+        "--ai",
+        help="Use the optional AI provider (needs POLY_ALPHA_AI_API_KEY); falls back offline.",
+    ),
+) -> None:
+    """Generate research notes for the selected markets (offline heuristic by default)."""
     from poly_alpha.api.server import to_jsonable
     from poly_alpha.research.analyst import model_vs_market, research_markets
 
-    notes = research_markets(_real_markets() if real else _fixture_markets())
+    markets = _real_markets() if real else _fixture_markets()
+    provider = None
+    if ai:
+        from poly_alpha.research.provider import select_provider
+
+        provider = select_provider()
+        notes = [provider.research_market(market) for market in markets]
+    else:
+        notes = research_markets(markets)
     if json_out:
         _print_json([to_jsonable(note) for note in notes])
         return
-    table = Table(title="Research notes (SIMULATED heuristic; check provenance)")
+    label = f"AI provider: {provider.name}" if provider is not None else "SIMULATED heuristic"
+    table = Table(title=f"Research notes ({label}; check provenance)")
     table.add_column("Market", style="cyan")
     table.add_column("Mkt", justify="right")
     table.add_column("Model", justify="right")
