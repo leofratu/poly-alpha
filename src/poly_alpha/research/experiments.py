@@ -137,3 +137,31 @@ def _require_number(data: Mapping[str, object], key: str) -> float:
     if not isinstance(value, (int, float)):
         raise ValueError(f"{key} must be a number")
     return float(value)
+
+
+def experiment_from_dict(data: dict[str, object]) -> Experiment:
+    """Rebuild an experiment from a dict, raising ``ValueError`` on bad fields."""
+    raw_params = data.get("params")
+    if not isinstance(raw_params, dict):
+        raise ValueError("params must be an object")
+    params: dict[str, float] = {}
+    for key, value in raw_params.items():
+        if not isinstance(value, (int, float)):
+            raise ValueError("params values must be numbers")
+        params[str(key)] = float(value)
+
+    raw_ids = data.get("allocation_ids")
+    if not isinstance(raw_ids, (list, tuple)):
+        raise ValueError("allocation_ids must be a list")
+
+    return Experiment(
+        run_id=_require_str(data, "run_id"),
+        created_at=_require_str(data, "created_at"),
+        params=params,
+        market_count=_require_int(data, "market_count"),
+        note_count=_require_int(data, "note_count"),
+        opportunity_count=_require_int(data, "opportunity_count"),
+        allocation_ids=tuple(str(item) for item in raw_ids),
+        total_stake=_require_number(data, "total_stake"),
+        cash=_require_number(data, "cash"),
+    )
