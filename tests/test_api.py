@@ -195,3 +195,11 @@ def test_allocate_route() -> None:
     assert body["simulated"] is True
     assert "allocations" in body["data"]
     assert "caveat" in body["data"]
+
+
+def test_run_route() -> None:
+    with _served(_provider()) as port:
+        _, body = _get(port, "/run")
+    assert body["simulated"] is True
+    assert "allocations" in body["data"]
+    assert "calibration" in body["data"]
