@@ -139,3 +139,47 @@ def test_kalshi_adapter_skips_non_binary_markets() -> None:
     scalar = _valid_market()
     scalar["market_type"] = "scalar"
     assert _adapter([scalar]).list_markets() == []
+
+
+class _PagedKalshiClient(KalshiClient):
+    """Offline client that serves one canned page per cursor."""
+
+    def __init__(self, pages: dict[str, dict[str, Any]]) -> None:
+        super().__init__()
+        self._pages = pages
+        self.cursors: list[str] = []
+
+    def get_markets(
+        self,
+        *,
+        limit: int = 100,
+        status: str = "open",
+        cursor: str = "",
+    ) -> dict[str, Any]:
+        self.cursors.append(cursor)
+        return self._pages.get(cursor, {"markets": [], "cursor": ""})
+
+
+def test_kalshi_adapter_follows_cursor_pagination() -> None:
+    second = _valid_market()
+    second["ticker"] = "HIGHNY-26JUN16-T70"
+    second["event_ticker"] = "HIGHNY-26JUN16"
+    client = _PagedKalshiClient(
+        {
+            "": {"markets": [_valid_market()], "cursor": "page-2"},
+            "page-2": {"markets": [second], "cursor": ""},
+        }
+    )
+    adapter = KalshiAdapter(client=client, limit=10)
+    assert [market.market_id for market in adapter.list_markets()] == [
+        TICKER,
+        "HIGHNY-26JUN16-T70",
+    ]
+    assert client.cursors == ["", "page-2"]
+
+
+def test_kalshi_adapter_stops_at_limit_without_extra_pages() -> None:
+    client = _PagedKalshiClient({"": {"markets": [_valid_market()], "cursor": "page-2"}})
+    adapter = KalshiAdapter(client=client, limit=1)
+    assert len(adapter.list_markets()) == 1
+    assert client.cursors == [""]
