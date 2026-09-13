@@ -136,3 +136,5 @@ def test_generated_at_falls_back_to_retrieved_at_then_fixed() -> None:
     no_time = replace(
         make_snapshot(),
         provenance=Provenance(source="test-fixture", kind=DataSourceKind.FIXTURE),
+    )
+    assert research_market(no_time).generated_at.year == 1970
