@@ -136,3 +136,49 @@ def test_optional_sections_render_without_crashing() -> None:
     ]
     metrics = compare_strategies(markets, {"half": half})
     notes = make_notes()
+    opportunities = [
+        Opportunity(
+            note=notes[0],
+            edge_low=0.10,
+            edge_high=0.20,
+            score=1.5,
+            requires_real_data=False,
+        )
+    ]
+    output = render_markdown(
+        notes,
+        opportunities=opportunities,
+        metrics=metrics,
+        risk=risk,
+        generated_at=NOW,
+    )
+    assert "## Screened opportunities" in output
+    assert "real=no" in output
+    assert "## Strategy comparison" in output
+    assert metrics[0].caveat in output
+    assert "## Portfolio risk" in output
+    assert "Historical VaR 95:" in output
+    assert "Max position fraction:" in output
+
+
+def test_optional_sections_omitted_when_not_supplied() -> None:
+    output = render_markdown(make_notes(), generated_at=NOW)
+    assert "## Screened opportunities" not in output
+    assert "## Strategy comparison" not in output
+    assert "## Portfolio risk" not in output
+
+
+def test_output_is_deterministic_for_fixed_time() -> None:
+    notes = make_notes()
+    first = render_markdown(notes, generated_at=NOW)
+    second = render_markdown(notes, generated_at=NOW)
+    assert first == second
+    assert first.endswith("\n")
+
+
+def test_missing_generated_at_emits_no_timestamp() -> None:
+    output = render_markdown(make_notes())
+    assert "Generated at:" not in output
+
+
+def test_write_markdown_writes_utf8(tmp_path: Path) -> None:
