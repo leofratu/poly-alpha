@@ -38,7 +38,7 @@ resolved markets, summarizes portfolio risk, and serves the results over a small
 | `backtesting/walkforward.py` | `WalkForwardResult`, `walk_forward`: holds one No-side position across a deterministic snapshot history and settles at the final snapshot; caveated. |
 | `backtesting/costs.py` | `CostModel`: fee/slippage-adjusted effective price and net edge for a buy or sell side. |
 | `portfolio/risk.py` | `Position`, `RiskReport`, `analyze_portfolio`, `portfolio_value`: concentration (HHI, max position fraction) and, when a return series is supplied, historical VaR and drawdown. |
-| `api/server.py` | Stdlib-only read-only JSON API: `DataProvider`, `StaticProvider`, `default_provider`, `create_server`; endpoints `/health`, `/markets`, `/research`, `/risk`, `/compare`, `/overview`, `/validation`, plus a read-only HTML dashboard at `/`. |
+| `api/server.py` | Stdlib-only read-only JSON API: `DataProvider`, `StaticProvider`, `default_provider`, `create_server`; endpoints `/health`, `/markets`, `/research`, `/risk`, `/compare`, `/overview`, `/validation`, `/curves`, `/calibration`, plus a read-only HTML dashboard at `/`. |
 | `strategy.py` | Shared strategy primitives used by the engine (`classify_category`, `shin_debiasing`). |
 | `cli.py` | Typer entry point (`scan`, `status`, `init`, `step`, `live`, `backtest`); the research modules are imported lazily by the commands. |
 | `cli_platform.py` | Typer group mounted as `poly-alpha research`: `markets`, `research`, `screen`, `report`, `size`, `strategy`, `compare`, `simulate`, `curves`, `calibration`, `costs`, `overview`, `validate`, `journal`, `history`, `risk`, `serve`. |

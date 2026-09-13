@@ -20,6 +20,8 @@ CAPABILITIES: tuple[str, ...] = (
     "compare",
     "overview",
     "validation",
+    "curves",
+    "calibration",
 )
 
 INDEX_HTML = """<!doctype html>
@@ -255,6 +257,43 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                 ]
                 invalid = sum(1 for check in checks if check["issues"])
                 self._send(200, {"data": checks, "invalid_count": invalid})
+            elif path == "/curves":
+                from poly_alpha.adapters.history import fixture_histories
+                from poly_alpha.backtesting.strategies import default_strategies
+                from poly_alpha.backtesting.walkforward import walk_forward
+
+                rows = [
+                    {
+                        "market_id": history.market_id,
+                        "strategy": name,
+                        "result": to_jsonable(walk_forward(history, strategy)),
+                    }
+                    for history in fixture_histories()
+                    for name, strategy in default_strategies().items()
+                ]
+                self._send(200, {"data": rows, "simulated": True})
+            elif path == "/calibration":
+                from poly_alpha.backtesting.demo_data import demo_resolved_markets
+                from poly_alpha.research.analyst import research_markets
+                from poly_alpha.research.calibration import (
+                    calibration_by_kind,
+                    interval_coverage,
+                )
+
+                markets = demo_resolved_markets()
+                notes = research_markets([market.snapshot for market in markets])
+                outcomes = [market.resolved_yes for market in markets]
+                groups = calibration_by_kind(notes, outcomes)
+                self._send(
+                    200,
+                    {
+                        "data": to_jsonable(interval_coverage(notes, outcomes)),
+                        "by_kind": {
+                            kind: to_jsonable(report) for kind, report in groups.items()
+                        },
+                        "simulated": True,
+                    },
+                )
             else:
                 self._send(404, {"error": "not found", "path": path})
 
