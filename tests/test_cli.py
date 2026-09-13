@@ -267,3 +267,20 @@ def test_experiment_records_and_lists(tmp_path: Path) -> None:
     assert len(records) == 1
     assert records[0]["run_id"] == payload["run_id"]
     assert records[0]["simulated"] is True
+
+
+def test_costs_without_size_has_no_depth_edges() -> None:
+    result = _invoke(["research", "costs", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["size"] == 0.0
+    assert payload["rows"]
+    assert all(row["depth_net_edge"] is None for row in payload["rows"])
+
+
+def test_costs_size_adds_depth_aware_edges() -> None:
+    result = _invoke(["research", "costs", "--size", "1", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["size"] == 1.0
+    assert any(row["depth_net_edge"] is not None for row in payload["rows"])
