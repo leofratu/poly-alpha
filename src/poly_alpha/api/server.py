@@ -119,13 +119,13 @@ class _ModuleProvider:
 
     def research(self) -> list[dict]:
         notes = self._research_fn(self.markets())
-        return [cast(dict, _to_jsonable(note)) for note in notes]
+        return [cast(dict, to_jsonable(note)) for note in notes]
 
     def risk(self) -> dict:
-        return cast(dict, _to_jsonable(self._risk_fn()))
+        return cast(dict, to_jsonable(self._risk_fn()))
 
     def compare(self) -> list[dict]:
-        return [cast(dict, _to_jsonable(metrics)) for metrics in self._compare_fn()]
+        return [cast(dict, to_jsonable(metrics)) for metrics in self._compare_fn()]
 
 
 def _market_implied(snapshot: MarketSnapshot) -> float | None:
@@ -169,23 +169,23 @@ def default_provider() -> DataProvider:
     )
 
 
-def _to_jsonable(value: object) -> object:
+def to_jsonable(value: object) -> object:
     if isinstance(value, Enum):
         return value.value
     if isinstance(value, datetime):
         return value.isoformat()
     if isinstance(value, Mapping):
-        return {str(key): _to_jsonable(item) for key, item in value.items()}
+        return {str(key): to_jsonable(item) for key, item in value.items()}
     if is_dataclass(value) and not isinstance(value, type):
-        return {field.name: _to_jsonable(getattr(value, field.name)) for field in fields(value)}
+        return {field.name: to_jsonable(getattr(value, field.name)) for field in fields(value)}
     if isinstance(value, (list, tuple, set)):
-        return [_to_jsonable(item) for item in value]
+        return [to_jsonable(item) for item in value]
     return value
 
 
 def snapshot_to_dict(s: MarketSnapshot) -> dict:
     """Convert a snapshot into JSON-safe primitives."""
-    return cast(dict, _to_jsonable(s))
+    return cast(dict, to_jsonable(s))
 
 
 def _markets_are_simulated(provider: DataProvider) -> bool:
@@ -236,7 +236,7 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                 rows = build_overview(provider.markets())
                 self._send(
                     200,
-                    {"data": [_to_jsonable(row) for row in rows], "dimensions": dimensions(rows)},
+                    {"data": [to_jsonable(row) for row in rows], "dimensions": dimensions(rows)},
                 )
             elif path == "/validation":
                 from poly_alpha.validation import validate_snapshot

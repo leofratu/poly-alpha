@@ -69,12 +69,12 @@ def markets(
 @app.command()
 def research(json_out: bool = JSON_OPTION) -> None:
     """Generate deterministic research notes for the fixture markets."""
-    from poly_alpha.api.server import _to_jsonable
+    from poly_alpha.api.server import to_jsonable
     from poly_alpha.research.analyst import model_vs_market, research_markets
 
     notes = research_markets(_fixture_markets())
     if json_out:
-        _print_json([_to_jsonable(note) for note in notes])
+        _print_json([to_jsonable(note) for note in notes])
         return
     table = Table(title="Fixture research (SIMULATED heuristic, not advice)")
     table.add_column("Market", style="cyan")
@@ -97,14 +97,14 @@ def research(json_out: bool = JSON_OPTION) -> None:
 @app.command()
 def compare(json_out: bool = JSON_OPTION) -> None:
     """Compare strategies over labeled demo resolved markets."""
-    from poly_alpha.api.server import _to_jsonable
+    from poly_alpha.api.server import to_jsonable
     from poly_alpha.backtesting.comparison import compare_strategies
     from poly_alpha.backtesting.demo_data import demo_resolved_markets
     from poly_alpha.backtesting.strategies import default_strategies
 
     metrics = compare_strategies(demo_resolved_markets(), default_strategies())
     if json_out:
-        _print_json([_to_jsonable(item) for item in metrics])
+        _print_json([to_jsonable(item) for item in metrics])
         return
     table = Table(title="Strategy comparison (DEMO resolutions, in-sample)")
     table.add_column("Strategy", style="cyan")
@@ -128,13 +128,13 @@ def compare(json_out: bool = JSON_OPTION) -> None:
 @app.command()
 def risk(json_out: bool = JSON_OPTION) -> None:
     """Report concentration and historical risk for the demo portfolio."""
-    from poly_alpha.api.server import _to_jsonable
+    from poly_alpha.api.server import to_jsonable
     from poly_alpha.backtesting.demo_data import demo_positions, demo_returns
     from poly_alpha.portfolio.risk import analyze_portfolio
 
     report = analyze_portfolio(demo_positions(), demo_returns())
     if json_out:
-        _print_json(_to_jsonable(report))
+        _print_json(to_jsonable(report))
         return
     table = Table(title="Demo portfolio risk (SIMULATED positions/returns)")
     table.add_column("Metric", style="cyan")
@@ -173,7 +173,7 @@ def screen(
     min_edge_low: float = typer.Option(0.0, help="Minimum conservative edge bound."),
 ) -> None:
     """Rank fixture markets by the lower bound of the model edge."""
-    from poly_alpha.api.server import _to_jsonable
+    from poly_alpha.api.server import to_jsonable
     from poly_alpha.research.analyst import research_markets
     from poly_alpha.research.screen import rank_opportunities, summarize
 
@@ -183,7 +183,7 @@ def screen(
     if json_out:
         payload = {
             "summary": summarize(opportunities),
-            "opportunities": [_to_jsonable(item) for item in opportunities],
+            "opportunities": [to_jsonable(item) for item in opportunities],
         }
         _print_json(payload)
         return
@@ -238,7 +238,7 @@ def report(
 @app.command()
 def size(json_out: bool = JSON_OPTION) -> None:
     """Size fixture opportunities with conservative fractional Kelly."""
-    from poly_alpha.api.server import _to_jsonable
+    from poly_alpha.api.server import to_jsonable
     from poly_alpha.portfolio.sizing import kelly_fraction
     from poly_alpha.research.analyst import research_market
 
@@ -258,7 +258,7 @@ def size(json_out: bool = JSON_OPTION) -> None:
             {
                 "market_id": market_id,
                 "price": price,
-                "decision": _to_jsonable(decision),
+                "decision": to_jsonable(decision),
             }
             for market_id, price, decision in decisions
         ]
@@ -284,7 +284,7 @@ def size(json_out: bool = JSON_OPTION) -> None:
 @app.command()
 def simulate(json_out: bool = JSON_OPTION) -> None:
     """Paper-simulate strategies over labeled demo resolutions (in-sample)."""
-    from poly_alpha.api.server import _to_jsonable
+    from poly_alpha.api.server import to_jsonable
     from poly_alpha.backtesting.demo_data import demo_resolved_markets
     from poly_alpha.backtesting.simulation import simulate_portfolio
     from poly_alpha.backtesting.strategies import default_strategies
@@ -295,7 +295,7 @@ def simulate(json_out: bool = JSON_OPTION) -> None:
         for name, strategy in default_strategies().items()
     ]
     if json_out:
-        payload = [{"strategy": name, "result": _to_jsonable(result)} for name, result in results]
+        payload = [{"strategy": name, "result": to_jsonable(result)} for name, result in results]
         _print_json(payload)
         return
     table = Table(title="Paper simulation (DEMO resolutions, in-sample, simulated)")
@@ -319,14 +319,14 @@ def simulate(json_out: bool = JSON_OPTION) -> None:
 def overview(json_out: bool = JSON_OPTION) -> None:
     """Rank labeled offline markets by absolute research edge."""
     from poly_alpha.adapters.registry import default_markets
-    from poly_alpha.api.server import _to_jsonable
+    from poly_alpha.api.server import to_jsonable
     from poly_alpha.research.overview import build_overview, dimensions, overview_rows
 
     rows = build_overview(default_markets())
     if json_out:
         payload = {
             "dimensions": dimensions(rows),
-            "rows": [_to_jsonable(row) for row in rows],
+            "rows": [to_jsonable(row) for row in rows],
         }
         _print_json(payload)
         return
