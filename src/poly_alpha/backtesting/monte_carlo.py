@@ -35,7 +35,7 @@ def run(
     iterations: int = 10_000,
     capital_per_trade: float = 10_000.0,
     trades_per_sample: int = 10,
-) -> dict[str, float]:
+) -> dict[str, float | str]:
     """Run Monte Carlo simulation over historical market data.
 
     Returns dict with avg_roi, avg_apy, p5, p95, win_rate.
@@ -108,7 +108,10 @@ def run(
     table.add_row("Synthetic Markets", f"{len(historical_trades)}")
     table.add_row("Win Rate", f"{win_rate * 100:.2f}%")
     table.add_row("Average ROI (per cycle)", f"{avg_roi * 100:.2f}%")
-    table.add_row("Annualized (synthetic, not a forecast)", f"[bold yellow]{avg_apy * 100:.2f}%[/bold yellow]")
+    table.add_row(
+        "Annualized (synthetic, not a forecast)",
+        f"[bold yellow]{avg_apy * 100:.2f}%[/bold yellow]",
+    )
     table.add_row("5th Percentile", f"{p5 * 100:.2f}%")
     table.add_row("95th Percentile", f"{p95 * 100:.2f}%")
     console.print(table)
@@ -119,6 +122,8 @@ def run(
         "p5": p5,
         "p95": p95,
         "win_rate": win_rate,
+        "synthetic": 1.0,
+        "caveat": "Synthetic Monte Carlo; fabricated resolutions and returns, not a forecast.",
     }
 
 

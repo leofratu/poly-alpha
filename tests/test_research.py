@@ -100,9 +100,7 @@ def test_model_vs_market_positive_for_yes_imbalance() -> None:
 
 
 def test_model_vs_market_negative_for_no_imbalance() -> None:
-    note = research_market(
-        make_snapshot(yes_price=0.40, no_price=0.60, orderbook=NO_BOOK), now=NOW
-    )
+    note = research_market(make_snapshot(yes_price=0.40, no_price=0.60, orderbook=NO_BOOK), now=NOW)
     edge = model_vs_market(note)
     assert edge is not None
     assert edge < 0.0
@@ -121,9 +119,7 @@ def test_shin_debiasing_used_without_orderbook() -> None:
 
 
 def test_research_markets_preserves_order() -> None:
-    notes = research_markets(
-        [make_snapshot(market_id="a"), make_snapshot(market_id="b")], now=NOW
-    )
+    notes = research_markets([make_snapshot(market_id="a"), make_snapshot(market_id="b")], now=NOW)
     assert [note.market_id for note in notes] == ["a", "b"]
     assert all(isinstance(note, ResearchNote) for note in notes)
 

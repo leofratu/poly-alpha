@@ -249,9 +249,7 @@ def research_market(snapshot: MarketSnapshot, *, now: datetime | None = None) ->
     )
 
     if snapshot.provenance.kind is DataSourceKind.REAL:
-        data_caveat = (
-            f"Market data is real observed data from {snapshot.provenance.source}."
-        )
+        data_caveat = f"Market data is real observed data from {snapshot.provenance.source}."
     else:
         data_caveat = (
             f"Market data is {snapshot.provenance.kind.value} "
