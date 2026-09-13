@@ -225,26 +225,26 @@
         <!-- Architecture Section (Code Block) -->
         <section id="architecture" class="container text-center">
             <div class="fade-up">
-                <h2 class="text-gradient">The Agentic Architecture</h2>
-                <p style="margin-bottom: 3rem;">Poly-Alpha offers a resilient network of specialized AI agents, securely managing high-frequency telemetry.</p>
+                <h2 class="text-gradient">How It Runs</h2>
+                <p style="margin-bottom: 3rem;">Plain CLI and HTTP commands over deterministic, labeled data. No live orders, no keys, no network by default.</p>
                 
                 <div class="code-terminal">
                     <div class="terminal-header">
                         <div class="dots"><span></span><span></span><span></span></div>
-                        <span class="terminal-title">deploy_swarm.py</span>
+                        <span class="terminal-title">research_cli.sh</span>
                     </div>
-                    <pre><code><span style="color: #8b5cf6;">import</span> polyalpha <span style="color: #8b5cf6;">as</span> pa
-<span style="color: #8b5cf6;">from</span> loguru <span style="color: #8b5cf6;">import</span> logger
+                    <pre><code><span style="color: #52525b;"># List labeled markets and rank them by conservative edge</span>
+poly-alpha research markets --all
+poly-alpha research overview
 
-<span style="color: #52525b;"># Initialize autonomous swarm</span>
-swarm = pa.Swarm(api_key=<span style="color: #14b8a6;">"sk_live_..."</span>, sandboxing=<span style="color: #8b5cf6;">True</span>)
+<span style="color: #52525b;"># In-sample comparison, paper simulation, and risk</span>
+poly-alpha research compare
+poly-alpha research simulate
+poly-alpha research risk
 
-<span style="color: #52525b;"># Define high-level objective</span>
-directive = <span style="color: #14b8a6;">"Capture premium on FED_RATES without exceeding 1.5% DD."</span>
-
-logger.info(<span style="color: #14b8a6;">"Deploying Poly-Alpha Agents..."</span>)
-plan = swarm.reason_and_plan(directive=directive)
-swarm.execute_plan(plan, await_human_approval=<span style="color: #8b5cf6;">False</span>)</code></pre>
+<span style="color: #52525b;"># Provenance-labeled dossier + read-only JSON API</span>
+poly-alpha research report --output dossier.md
+poly-alpha research serve --port 8000</code></pre>
                 </div>
             </div>
         </section>
@@ -285,7 +285,7 @@ swarm.execute_plan(plan, await_human_approval=<span style="color: #8b5cf6;">Fals
         <section id="pricing" class="container">
             <div class="text-center fade-up">
                 <h2 class="text-gradient">Transparent SaaS Pricing</h2>
-                <p>Scale your autonomous capital deployment with predictable infrastructure costs.</p>
+                <p>Usage-based research tooling with predictable infrastructure costs.</p>
             </div>
             
             <div class="pricing-grid fade-up">
@@ -294,9 +294,9 @@ swarm.execute_plan(plan, await_human_approval=<span style="color: #8b5cf6;">Fals
                     <p style="font-size: 0.875rem;">For independent researchers.</p>
                     <div class="price">$499<span>/mo</span></div>
                     <ul class="pricing-features">
-                        <li>1 Autonomous Swarm</li>
+                        <li>1 Research Workspace</li>
                         <li>1M API Requests / month</li>
-                        <li>Standard REST Execution</li>
+                        <li>Read-only REST API</li>
                         <li>End-of-Day Data Sync</li>
                     </ul>
                     <a href="app.html" class="btn btn-secondary" style="width: 100%;">Start Trial</a>
@@ -306,7 +306,7 @@ swarm.execute_plan(plan, await_human_approval=<span style="color: #8b5cf6;">Fals
                     <p style="font-size: 0.875rem;">For prop desks and small funds.</p>
                     <div class="price">$2,499<span>/mo</span></div>
                     <ul class="pricing-features">
-                        <li>5 Autonomous Swarms</li>
+                        <li>5 Research Workspaces</li>
                         <li>Offline research pipeline</li>
                         <li>Unlimited API Requests</li>
                         <li>Research journal export</li>
@@ -319,7 +319,7 @@ swarm.execute_plan(plan, await_human_approval=<span style="color: #8b5cf6;">Fals
                     <p style="font-size: 0.875rem;">For institutional capital.</p>
                     <div class="price">Custom</div>
                     <ul class="pricing-features">
-                        <li>Unlimited Swarms</li>
+                        <li>Unlimited Workspaces</li>
                         <li>Petabyte Historical Data Lake</li>
                         <li>Custom Debiasing Parameters</li>
                         <li>On-Premise Deployment</li>
@@ -351,7 +351,7 @@ swarm.execute_plan(plan, await_human_approval=<span style="color: #8b5cf6;">Fals
                         <img src="assets/logo.png" alt="Poly-Alpha" class="logo-img">
                         <span class="logo-text">Poly-Alpha</span>
                     </a>
-                    <p class="text-secondary" style="font-size: 0.875rem;">Autonomous multi-agent infrastructure designed to reason, plan, and execute efficiently.</p>
+                    <p class="text-secondary" style="font-size: 0.875rem;">Offline research tooling that reasons over labeled data; it does not execute trades.</p>
                 </div>
                 <div class="footer-col">
                     <h4>Platform</h4>
