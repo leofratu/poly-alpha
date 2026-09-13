@@ -38,3 +38,27 @@ _SYSTEM_PROMPT = (
     '"rationale" is a short string. "citations" is an array of source URLs and may be '
     "empty. Do not claim certainty or guaranteed outcomes."
 )
+
+
+class ResearchProvider(Protocol):
+    """A source of provenance-tagged research notes for one market snapshot."""
+
+    name: str
+    is_ai: bool
+
+    def research_market(
+        self, snapshot: MarketSnapshot, *, now: datetime | None = None
+    ) -> ResearchNote: ...
+
+
+class HeuristicProvider:
+    """Default provider: delegates to the deterministic offline analyst heuristic."""
+
+    name = "offline-heuristic"
+    is_ai = False
+
+    def research_market(
+        self, snapshot: MarketSnapshot, *, now: datetime | None = None
+    ) -> ResearchNote:
+        """Build a deterministic offline note; no network and no AI model is involved."""
+        return _heuristic_research_market(snapshot, now=now)
