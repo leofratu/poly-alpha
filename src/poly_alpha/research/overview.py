@@ -44,3 +44,49 @@ def build_overview(
     """
     overviews = [
         MarketOverview(
+            market_id=note.market_id,
+            question=note.question,
+            asset_class=snapshot.asset.asset_class,
+            source_kind=note.provenance.kind.value,
+            implied_yes=note.market_implied_yes,
+            model_yes=note.model_yes.estimate,
+            edge=note.edge.estimate,
+            uncertainty_width=note.model_yes.width,
+            simulated=note.is_simulated(),
+        )
+        for snapshot, note in zip(snapshots, research_markets(snapshots, now=now), strict=True)
+    ]
+    overviews.sort(key=lambda overview: (-abs(overview.edge), overview.market_id))
+    return overviews
+
+
+def dimensions(overviews: Sequence[MarketOverview]) -> dict[str, dict[str, int]]:
+    """Count rows per ``source_kind`` and per ``asset_class`` as nested, sorted dicts."""
+    nested: dict[str, dict[str, int]] = {"source_kind": {}, "asset_class": {}}
+    for overview in overviews:
+        for key, value in (
+            ("source_kind", overview.source_kind),
+            ("asset_class", overview.asset_class),
+        ):
+            counts = nested[key]
+            counts[value] = counts.get(value, 0) + 1
+    return {key: dict(sorted(counts.items())) for key, counts in nested.items()}
+
+
+def overview_rows(overviews: Sequence[MarketOverview]) -> list[tuple[str, ...]]:
+    """Render overviews as plain string rows: id, class, kind, implied, model, edge, width, sim."""
+    rows: list[tuple[str, ...]] = []
+    for overview in overviews:
+        implied = "n/a" if overview.implied_yes is None else f"{overview.implied_yes:.4f}"
+        rows.append(
+            (
+                overview.market_id,
+                overview.asset_class,
+                overview.source_kind,
+                implied,
+                f"{overview.model_yes:.4f}",
+                f"{overview.edge:+.4f}",
+                f"{overview.uncertainty_width:.4f}",
+                "yes" if overview.simulated else "no",
+            )
+        )
