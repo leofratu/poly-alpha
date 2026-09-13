@@ -205,8 +205,8 @@ def snapshot_to_dict(s: MarketSnapshot) -> dict:
 def _markets_are_simulated(provider: DataProvider) -> bool:
     """True when any served market is not real observed data.
 
-    This labels the served market stream; the packaged provider also derives risk and
-    comparison figures from the labeled demo dataset, so the flag is conservative there.
+    Only /research and /overview use this. /risk and /compare are always computed from the
+    packaged demo dataset, so they report simulated=True directly.
     """
     return any(not market.provenance.kind.is_real for market in provider.markets())
 

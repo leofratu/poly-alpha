@@ -49,8 +49,6 @@ class RiskReport:
 
 def _drawdown_from_returns(returns: np.ndarray) -> float:
     equity = np.concatenate(([1.0], np.cumprod(1.0 + returns)))
-    if equity.size == 0:
-        return 0.0
     peaks = np.maximum.accumulate(equity)
     with np.errstate(divide="ignore", invalid="ignore"):
         drawdowns = np.where(peaks > 0.0, (peaks - equity) / peaks, 0.0)

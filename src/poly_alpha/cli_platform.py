@@ -651,9 +651,7 @@ def allocate(
     from poly_alpha.research.screen import rank_opportunities
 
     markets = fixture_adapter().list_markets()
-    opportunities = rank_opportunities(
-        research_markets(markets), min_edge_low=float("-inf")
-    )
+    opportunities = rank_opportunities(research_markets(markets), min_edge_low=float("-inf"))
     prices = {
         market.market_id: market.yes_price if market.yes_price is not None else 0.5
         for market in markets

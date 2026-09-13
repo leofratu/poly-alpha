@@ -39,7 +39,7 @@ def make_opportunity(
         no_price=no_price,
         liquidity=liquidity,
         volume=5000.0,
-        provenance=Provenance(source="test-fixture", kind=DataSourceKind.REAL, retrieved_at=NOW),
+        provenance=Provenance(source="test-fixture", kind=DataSourceKind.FIXTURE, retrieved_at=NOW),
         orderbook=orderbook,
     )
     note = research_market(snapshot, now=NOW)
@@ -160,3 +160,10 @@ def test_invalid_max_deploy_raises(max_deploy: float) -> None:
 def test_invalid_max_positions_raises() -> None:
     with pytest.raises(ValueError):
         allocate([], {}, max_positions=-1)
+
+
+def test_boundary_caps_allow_full_deploy_and_balance() -> None:
+    opps = [make_opportunity("m1", yes_price=0.30, no_price=0.70, liquidity=100000.0)]
+    plan = allocate(opps, {"m1": 0.30}, cap=1.0, max_positions=5, max_deploy=1.0)
+    assert 0.0 <= plan.total_fraction <= 1.0
+    assert plan.total_stake + plan.cash == pytest.approx(plan.bankroll)
