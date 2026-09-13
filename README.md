@@ -338,14 +338,34 @@ uv run poly-alpha backtest mc --iterations 10000
 export POLY_ALPHA_PRESET=acceleration
 ```
 
+### 6.6 Research platform (offline, labeled data)
+
+These commands run entirely on deterministic fixtures and demo data and make no network
+calls. Every value carries `Provenance`; outputs are tagged `FIXTURE`, `SIMULATED`, or
+`SYNTHETIC`, never presented as real observations. See `docs/DATA_PROVENANCE.md`.
+
+```bash
+uv run poly-alpha research markets            # list labeled fixture markets
+uv run poly-alpha research research --json    # research notes with uncertainty + sources
+uv run poly-alpha research compare            # in-sample strategy comparison (demo data)
+uv run poly-alpha research risk               # demo concentration + historical risk
+uv run poly-alpha research serve --port 8000  # read-only JSON API on loopback
+```
+
 ---
 
 ## 7. Architecture
 
 ```
 src/poly_alpha/
+├── contracts.py             # Contracts: provenance, snapshots, uncertainty
 ├── strategy.py              # Signal: classification, Shin debiasing, Kelly
 ├── cli.py                   # Interface: Typer CLI
+├── cli_platform.py          # Interface: research/compare/risk/serve commands
+├── adapters/                # Data: fixture, Polymarket (REAL), synthetic series
+├── research/                # Research: provenance-tagged notes + uncertainty
+├── portfolio/               # Risk: concentration, HHI, historical VaR
+├── api/server.py            # Interface: stdlib read-only JSON API
 ├── execution/
 │   ├── paper_engine.py      # Execution: paper trading (SQLite persistence)
 │   └── live_executor.py     # Execution: live CLOB orders + risk filter
@@ -353,8 +373,10 @@ src/poly_alpha/
 │   ├── polymarket.py        # Data: Gamma API client
 │   └── tradfi.py            # Data: Black-Scholes, yield curve, vol surface
 └── backtesting/
-    ├── empirical.py         # Validation: Reichenbach-calibrated MC
-    └── monte_carlo.py       # Validation: historical market replay
+    ├── comparison.py        # Validation: in-sample strategy comparison
+    ├── demo_data.py         # Validation: labeled simulated demo dataset
+    ├── empirical.py         # Validation: Reichenbach-calibrated MC (synthetic)
+    └── monte_carlo.py       # Validation: synthetic replay (not a backtest)
 ```
 
 ---
