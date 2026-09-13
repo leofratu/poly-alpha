@@ -36,3 +36,25 @@ class _FakeResponse:
 
     def json(self) -> dict[str, Any]:
         return self._payload
+
+
+class _FakeSession:
+    """Offline session that records posts and replays queued responses or exceptions."""
+
+    def __init__(self, responses: Sequence[_FakeResponse | Exception]) -> None:
+        self._responses = list(responses)
+        self.calls: list[dict[str, Any]] = []
+
+    def post(
+        self,
+        url: str,
+        *,
+        headers: dict[str, str] | None = None,
+        json: dict[str, Any] | None = None,
+        timeout: int | None = None,
+    ) -> _FakeResponse:
+        self.calls.append({"url": url, "headers": headers, "json": json, "timeout": timeout})
+        item = self._responses.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        return item
