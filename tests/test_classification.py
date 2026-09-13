@@ -2,8 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from poly_alpha.data.tradfi import PriceDirection, extract_financial_target
-from poly_alpha.strategy import classify_category, classify_market_type, describe_market
+from poly_alpha.strategy import (
+    _date_mismatch,
+    classify_category,
+    classify_market_type,
+    describe_market,
+)
 
 
 class TestClassifyCategory:
@@ -60,6 +67,15 @@ class TestClassifyMarketType:
     def test_binary_default(self) -> None:
         # "Will" at start triggers moneyline check; use a non-will phrasing
         assert classify_market_type("Is the temperature above 30?") == "binary"
+
+
+class TestDateMismatch:
+    def test_year_wrap_and_word_boundaries(self) -> None:
+        jan = datetime(2026, 1, 15, tzinfo=UTC)
+        now = datetime(2026, 1, 1, tzinfo=UTC)
+        assert _date_mismatch("Will it snow in December?", jan, now) is False
+        assert _date_mismatch("Will the mayor resign?", jan, now) is False
+        assert _date_mismatch("Will it happen in June?", jan, now) is True
 
 
 class TestDescribeMarket:

@@ -529,11 +529,10 @@ def _parse_dt(value: str | None) -> datetime | None:
 def _date_mismatch(question: str, target_date: datetime, now: datetime) -> bool:
     q_lower = question.lower()
     for month_name, month_no in MONTHS.items():
-        if (
-            month_name in q_lower
-            and abs(target_date.month - month_no) > 2
-            and target_date.year == now.year
-        ):
+        if not re.search(rf"\b{month_name}\b", q_lower):
+            continue
+        distance = abs(target_date.month - month_no)
+        if min(distance, 12 - distance) > 2 and target_date.year == now.year:
             return True
 
     years = re.findall(r"202[4-9]", q_lower)
