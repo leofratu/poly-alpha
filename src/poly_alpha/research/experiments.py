@@ -33,3 +33,20 @@ __all__ = [
     "read_experiments",
     "reproduce",
 ]
+
+DEFAULT_EXPERIMENTS_PATH = Path.home() / ".poly_alpha" / "experiments.jsonl"
+
+
+@dataclass(frozen=True)
+class Experiment:
+    """A reproducible record of one deterministic offline research run."""
+
+    run_id: str
+    created_at: str
+    params: dict[str, float]
+    market_count: int
+    note_count: int
+    opportunity_count: int
+    allocation_ids: tuple[str, ...]
+    total_stake: float
+    cash: float
