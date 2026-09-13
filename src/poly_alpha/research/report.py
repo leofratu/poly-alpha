@@ -153,6 +153,8 @@ def _allocation_lines(allocations: Sequence[Allocation]) -> list[str]:
     if not allocations:
         lines.extend(["(none)", ""])
         return lines
+    total = sum(allocation.stake for allocation in allocations)
+    lines.extend([f"Deployed: {total:,.2f} across {len(allocations)} positions.", ""])
     for allocation in allocations:
         lines.append(
             f"- `{allocation.market_id}`: fraction={allocation.fraction:.3f}, "
