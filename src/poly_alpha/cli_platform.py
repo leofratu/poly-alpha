@@ -112,8 +112,10 @@ def research(
     if json_out:
         _print_json([to_jsonable(note) for note in notes])
         return
-    if provider is not None and provider.is_ai:
-        label = f"AI provider: {provider.name}"
+    if any(note.model_yes.basis.startswith("ai:") for note in notes):
+        label = "AI provider (per-row basis shows fallbacks)"
+    elif provider is not None and provider.is_ai:
+        label = "SIMULATED heuristic (AI provider fallback)"
     elif provider is not None:
         label = "SIMULATED heuristic (AI provider unavailable)"
     else:

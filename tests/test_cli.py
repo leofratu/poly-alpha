@@ -54,6 +54,15 @@ def test_research_ai_without_key_falls_back_offline(
     assert all(not note["model_yes"]["basis"].startswith("ai:") for note in payload)
 
 
+def test_research_ai_without_key_labels_heuristic_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("POLY_ALPHA_AI_API_KEY", raising=False)
+    result = _invoke(["research", "research", "--ai"])
+    assert result.exit_code == 0
+    assert "AI provider unavailable" in result.output
+
+
 def test_screen_json_has_summary_and_opportunities() -> None:
     result = _invoke(["research", "screen", "--json"])
     assert result.exit_code == 0
