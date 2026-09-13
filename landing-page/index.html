@@ -6,7 +6,7 @@
 
     <!-- Primary SEO -->
     <title>Poly-Alpha | Autonomous AI for Prediction Markets</title>
-    <meta name="description" content="Poly-Alpha is a B2B AI SaaS platform that deploys autonomous multi-agent swarms to trade prediction markets. Sub-10ms execution, continuous LLM reasoning, and Kelly-optimized risk management — all via API.">
+    <meta name="description" content="Poly-Alpha is an offline research and paper-trading platform for prediction-market strategies: provenance-tagged data contracts, uncertainty-aware research, strategy comparison, and portfolio risk analysis. It does not execute live trades.">
     <meta name="keywords" content="prediction market trading, autonomous AI trading, multi-agent framework, quantitative finance AI, polymarket trading bot, AI hedge fund, agentic finance">
     <meta name="author" content="Poly-Alpha, Inc.">
     <link rel="canonical" href="https://polyalpha.io/">
@@ -15,7 +15,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://polyalpha.io/">
     <meta property="og:title" content="Poly-Alpha | Autonomous AI for Prediction Markets">
-    <meta property="og:description" content="Deploy autonomous AI swarms that reason, backtest, and trade prediction markets entirely independently. The execution layer for quantitative AI.">
+    <meta property="og:description" content="Research and paper-trading tooling for prediction-market strategies: provenance-tagged data, uncertainty-aware research, backtesting, and risk analysis. No live trading.">
     <meta property="og:image" content="https://polyalpha.io/assets/logo.png">
     <meta property="og:site_name" content="Poly-Alpha">
     <meta property="og:locale" content="en_US">
@@ -24,7 +24,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@polyalpha">
     <meta name="twitter:title" content="Poly-Alpha | Autonomous AI for Prediction Markets">
-    <meta name="twitter:description" content="Deploy autonomous AI swarms that reason, backtest, and trade prediction markets entirely independently.">
+    <meta name="twitter:description" content="Research and paper-trading tooling for prediction-market strategies. No live trading.">
     <meta name="twitter:image" content="https://polyalpha.io/assets/logo.png">
 
     <!-- Favicon -->
@@ -41,7 +41,7 @@
         "operatingSystem": "Web",
         "url": "https://polyalpha.io",
         "logo": "https://polyalpha.io/assets/logo.png",
-        "description": "Poly-Alpha is an autonomous multi-agent AI framework for institutional prediction market trading. It provides sub-10ms execution, continuous LLM reasoning, and Kelly-optimized risk management via API.",
+        "description": "Poly-Alpha is an offline research and paper-trading framework for prediction-market strategies. It provides provenance-tagged data contracts, uncertainty-aware research, strategy comparison, and risk analysis, and does not execute live trades or expose an order-placement API.",
         "offers": {
             "@type": "AggregateOffer",
             "lowPrice": "499",
@@ -65,6 +65,11 @@
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
+<div style="background:#7a2e00;color:#fff7e6;padding:.75rem 1rem;text-align:center;font-size:.95rem;">
+  Concept preview: this page contains aspirational marketing copy. The implemented software is an
+  offline research and paper-trading platform; it does not execute live trades, and performance
+  claims on this page are not validated. See the repository README and docs/ for what exists.
+</div>
     <div class="bg-grid"></div>
     <div class="glow-orb orb-1"></div>
     <div class="glow-orb orb-2"></div>
@@ -93,10 +98,12 @@
     <main>
         <section class="hero container">
             <div class="hero-content fade-up">
-                <div class="badge">Poly-Alpha Swarm v2.0 is Live</div>
-                <h1 class="text-gradient">Agentic AI for Prediction Markets.</h1>
+                <div class="badge">Research preview — simulated data only</div>
+                <h1 class="text-gradient">Research tooling for prediction markets.</h1>
                 <p>
-                    Poly-Alpha is an autonomous multi-agent framework designed to reason, plan, and deploy capital entirely independently, replacing legacy quantitative infrastructure with goal-oriented AI.
+                    Poly-Alpha is an offline research and paper-trading platform for prediction-market
+                    strategies: provenance-tagged data contracts, uncertainty-aware research,
+                    strategy comparison, and risk analysis. It does not execute live trades.
                 </p>
                 <div class="cta-group">
                     <a href="app.html" class="btn btn-primary">Deploy Agents Now</a>
@@ -136,13 +143,20 @@
                 <div class="badge">Enterprise B2B AI SaaS</div>
                 <h2 class="text-gradient">The Execution Layer for Quantitative AI.</h2>
                 <p style="margin-top: 1.5rem; font-size: 1.25rem; line-height: 1.8;">
-                    Poly-Alpha is a B2B SaaS platform that gives institutional funds and proprietary trading desks a fully managed, autonomous trading stack for prediction markets — deployed entirely through our API. Think of it as your quant team in software form.
+                    Poly-Alpha is a research platform for prediction-market strategies. It provides
+                    shared market and asset data contracts, provenance-tagged research with uncertainty
+                    intervals, in-sample strategy comparison, and portfolio risk analysis — all offline
+                    and deterministic.
                 </p>
                 <p style="margin-top: 1.25rem; line-height: 1.8;">
-                    Instead of spending 12–18 months building internal infrastructure to parse news, calculate edge, and execute trades, your team simply calls our API with a high-level objective. Poly-Alpha's multi-agent swarm handles everything below: real-time data ingestion, LLM-driven probability estimation, dynamic position sizing via Kelly Criterion, and sub-10ms execution on Layer-2 orderbooks.
+                    The platform ships deterministic fixture and synthetic datasets alongside an optional
+                    real Polymarket market reader. Notes carry sources and caveats; fixture, simulated,
+                    and synthetic values are always labeled and are never presented as observed data.
                 </p>
                 <p style="margin-top: 1.25rem; line-height: 1.8;">
-                    We currently operate on <strong style="color: #fff;">Polymarket</strong>, <strong style="color: #fff;">Kalshi</strong>, and <strong style="color: #fff;">Manifold Markets</strong> — the three largest prediction market venues globally — with real-money volume and measurable Sharpe ratios. Our clients retain full capital control with optional human-in-the-loop approval gates before any trade is submitted.
+                    It reads <strong style="color: #fff;">Polymarket</strong> market data only. There is no
+                    Kalshi or Manifold integration, no order placement, no fund movement, and no validated
+                    performance or Sharpe figure. Backtest metrics are in-sample and are not forecasts.
                 </p>
 
                 <!-- Three product pillars -->
@@ -169,7 +183,7 @@
         <!-- Features Bento Grid -->
         <section id="platform" class="container">
             <div class="text-center fade-up" style="margin-bottom: 4rem;">
-                <h2 class="text-gradient">Multi-Agent Swarm Capabilities</h2>
+                <h2 class="text-gradient">Research Platform Capabilities</h2>
                 <p>Engineered for high-throughput autonomous reasoning and tool execution.</p>
             </div>
             
@@ -187,7 +201,7 @@
                         <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                     </div>
                     <h3>Autonomous Tool Use</h3>
-                    <p>Our agents utilize direct API tool-calling to interact with continuous double auction orderbooks at sub-10ms latency.</p>
+                    <p>Market data is read from Polymarket; there is no live order execution or low-latency trading claim.</p>
                 </div>
 
                 <div class="bento-card fade-up">
@@ -203,7 +217,7 @@
                         <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
                     </div>
                     <h3>Goal-Oriented Optimization</h3>
-                    <p>Initialize your swarm with high-level directives (e.g., "Maximize Sharpe ratio with 2% Max Drawdown"). The agents will dynamically calculate live metric exposures, ingest tick-level historical data from over 5,000 markets, and shift execution parameters to satisfy the ultimate goal state entirely autonomously.</p>
+                    <p>Run deterministic research over labeled fixture, synthetic, and optional real markets; screen candidates by a conservative edge bound, size them with capped fractional Kelly, and analyze portfolio risk. Every estimate carries provenance and an uncertainty interval.</p>
                 </div>
             </div>
         </section>
@@ -293,9 +307,9 @@ swarm.execute_plan(plan, await_human_approval=<span style="color: #8b5cf6;">Fals
                     <div class="price">$2,499<span>/mo</span></div>
                     <ul class="pricing-features">
                         <li>5 Autonomous Swarms</li>
-                        <li>Real-time Layer-2 Execution</li>
+                        <li>Offline research pipeline</li>
                         <li>Unlimited API Requests</li>
-                        <li>Live Event Webhooks</li>
+                        <li>Research journal export</li>
                         <li>Priority Slack Support</li>
                     </ul>
                     <a href="app.html" class="btn btn-primary" style="width: 100%;">Get Started</a>
@@ -319,8 +333,8 @@ swarm.execute_plan(plan, await_human_approval=<span style="color: #8b5cf6;">Fals
         <!-- CTA Section -->
         <section class="container" style="padding-bottom: 8rem;">
             <div class="text-center fade-up" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 24px; padding: 6rem 2rem;">
-                <h2 class="text-gradient" style="font-size: 3rem; margin-bottom: 1.5rem;">Deploy Poly-Alpha Agents</h2>
-                <p style="margin-bottom: 3rem;">Begin provisioning your own autonomous quantitative swarm today.</p>
+                <h2 class="text-gradient" style="font-size: 3rem; margin-bottom: 1.5rem;">Explore the Research Platform</h2>
+                <p style="margin-bottom: 3rem;">Run the offline research, comparison, and risk tooling described in the repository README.</p>
                 <div class="cta-group" style="margin-top: 0;">
                     <a href="app.html" class="btn btn-primary">Start Building</a>
                     <a href="app.html" class="btn btn-secondary">Contact Sales</a>
