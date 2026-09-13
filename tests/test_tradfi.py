@@ -34,3 +34,20 @@ def test_dividend_yield_lowers_the_probability() -> None:
     assert with_dividend < without
 
 
+def test_expired_contract_is_a_step_function() -> None:
+    assert calculate_implied_probability(101.0, 100.0, 0.0, 0.05, 0.2) == 1.0
+    assert calculate_implied_probability(99.0, 100.0, 0.0, 0.05, 0.2) == 0.0
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        (-1.0, 100.0, 1.0, 0.05, 0.2),
+        (100.0, -1.0, 1.0, 0.05, 0.2),
+        (100.0, 100.0, -1.0, 0.05, 0.2),
+        (100.0, 100.0, 1.0, 0.05, 0.0),
+    ],
+)
+def test_implied_probability_rejects_bad_inputs(args: tuple[float, ...]) -> None:
+    with pytest.raises(ValueError):
+        calculate_implied_probability(*args)
