@@ -167,6 +167,7 @@ def test_root_serves_html_dashboard() -> None:
             body = response.read().decode("utf-8")
     assert status == 200
     assert "Poly-Alpha Research" in body
+    assert "Uncertainty coverage" in body
     assert "not investment advice" in body.lower()
 
 

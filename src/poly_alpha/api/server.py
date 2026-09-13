@@ -43,6 +43,7 @@ data are labeled and are not real. Not investment advice.</p>
 <h2>Capabilities</h2><div id="health"></div>
 <h2>Cross-market overview</h2><div id="overview"></div>
 <h2>Portfolio risk (demo)</h2><div id="risk"></div>
+<h2>Uncertainty coverage (demo)</h2><div id="calibration"></div>
 <script>
 async function load(){
   const h = await (await fetch('/health')).json();
@@ -60,6 +61,11 @@ async function load(){
   document.getElementById('risk').textContent =
     'positions=' + d.n_positions + ' stake=' + d.total_stake + ' hhi=' + d.hhi +
     ' simulated=' + rk.simulated;
+  const ca = await (await fetch('/calibration')).json();
+  const cr = ca.data || {};
+  document.getElementById('calibration').textContent =
+    'markets=' + cr.n + ' coverage=' + cr.coverage + ' mean_width=' + cr.mean_width +
+    ' simulated=' + ca.simulated;
 }
 load();
 </script></body></html>"""
