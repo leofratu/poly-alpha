@@ -5,6 +5,7 @@ from __future__ import annotations
 import typer
 from rich.console import Console
 
+from poly_alpha import __version__
 from poly_alpha.cli_platform import app as platform_app
 
 app = typer.Typer(
@@ -14,6 +15,12 @@ app = typer.Typer(
 console = Console()
 
 app.add_typer(platform_app, name="research")
+
+
+@app.command()
+def version() -> None:
+    """Print the installed poly-alpha version."""
+    console.print(__version__)
 
 
 @app.command()

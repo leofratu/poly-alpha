@@ -163,7 +163,20 @@ def test_costs_json_applies_basis_points() -> None:
     assert result.exit_code == 0
     payload = json.loads(result.output)
     assert payload["total_bps"] == 100.0
+    assert payload["side"] == "buy"
     assert payload["rows"]
+
+
+def test_costs_sell_side_is_supported() -> None:
+    result = _invoke(["research", "costs", "--side", "sell", "--json"])
+    assert result.exit_code == 0
+    assert json.loads(result.output)["side"] == "sell"
+
+
+def test_version_command_prints_semver() -> None:
+    result = _invoke(["version"])
+    assert result.exit_code == 0
+    assert "." in result.output
 
 
 def test_stress_json_reports_scenarios() -> None:

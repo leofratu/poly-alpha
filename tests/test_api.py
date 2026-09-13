@@ -66,6 +66,7 @@ def test_health() -> None:
         status, body = _get(port, "/health")
     assert status == 200
     assert body["status"] == "ok"
+    assert "version" in body
     assert "markets" in body["capabilities"]
 
 

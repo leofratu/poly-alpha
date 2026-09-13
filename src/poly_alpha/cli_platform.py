@@ -558,6 +558,7 @@ def calibration(json_out: bool = JSON_OPTION) -> None:
 def costs(
     fee_bps: float = typer.Option(0.0, help="Fee in basis points."),
     slippage_bps: float = typer.Option(0.0, help="Slippage in basis points."),
+    side: str = typer.Option("buy", help="Trade side: buy or sell."),
     json_out: bool = JSON_OPTION,
 ) -> None:
     """Show fee/slippage-adjusted edges for the fixture markets."""
@@ -565,6 +566,9 @@ def costs(
     from poly_alpha.research.analyst import research_markets
     from poly_alpha.research.screen import rank_opportunities
 
+    normalized_side = side.lower()
+    if normalized_side not in {"buy", "sell"}:
+        raise typer.BadParameter("side must be 'buy' or 'sell'")
     model = CostModel(fee_bps=fee_bps, slippage_bps=slippage_bps)
     opportunities = rank_opportunities(
         research_markets(_fixture_markets()), min_edge_low=float("-inf")
@@ -581,7 +585,7 @@ def costs(
                 "net_edge": model.net_edge(
                     fair_probability=opportunity.note.model_yes.estimate,
                     price=implied,
-                    side="buy",
+                    side=normalized_side,
                 ),
             }
         )
@@ -589,13 +593,14 @@ def costs(
         _print_json(
             {
                 "total_bps": model.total_bps,
+                "side": normalized_side,
                 "rows": rows,
                 "simulated": True,
                 "caveat": "Simulated cost-adjusted edges over labeled fixture data; not advice.",
             }
         )
         return
-    table = Table(title="Cost-adjusted buy edges (SIMULATED; gross vs net)")
+    table = Table(title=f"Cost-adjusted {normalized_side} edges (SIMULATED; gross vs net)")
     table.add_column("Market", style="cyan")
     table.add_column("Gross", justify="right")
     table.add_column("Net", justify="right")

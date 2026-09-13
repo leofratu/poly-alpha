@@ -230,7 +230,16 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
             if path in ("/", "/index.html"):
                 self._send_html(200, INDEX_HTML)
             elif path == "/health":
-                self._send(200, {"status": "ok", "capabilities": list(CAPABILITIES)})
+                from poly_alpha import __version__
+
+                self._send(
+                    200,
+                    {
+                        "status": "ok",
+                        "version": __version__,
+                        "capabilities": list(CAPABILITIES),
+                    },
+                )
             elif path == "/markets":
                 markets = provider.markets()
                 data = [snapshot_to_dict(market) for market in markets]
