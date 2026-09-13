@@ -44,3 +44,31 @@ def test_workflow_allocate_json_balances_bankroll() -> None:
 def test_workflow_run_json_reports_bundle() -> None:
     payload = _payload(_invoke(["research", "run", "--json"]))
     assert payload["simulated"] is True
+    assert payload["market_count"] >= 1
+    assert abs(payload["total_stake"] + payload["cash"] - 1000.0) < 1e-6
+
+
+def test_workflow_report_writes_dossier(tmp_path: Path) -> None:
+    target = tmp_path / "dossier.md"
+    result = _invoke(["research", "report", "--output", str(target)])
+    assert result.exit_code == 0
+    content = target.read_text(encoding="utf-8")
+    assert "Provenance summary" in content
+    assert "Allocation (simulated)" in content
+    assert "not investment advice" in content
+
+
+def test_workflow_journal_then_history_summary(tmp_path: Path) -> None:
+    log = tmp_path / "runs.jsonl"
+    assert _invoke(["research", "journal", "--path", str(log), "--json"]).exit_code == 0
+    payload = _payload(
+        _invoke(["research", "history", "--path", str(log), "--summary", "--json"])
+    )
+    assert payload["runs"] >= 1
+    assert payload["any_simulated"] is True
+
+
+def test_workflow_run_is_deterministic() -> None:
+    first = _payload(_invoke(["research", "run", "--json"]))
+    second = _payload(_invoke(["research", "run", "--json"]))
+    assert first == second
