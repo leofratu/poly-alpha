@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from poly_alpha.backtesting.costs import CostModel
+from poly_alpha.backtesting.costs import CostModel, walk_book
+from poly_alpha.contracts import PriceLevel
 
 
 def test_zero_cost_model_leaves_price_unchanged() -> None:
@@ -78,3 +79,33 @@ def test_effective_price_clamps_at_bounds() -> None:
     assert huge.effective_price(0.5, "sell") == 0.0
     assert CostModel().effective_price(1.0, "buy") == 1.0
     assert CostModel().effective_price(0.0, "sell") == 0.0
+
+
+def _book() -> tuple[PriceLevel, ...]:
+    return (PriceLevel(0.60, 100.0), PriceLevel(0.50, 100.0))
+
+
+def test_walk_book_buy_consumes_cheapest_first() -> None:
+    fill = walk_book(_book(), 150.0, side="buy")
+    assert fill.shares == pytest.approx(150.0)
+    assert fill.average_price == pytest.approx(80.0 / 150.0)
+    assert fill.levels_consumed == 2
+    assert fill.is_complete
+
+
+def test_walk_book_sell_consumes_highest_first() -> None:
+    fill = walk_book(_book(), 50.0, side="sell")
+    assert fill.average_price == pytest.approx(0.60)
+    assert fill.levels_consumed == 1
+
+
+def test_walk_book_reports_shortfall() -> None:
+    fill = walk_book((PriceLevel(0.5, 10.0),), 100.0)
+    assert fill.shares == pytest.approx(10.0)
+    assert fill.unfilled == pytest.approx(90.0)
+    assert not fill.is_complete
+
+
+def test_walk_book_rejects_bad_size() -> None:
+    with pytest.raises(ValueError):
+        walk_book(_book(), 0.0)
