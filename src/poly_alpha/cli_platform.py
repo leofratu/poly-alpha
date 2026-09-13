@@ -393,3 +393,31 @@ def journal(path: str = JOURNAL_PATH, json_out: bool = JSON_OPTION) -> None:
         f"| simulated={entry.simulated}[/white]"
     )
 
+
+@app.command()
+def history(path: str = JOURNAL_PATH, json_out: bool = JSON_OPTION) -> None:
+    """List recorded research journal entries."""
+    import os
+
+    from poly_alpha.api.server import to_jsonable
+    from poly_alpha.research.journal import read_entries
+
+    entries = read_entries(os.path.expanduser(path))
+    if json_out:
+        _print_json([to_jsonable(entry) for entry in entries])
+        return
+    table = Table(title="Research journal (provenance audit; simulated estimates)")
+    table.add_column("Recorded")
+    table.add_column("Markets", justify="right")
+    table.add_column("Mean edge", justify="right")
+    table.add_column("Top")
+    table.add_column("Sim")
+    for entry in entries:
+        table.add_row(
+            entry.recorded_at,
+            str(entry.market_count),
+            f"{entry.mean_edge:+.4f}",
+            entry.top_market_id or "n/a",
+            "yes" if entry.simulated else "no",
+        )
+    console.print(table)
