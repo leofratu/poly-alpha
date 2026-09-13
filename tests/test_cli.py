@@ -133,6 +133,17 @@ def test_journal_and_history_round_trip(tmp_path: Path) -> None:
     assert entries[0]["simulated"] is True
 
 
+def test_history_summary_aggregates_entries(tmp_path: Path) -> None:
+    log = tmp_path / "journal.jsonl"
+    assert _invoke(["research", "journal", "--path", str(log), "--json"]).exit_code == 0
+    result = _invoke(["research", "history", "--path", str(log), "--summary", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["runs"] == 1
+    assert payload["total_markets"] >= 1
+    assert payload["any_simulated"] is True
+
+
 def test_strategy_lists_named_heuristics() -> None:
     result = _invoke(["research", "strategy", "--json"])
     assert result.exit_code == 0

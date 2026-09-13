@@ -438,7 +438,11 @@ def journal(path: str = JOURNAL_PATH, json_out: bool = JSON_OPTION) -> None:
 
 
 @app.command()
-def history(path: str = JOURNAL_PATH, json_out: bool = JSON_OPTION) -> None:
+def history(
+    path: str = JOURNAL_PATH,
+    summary: bool = typer.Option(False, "--summary", help="Aggregate the journal."),
+    json_out: bool = JSON_OPTION,
+) -> None:
     """List recorded research journal entries."""
     import os
 
@@ -446,6 +450,23 @@ def history(path: str = JOURNAL_PATH, json_out: bool = JSON_OPTION) -> None:
     from poly_alpha.research.journal import read_entries
 
     entries = read_entries(os.path.expanduser(path))
+    if summary:
+        total_markets = sum(entry.market_count for entry in entries)
+        mean_edge = sum(entry.mean_edge for entry in entries) / len(entries) if entries else 0.0
+        payload = {
+            "runs": len(entries),
+            "total_markets": total_markets,
+            "mean_edge": mean_edge,
+            "any_simulated": any(entry.simulated for entry in entries),
+        }
+        if json_out:
+            _print_json(payload)
+            return
+        console.print(
+            f"[white]{payload['runs']} runs | {total_markets} markets | "
+            f"mean edge {mean_edge:+.4f} | simulated={payload['any_simulated']}[/white]"
+        )
+        return
     if json_out:
         _print_json([to_jsonable(entry) for entry in entries])
         return
