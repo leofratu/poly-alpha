@@ -138,6 +138,13 @@ def test_entry_from_dict_rejects_non_int_market_count() -> None:
         entry_from_dict(data)
 
 
+def test_entry_from_dict_rejects_bool_market_count() -> None:
+    data = entry_to_dict(build_entry([make_note("m1", 0.1)], now=NOW))
+    data["market_count"] = True
+    with pytest.raises(ValueError):
+        entry_from_dict(data)
+
+
 def test_entry_from_dict_rejects_non_numeric_mean_edge() -> None:
     data = entry_to_dict(build_entry([make_note("m1", 0.1)], now=NOW))
     data["mean_edge"] = "nope"

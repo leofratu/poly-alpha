@@ -92,10 +92,10 @@ def entry_from_dict(data: dict[str, object]) -> JournalEntry:
     kind_counts = {str(key): int(value) for key, value in raw_counts.items()}
     top = data.get("top_market_id")
     market_count = data["market_count"]
-    if not isinstance(market_count, int):
+    if isinstance(market_count, bool) or not isinstance(market_count, int):
         raise ValueError("market_count must be an int")
     mean_edge = data["mean_edge"]
-    if not isinstance(mean_edge, (int, float)):
+    if isinstance(mean_edge, bool) or not isinstance(mean_edge, (int, float)):
         raise ValueError("mean_edge must be a number")
     return JournalEntry(
         recorded_at=str(data["recorded_at"]),
