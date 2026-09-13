@@ -274,3 +274,21 @@ def research_market(snapshot: MarketSnapshot, *, now: datetime | None = None) ->
         market_implied_yes=implied,
         model_yes=model_yes,
         edge=edge,
+        provenance=snapshot.provenance,
+        generated_at=_resolve_time(snapshot, now),
+        caveats=caveats,
+    )
+
+
+def research_markets(
+    snapshots: Sequence[MarketSnapshot], *, now: datetime | None = None
+) -> list[ResearchNote]:
+    """Build research notes for many snapshots, preserving input order."""
+    return [research_market(snapshot, now=now) for snapshot in snapshots]
+
+
+def model_vs_market(note: ResearchNote) -> float | None:
+    """Signed edge (model estimate minus market implied), or None without a market price."""
+    if note.market_implied_yes is None:
+        return None
+    return note.model_yes.estimate - note.market_implied_yes
