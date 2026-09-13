@@ -182,3 +182,6 @@ def test_missing_generated_at_emits_no_timestamp() -> None:
 
 
 def test_write_markdown_writes_utf8(tmp_path: Path) -> None:
+    target = tmp_path / "dossier.md"
+    write_markdown(target, "# Dossier — ünïcode\n")
+    assert target.read_text(encoding="utf-8") == "# Dossier — ünïcode\n"
