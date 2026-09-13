@@ -200,3 +200,12 @@ def test_calibration_section_renders_when_supplied() -> None:
     output = render_markdown(make_notes(), calibration=demo_calibration())
     assert "## Uncertainty coverage" in output
     assert "Coverage:" in output
+
+
+def test_allocation_section_renders_when_supplied() -> None:
+    from poly_alpha.portfolio.allocate import Allocation
+
+    allocations = [Allocation(market_id="m1", fraction=0.05, stake=50.0, rationale="test")]
+    output = render_markdown(make_notes(), allocations=allocations)
+    assert "## Allocation (simulated)" in output
+    assert "fraction=0.050" in output

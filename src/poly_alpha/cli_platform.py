@@ -245,21 +245,29 @@ def report(
         demo_returns,
     )
     from poly_alpha.backtesting.strategies import default_strategies
+    from poly_alpha.portfolio.allocate import allocate
     from poly_alpha.portfolio.risk import analyze_portfolio
     from poly_alpha.research.analyst import research_markets
     from poly_alpha.research.calibration import demo_calibration
     from poly_alpha.research.report import render_markdown, write_markdown
     from poly_alpha.research.screen import rank_opportunities
 
-    notes = research_markets(_fixture_markets())
+    markets = _fixture_markets()
+    notes = research_markets(markets)
     opportunities = rank_opportunities(notes, min_edge_low=float("-inf"))
     metrics = compare_strategies(demo_resolved_markets(), default_strategies())
     risk = analyze_portfolio(demo_positions(), demo_returns())
+    prices = {
+        market.market_id: market.yes_price if market.yes_price is not None else 0.5
+        for market in markets
+    }
+    plan = allocate(opportunities, prices)
     content = render_markdown(
         notes,
         opportunities=opportunities,
         metrics=metrics,
         risk=risk,
+        allocations=plan.allocations,
         calibration=demo_calibration(),
     )
     if output:

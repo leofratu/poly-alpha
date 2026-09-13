@@ -19,6 +19,7 @@ from poly_alpha.research.screen import Opportunity
 
 if TYPE_CHECKING:
     from poly_alpha.backtesting.comparison import StrategyMetrics
+    from poly_alpha.portfolio.allocate import Allocation
     from poly_alpha.portfolio.risk import RiskReport
     from poly_alpha.research.calibration import CalibrationReport
 
@@ -146,6 +147,21 @@ def _risk_lines(risk: RiskReport) -> list[str]:
     ]
 
 
+def _allocation_lines(allocations: Sequence[Allocation]) -> list[str]:
+    """Render the allocation section with per-market fractions and stakes."""
+    lines = ["## Allocation (simulated)", ""]
+    if not allocations:
+        lines.extend(["(none)", ""])
+        return lines
+    for allocation in allocations:
+        lines.append(
+            f"- `{allocation.market_id}`: fraction={allocation.fraction:.3f}, "
+            f"stake={allocation.stake:,.2f}"
+        )
+    lines.append("")
+    return lines
+
+
 def _calibration_lines(calibration: CalibrationReport) -> list[str]:
     """Render the uncertainty-coverage section with its honesty notes."""
     lines = [
@@ -168,6 +184,7 @@ def render_markdown(
     opportunities: Sequence[Opportunity] | None = None,
     metrics: Sequence[StrategyMetrics] | None = None,
     risk: RiskReport | None = None,
+    allocations: Sequence[Allocation] | None = None,
     calibration: CalibrationReport | None = None,
     generated_at: datetime | None = None,
     title: str = "Poly-Alpha Research Dossier",
@@ -193,6 +210,8 @@ def render_markdown(
         lines.extend(_metrics_lines(metrics))
     if risk is not None:
         lines.extend(_risk_lines(risk))
+    if allocations is not None:
+        lines.extend(_allocation_lines(allocations))
     if calibration is not None:
         lines.extend(_calibration_lines(calibration))
     return "\n".join(lines).rstrip("\n") + "\n"
