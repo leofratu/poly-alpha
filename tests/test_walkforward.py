@@ -90,3 +90,30 @@ def test_max_drawdown_within_bounds() -> None:
     history = make_history("wf5", [0.30, 0.30, 0.30])
     result = walk_forward(history, strategy_returning(0.20))
     assert 0.0 <= result.max_drawdown <= 1.0
+
+
+def test_walk_forward_is_deterministic() -> None:
+    history = make_history("wf6", [0.30, 0.30, 0.30])
+    first = walk_forward(history, strategy_returning(0.20))
+    second = walk_forward(history, strategy_returning(0.20))
+    assert first == second
+
+
+@pytest.mark.parametrize("bankroll", [0.0, -1.0])
+def test_invalid_bankroll_raises(bankroll: float) -> None:
+    history = make_history("wf7", [0.30])
+    with pytest.raises(ValueError):
+        walk_forward(history, strategy_returning(0.20), starting_bankroll=bankroll)
+
+
+@pytest.mark.parametrize("cap", [0.0, -0.1, 1.5])
+def test_invalid_cap_raises(cap: float) -> None:
+    history = make_history("wf8", [0.30])
+    with pytest.raises(ValueError):
+        walk_forward(history, strategy_returning(0.20), cap=cap)
+
+
+def test_at_most_one_trade_across_many_steps() -> None:
+    history = make_history("wf9", [0.30, 0.30, 0.30, 0.30, 0.30])
+    result = walk_forward(history, strategy_returning(0.20))
+    assert result.trades == 1
