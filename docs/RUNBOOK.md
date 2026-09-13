@@ -92,12 +92,14 @@ the lightweight aggregate audit trail.
 uv run poly-alpha research serve --port 8000
 # GET /              -> read-only HTML dashboard
 # GET /health /markets /research /risk /compare /overview /validation
-# GET /curves /calibration /stress /allocate /run /experiments
+# GET /curves /calibration /stress /allocate /run /experiments /sources
+# GET /experiments?verify=1  -> re-run each record and report reproducibility
 ```
 
 The server is GET-only, binds loopback by default, and returns 404/405 for unknown paths and
-methods. `/curves`, `/calibration`, `/stress`, `/allocate`, `/run`, and `/experiments` are
-computed from the packaged fixture/demo data or local records, not the injected provider.
+methods. `/curves`, `/calibration`, `/stress`, `/allocate`, `/run`, `/experiments`, and
+`/sources` are computed from the packaged fixture/demo data, local records, or adapter metadata,
+not the injected provider.
 
 ## Interpreting output
 
