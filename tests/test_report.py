@@ -44,3 +44,49 @@ def make_snapshot(
     )
 
 
+def make_notes() -> list[ResearchNote]:
+    return [
+        research_market(
+            make_snapshot(market_id="m1", question="Will event one resolve YES?"), now=NOW
+        ),
+        research_market(
+            make_snapshot(
+                market_id="m2",
+                question="Will event two resolve YES?",
+                orderbook=(),
+            ),
+            now=NOW,
+        ),
+    ]
+
+
+def half(snapshot: MarketSnapshot) -> float | None:
+    return 0.5
+
+
+def test_disclaimer_is_present_and_bold() -> None:
+    output = render_markdown(make_notes(), generated_at=NOW)
+    assert "**" in output
+    assert "not investment advice" in output
+    assert "not real observations" in output
+    assert "in-sample" in output
+    assert "not forecasts" in output
+
+
+def test_provenance_summary_counts_fixture_notes() -> None:
+    output = render_markdown(make_notes(), generated_at=NOW)
+    assert "## Provenance summary" in output
+    assert "- fixture: 2" in output
+    assert "Real data present: no" in output
+
+
+def test_provenance_summary_reports_real_data() -> None:
+    note = research_market(
+        make_snapshot(market_id="m3", question="Real?", kind=DataSourceKind.REAL), now=NOW
+    )
+    output = render_markdown([note], generated_at=NOW)
+    assert "- real: 1" in output
+    assert "Real data present: yes" in output
+
+
+def test_every_note_question_appears() -> None:
