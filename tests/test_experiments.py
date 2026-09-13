@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from poly_alpha.adapters.registry import default_markets
+from poly_alpha.contracts import PriceLevel
 from poly_alpha.research.experiments import (
     Experiment,
     append_experiment,
@@ -53,6 +54,13 @@ def test_fingerprint_is_deterministic_and_input_sensitive() -> None:
     assert fingerprint(changed_market, params) != base
     assert fingerprint(markets, dict(params, cap=0.1)) != base
 
+    requestioned = [replace(markets[0], question="A different question?"), *markets[1:]]
+    assert fingerprint(requestioned, params) != base
+
+    thicker_book = markets[0].orderbook + (PriceLevel(0.99, 10.0),)
+    extended = [replace(markets[0], orderbook=thicker_book), *markets[1:]]
+    assert fingerprint(extended, params) != base
+
 
 def test_build_experiment_populates_fields_with_stable_run_id() -> None:
     markets = default_markets()
@@ -89,13 +97,21 @@ def test_read_experiments_skips_malformed_and_mistyped_lines(tmp_path: Path) -> 
     valid = experiment_to_dict(make_experiment())
     wrong_type = dict(valid, market_count="4")
     path.write_text(
-        json.dumps(valid) + "\n" + "not json at all\n" + json.dumps(wrong_type) + "\n",
+        json.dumps(valid) + "\nnot json at all\n" + "123\n[1, 2]\n" + json.dumps(wrong_type) + "\n",
         encoding="utf-8",
     )
     experiments = read_experiments(path)
     assert len(experiments) == 1
     assert isinstance(experiments[0], Experiment)
     assert experiments[0].market_count == valid["market_count"]
+
+
+def test_append_after_torn_line_does_not_merge_records(tmp_path: Path) -> None:
+    path = tmp_path / "experiments.jsonl"
+    experiment = make_experiment()
+    path.write_text('{"torn":', encoding="utf-8")
+    append_experiment(path, experiment)
+    assert read_experiments(path) == [experiment]
 
 
 def test_experiment_from_dict_rejects_missing_market_count() -> None:
@@ -117,6 +133,19 @@ def test_experiment_from_dict_rejects_non_numeric_total_stake() -> None:
     data["total_stake"] = "nope"
     with pytest.raises(ValueError):
         experiment_from_dict(data)
+
+
+def test_experiment_from_dict_rejects_bool_market_count() -> None:
+    data = experiment_to_dict(make_experiment())
+    data["market_count"] = True
+    with pytest.raises(ValueError):
+        experiment_from_dict(data)
+
+
+def test_reproduce_false_when_a_parameter_changes() -> None:
+    experiment = make_experiment()
+    changed = replace(experiment, params=dict(experiment.params, bankroll=2000.0))
+    assert reproduce(changed) is False
 
 
 def test_reproduce_true_for_fresh_and_false_for_tampered() -> None:
