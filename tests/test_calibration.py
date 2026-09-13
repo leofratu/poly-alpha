@@ -90,3 +90,20 @@ def test_simulated_flag_true_when_intervals_are_simulated() -> None:
 
 
 def test_calibration_by_kind_groups_and_sums_to_n() -> None:
+    notes = [
+        _note(market_id="a", kind=DataSourceKind.FIXTURE),
+        _note(market_id="b", kind=DataSourceKind.FIXTURE),
+        _note(market_id="c", kind=DataSourceKind.SIMULATED),
+    ]
+    reports = calibration_by_kind(notes, [True, False, True])
+    assert sorted(reports) == ["fixture", "simulated"]
+    assert reports["fixture"].n == 2
+    assert reports["simulated"].n == 1
+    assert sum(report.n for report in reports.values()) == len(notes)
+
+
+def test_demo_calibration_runs_and_disclaims_real_world_evidence() -> None:
+    report = demo_calibration()
+    assert report.n >= 1
+    assert report.simulated is True
+    assert any("not evidence of real-world calibration" in note for note in report.notes)
