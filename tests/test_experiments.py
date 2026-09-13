@@ -97,3 +97,30 @@ def test_read_experiments_skips_malformed_and_mistyped_lines(tmp_path: Path) -> 
     assert isinstance(experiments[0], Experiment)
     assert experiments[0].market_count == valid["market_count"]
 
+
+def test_experiment_from_dict_rejects_missing_market_count() -> None:
+    data = experiment_to_dict(make_experiment())
+    del data["market_count"]
+    with pytest.raises(ValueError):
+        experiment_from_dict(data)
+
+
+def test_experiment_from_dict_rejects_non_int_market_count() -> None:
+    data = experiment_to_dict(make_experiment())
+    data["market_count"] = "4"
+    with pytest.raises(ValueError):
+        experiment_from_dict(data)
+
+
+def test_experiment_from_dict_rejects_non_numeric_total_stake() -> None:
+    data = experiment_to_dict(make_experiment())
+    data["total_stake"] = "nope"
+    with pytest.raises(ValueError):
+        experiment_from_dict(data)
+
+
+def test_reproduce_true_for_fresh_and_false_for_tampered() -> None:
+    experiment = make_experiment()
+    assert reproduce(experiment) is True
+    tampered = replace(experiment, run_id="0" * 64)
+    assert reproduce(tampered) is False
