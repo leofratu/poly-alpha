@@ -90,3 +90,49 @@ def _opportunity_lines(opportunities: Sequence[Opportunity]) -> list[str]:
         lines.extend(["(none)", ""])
         return lines
     for opportunity in opportunities:
+        lines.append(
+            f"- `{opportunity.note.market_id}`: edge_low={opportunity.edge_low:.1%}, "
+            f"edge_high={opportunity.edge_high:.1%}, score={opportunity.score:.4f}, "
+            f"real={_yes_no(opportunity.is_real)}"
+        )
+    lines.append("")
+    return lines
+
+
+def _metrics_lines(metrics: Sequence[StrategyMetrics]) -> list[str]:
+    """Render the strategy-comparison section with the first metric's caveat."""
+    lines = ["## Strategy comparison", ""]
+    if not metrics:
+        lines.extend(["(none)", ""])
+        return lines
+    for record in metrics:
+        lines.append(
+            f"- {record.name}: trades={record.trades}, hit_rate={record.hit_rate:.1%}, "
+            f"total_pnl={record.total_pnl:+.2f}, roi={record.roi:+.1%}, "
+            f"max_drawdown={record.max_drawdown:.1%}"
+        )
+    lines.extend(["", f"**Caveat:** {metrics[0].caveat}", ""])
+    return lines
+
+
+def _risk_lines(risk: RiskReport) -> list[str]:
+    """Render the portfolio-risk section."""
+    var = "n/a" if risk.historical_var_95 is None else f"{risk.historical_var_95:.2%}"
+    notes_text = "; ".join(risk.notes) if risk.notes else "none"
+    return [
+        "## Portfolio risk",
+        "",
+        f"- Positions: {risk.n_positions}",
+        f"- Total stake: {risk.total_stake:.2f}",
+        f"- HHI: {risk.hhi:.4f}",
+        f"- Max position fraction: {risk.max_position_fraction:.1%}",
+        f"- Historical VaR 95: {var}",
+        f"- Max drawdown: {risk.max_drawdown:.1%}",
+        f"- Notes: {notes_text}",
+        "",
+    ]
+
+
+def render_markdown(
+    notes: Sequence[ResearchNote],
+    *,
