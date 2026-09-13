@@ -21,17 +21,20 @@ resolved markets, summarizes portfolio risk, and serves the results over a small
 | `adapters/fixtures.py` | `FixtureMarketAdapter`: hand-authored, deterministic `DataSourceKind.FIXTURE` markets for local development and tests. |
 | `adapters/polymarket.py` | `PolymarketAdapter`: maps live Polymarket Gamma payloads to `MarketSnapshot`s tagged `DataSourceKind.REAL`; skips malformed or non-two-sided markets. |
 | `adapters/series.py` | `BinaryFromSeriesAdapter`: derives one synthetic up/down market per supplied price series, tagged `DataSourceKind.SYNTHETIC`. |
+| `adapters/registry.py` | `default_adapters`, `aggregate_markets`, `markets_by_kind`: composes fixtures + crypto/equity series into one labeled snapshot stream, skipping failed adapters. |
 | `research/notes.py` | Note containers: `ResearchClaim` (direction, support, sources) and `ResearchNote` (summary, model `Uncertainty`, edge, caveats, `source_kinds`). |
 | `research/analyst.py` | Deterministic offline engine. `research_market` / `research_markets` turn snapshots into notes using de-vigged price, order-book imbalance, liquidity shrinkage, and Shin debiasing. |
 | `research/screen.py` | `Opportunity`, `rank_opportunities`, `summarize`: ranks notes by the **lower bound** of the model edge, optionally requiring `REAL` provenance. |
 | `research/report.py` | `render_markdown` / `write_markdown`: composes notes, opportunities, comparison metrics, and risk into one provenance-labeled Markdown dossier. |
 | `portfolio/sizing.py` | `SizingDecision`, `kelly_fraction`: conservative fractional-Kelly sizing that uses the uncertainty lower bound and a hard cap. |
 | `backtesting/comparison.py` | `ResolvedMarket`, `StrategyMetrics`, `compare_strategies`: replays resolved markets through supplied strategies and ranks the No-side ledger by total PnL. |
+| `backtesting/strategies.py` | Named heuristic strategies (`market_implied`, `shin_debiased`, `constant_half`, `uncertainty_gated`) plus `describe`; no strategy claims validated performance. |
+| `backtesting/simulation.py` | `simulate_portfolio`: uncertainty-aware paper equity curve over supplied resolved markets; in-sample, non-annualized, caveated. |
 | `portfolio/risk.py` | `Position`, `RiskReport`, `analyze_portfolio`, `portfolio_value`: concentration (HHI, max position fraction) and, when a return series is supplied, historical VaR and drawdown. |
 | `api/server.py` | Stdlib-only read-only JSON API: `DataProvider`, `StaticProvider`, `default_provider`, `create_server`; endpoints `/health`, `/markets`, `/research`, `/risk`, `/compare`. |
 | `strategy.py` | Shared strategy primitives used by the engine (`classify_category`, `shin_debiasing`). |
 | `cli.py` | Typer entry point (`scan`, `status`, `init`, `step`, `live`, `backtest`); the research modules are imported lazily by the commands. |
-| `cli_platform.py` | Typer group mounted as `poly-alpha research`: `markets`, `research`, `screen`, `report`, `size`, `compare`, `risk`, `serve`. |
+| `cli_platform.py` | Typer group mounted as `poly-alpha research`: `markets`, `research`, `screen`, `report`, `size`, `compare`, `simulate`, `risk`, `serve`. |
 
 ## End-to-end flow
 

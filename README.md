@@ -345,12 +345,13 @@ calls. Every value carries `Provenance`; outputs are tagged `FIXTURE`, `SIMULATE
 `SYNTHETIC`, never presented as real observations. See `docs/DATA_PROVENANCE.md`.
 
 ```bash
-uv run poly-alpha research markets            # list labeled fixture markets
+uv run poly-alpha research markets --all      # labeled fixture + synthetic markets
 uv run poly-alpha research research --json    # research notes with uncertainty + sources
 uv run poly-alpha research screen             # rank by the conservative edge lower bound
 uv run poly-alpha research size               # conservative fractional-Kelly sizing
 uv run poly-alpha research report             # provenance-labeled Markdown dossier
 uv run poly-alpha research compare            # in-sample strategy comparison (demo data)
+uv run poly-alpha research simulate           # paper equity curve over demo resolutions
 uv run poly-alpha research risk               # demo concentration + historical risk
 uv run poly-alpha research serve --port 8000  # read-only JSON API on loopback
 ```

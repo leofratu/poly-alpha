@@ -34,6 +34,8 @@ non-real data.
 | `adapters/polymarket.py` | `REAL` | Polymarket Gamma API; `Provenance.url` set to the API base. |
 | `adapters/fixtures.py` | `FIXTURE` | Static `_SPECS`; fixed `FIXTURE_AS_OF` timestamp. |
 | `adapters/series.py` | `SYNTHETIC` | Probabilities derived from the last two points of a supplied series. |
+| `adapters/registry.py` | (carries) | Concatenates labeled snapshots; `markets_by_kind` counts them by kind. |
+| `backtesting/simulation.py` | (consumes) | Equity curve from supplied resolved markets; fixed caveat, no provenance claim. |
 | `research/analyst.py` | `SIMULATED` | Heuristic adjustment provenance; model/edge `Uncertainty.simulated=True`. |
 | `research/notes.py` | (carries) | Re-exposes the snapshot's `Provenance`; `source_kinds()` lists all kinds cited. |
 | `research/screen.py` | (consumes) | Ranks by `note.edge.low`; `Opportunity.is_real` reflects the note's provenance. |
