@@ -36,6 +36,9 @@ non-real data.
 | `adapters/series.py` | `SYNTHETIC` | Probabilities derived from the last two points of a supplied series. |
 | `research/analyst.py` | `SIMULATED` | Heuristic adjustment provenance; model/edge `Uncertainty.simulated=True`. |
 | `research/notes.py` | (carries) | Re-exposes the snapshot's `Provenance`; `source_kinds()` lists all kinds cited. |
+| `research/screen.py` | (consumes) | Ranks by `note.edge.low`; `Opportunity.is_real` reflects the note's provenance. |
+| `research/report.py` | (exposes) | Renders a provenance summary and labels every note's kind in the dossier. |
+| `portfolio/sizing.py` | (consumes) | Uses `Uncertainty` bounds; emits a rationale, not a market-data claim. |
 | `portfolio/risk.py` | (carries) | Each `Position` carries a `Provenance`; the report summarizes positions. |
 | `backtesting/comparison.py` | (consumes) | Reads snapshot provenance; `StrategyMetrics` carries a fixed caveat string, not a `Provenance`. |
 | `api/server.py` | (exposes) | Serializes provenance as-is; `/research` includes a top-level `simulated` flag. |
