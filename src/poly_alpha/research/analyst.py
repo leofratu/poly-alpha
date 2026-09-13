@@ -107,7 +107,12 @@ def _build_claims(
             f"YES/NO prices {snapshot.yes_price:.3f}/{snapshot.no_price:.3f}."
         )
         claims.append(
-            ResearchClaim(market_text, _direction(implied), liquidity_confidence, (snapshot_source,))
+            ResearchClaim(
+                market_text,
+                _direction(implied),
+                liquidity_confidence,
+                (snapshot_source,),
+            )
         )
     else:
         claims.append(

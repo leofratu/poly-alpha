@@ -85,6 +85,21 @@ class _ModuleProvider:
         return [cast(dict, _to_jsonable(metrics)) for metrics in self._compare_fn()]
 
 
+def _market_implied(snapshot: MarketSnapshot) -> float | None:
+    """Use the de-vigged market price as the fair YES probability."""
+    return snapshot.implied_yes()
+
+
+def _shin_debiased(snapshot: MarketSnapshot) -> float | None:
+    """Use Shin (1992) debiasing of the de-vigged market price."""
+    from poly_alpha.strategy import classify_category, shin_debiasing
+
+    implied = snapshot.implied_yes()
+    if implied is None:
+        return None
+    return shin_debiasing(implied, classify_category(snapshot.question))
+
+
 def default_provider() -> DataProvider:
     """Build the real provider, falling back to static data when modules are absent."""
     try:
@@ -162,7 +177,7 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
             self.end_headers()
             self.wfile.write(body)
 
-        def log_message(self, format: str, *args: object) -> None:
+        def log_message(self, fmt: str, *args: object) -> None:
             pass
 
     return Handler
