@@ -14,7 +14,9 @@ none of it is validated performance.
 Completed in the second improvement pass (2026-09-14): all four CI gates were run and recorded
 on the designated Linux runner (`pytest`, `ruff check`, `ruff format --check`, `mypy`);
 the type gate was widened from `strategy.py` to `src/poly_alpha/`; Kalshi was added as a second
-real venue; and reproducible experiment records were added alongside the journal.
+real venue; reproducible experiment records were added alongside the journal; and
+`validation.py` now filters ingestion in `aggregate_markets` so invalid snapshots are rejected
+at the source.
 
 ## Adapters and data
 
@@ -24,7 +26,6 @@ real venue; and reproducible experiment records were added alongside the journal
 - **Richer run storage.** Experiments are persisted as fingerprinted JSONL and the journal
   remains the aggregate audit trail; a SQLite-backed history for richer queries is still open.
   Keep provenance labels on every stored row.
-- **Wire `validation.py` into ingestion** so adapters reject malformed snapshots at the source.
 
 ## Research and evaluation
 

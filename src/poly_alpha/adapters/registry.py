@@ -17,6 +17,7 @@ from poly_alpha.adapters.kalshi import KalshiAdapter
 from poly_alpha.adapters.polymarket import PolymarketAdapter
 from poly_alpha.adapters.series import BinaryFromSeriesAdapter
 from poly_alpha.contracts import MarketSnapshot
+from poly_alpha.validation import is_valid
 
 
 def sample_series() -> dict[str, list[float]]:
@@ -47,15 +48,16 @@ def default_adapters() -> list[MarketAdapter]:
 def aggregate_markets(adapters: Sequence[MarketAdapter]) -> list[MarketSnapshot]:
     """Concatenate `list_markets()` across adapters in the given order.
 
-    Adapters that raise `AdapterError` or `requests.RequestException` are
-    skipped so one failed source does not blank the whole result. Snapshots are
-    not deduplicated: if two adapters expose the same `market_id`, both are
-    returned and resolving that collision is the caller's concern.
+    Adapters that raise `AdapterError` or `requests.RequestException` are skipped so one
+    failed source does not blank the whole result, and snapshots that fail the shared
+    contract validation are dropped so invalid data never reaches research. Snapshots are
+    not deduplicated: if two adapters expose the same `market_id`, both are returned and
+    resolving that collision is the caller's concern.
     """
     markets: list[MarketSnapshot] = []
     for adapter in adapters:
         try:
-            markets.extend(adapter.list_markets())
+            markets.extend(market for market in adapter.list_markets() if is_valid(market))
         except (AdapterError, requests.RequestException):
             continue
     return markets

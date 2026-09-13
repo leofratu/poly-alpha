@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from poly_alpha.adapters import (
@@ -103,3 +105,20 @@ def test_real_adapters_threads_the_limit(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(registry, "KalshiAdapter", _FakeAdapter)
     assert len(real_adapters(limit=7)) == 2
     assert seen == [7, 7]
+
+
+def test_aggregate_markets_drops_invalid_snapshots() -> None:
+    good = fixture_adapter().list_markets()[0]
+    bad = replace(good, yes_price=1.5)
+
+    class _MixedAdapter:
+        name = "mixed"
+        source_kind = DataSourceKind.FIXTURE
+
+        def list_markets(self) -> list[MarketSnapshot]:
+            return [bad, good]
+
+        def get_snapshot(self, market_id: str) -> MarketSnapshot | None:
+            return None
+
+    assert aggregate_markets([_MixedAdapter()]) == [good]
