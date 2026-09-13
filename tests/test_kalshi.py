@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+import requests
 
 from poly_alpha.adapters.kalshi import KalshiAdapter
 from poly_alpha.contracts import DataSourceKind, MarketSnapshot
@@ -143,6 +144,14 @@ def test_kalshi_get_snapshot_uses_single_market_endpoint() -> None:
     assert adapter.get_snapshot(TICKER) is not None
     assert client.market_calls == [TICKER]
     assert adapter.get_snapshot("missing") is None
+
+
+def test_kalshi_get_snapshot_returns_none_on_transport_error() -> None:
+    class _ErroringClient(KalshiClient):
+        def get_market(self, ticker: str) -> dict[str, Any]:
+            raise requests.ConnectionError("offline")
+
+    assert KalshiAdapter(client=_ErroringClient()).get_snapshot(TICKER) is None
 
 
 def test_kalshi_adapter_is_deterministic() -> None:

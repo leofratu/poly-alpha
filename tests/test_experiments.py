@@ -90,6 +90,7 @@ def test_append_then_read_round_trips(tmp_path: Path) -> None:
 
 def test_read_experiments_missing_file_returns_empty(tmp_path: Path) -> None:
     assert read_experiments(tmp_path / "does-not-exist.jsonl") == []
+    assert read_experiments(tmp_path / "no" / "parent" / "missing.jsonl") == []
 
 
 def test_read_experiments_skips_malformed_and_mistyped_lines(tmp_path: Path) -> None:
