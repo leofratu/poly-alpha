@@ -6,11 +6,14 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
+
 from poly_alpha.contracts import DataSourceKind, Provenance, Uncertainty
 from poly_alpha.research.journal import (
     JournalEntry,
     append_entry,
     build_entry,
+    entry_from_dict,
     entry_to_dict,
     read_entries,
 )
@@ -112,3 +115,30 @@ def test_read_entries_skips_malformed_lines(tmp_path: Path) -> None:
     assert len(entries) == 1
     assert isinstance(entries[0], JournalEntry)
     assert entries[0].market_count == 1
+
+
+def test_entry_from_dict_rejects_non_mapping_kind_counts() -> None:
+    data = entry_to_dict(build_entry([make_note("m1", 0.1)], now=NOW))
+    data["kind_counts"] = ["fixture"]
+    with pytest.raises(ValueError):
+        entry_from_dict(data)
+
+
+def test_entry_from_dict_requires_market_count() -> None:
+    data = entry_to_dict(build_entry([make_note("m1", 0.1)], now=NOW))
+    del data["market_count"]
+    with pytest.raises(KeyError):
+        entry_from_dict(data)
+
+
+def test_entry_to_dict_sorts_kind_counts_keys() -> None:
+    entry = JournalEntry(
+        recorded_at=NOW.isoformat(),
+        market_count=3,
+        kind_counts={"synthetic": 1, "real": 1, "fixture": 1},
+        simulated=False,
+        mean_edge=0.0,
+        top_market_id=None,
+    )
+    counts = entry_to_dict(entry)["kind_counts"]
+    assert list(counts) == ["fixture", "real", "synthetic"]
