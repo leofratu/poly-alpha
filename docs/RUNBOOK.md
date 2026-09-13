@@ -90,3 +90,7 @@ data, not the injected provider.
   in-sample metrics as forecasts. See `docs/DATA_PROVENANCE.md`.
 
 ## Testing
+
+The project uses pytest (`uv run pytest tests/`). On the authoring workstation test suites were
+not executed; behavior was verified with bounded import/smoke checks. Run the suite in a normal
+development environment before merging.
