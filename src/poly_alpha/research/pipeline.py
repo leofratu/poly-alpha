@@ -44,3 +44,49 @@ class ResearchBundle:
 
 def _position_for(allocation: Allocation, note: ResearchNote, asset_class: str) -> Position:
     """Build one risk position from an allocation, its note, and an asset class."""
+    return Position(
+        market_id=allocation.market_id,
+        asset_class=asset_class,
+        stake=allocation.stake,
+        yes_probability=note.model_yes.estimate,
+        provenance=note.provenance,
+    )
+
+
+def run_pipeline(
+    *,
+    bankroll: float = 1000.0,
+    cap: float = 0.05,
+    max_positions: int = 20,
+    max_deploy: float = 0.6,
+) -> ResearchBundle:
+    """Run the whole research pipeline once, offline and deterministically.
+
+    Markets come from the adapter registry, notes from the offline research engine,
+    and opportunities from conservative screening. A budgeted allocation is then
+    marked into risk positions and scored against demo calibration. Constraint
+    validation lives in ``allocate``; invalid values raise ``ValueError``.
+    """
+    markets = default_markets()
+    notes = research_markets(markets)
+    opportunities = rank_opportunities(notes, min_edge_low=float("-inf"))
+
+    prices = {
+        market.market_id: market.yes_price
+        for market in markets
+        if market.yes_price is not None
+    }
+    plan = allocate(
+        opportunities,
+        prices,
+        bankroll=bankroll,
+        cap=cap,
+        max_positions=max_positions,
+        max_deploy=max_deploy,
+    )
+
+    note_by_id = {note.market_id: note for note in notes}
+    asset_class_by_id = {market.market_id: market.asset.asset_class for market in markets}
+    positions = [
+        _position_for(
+            allocation,
