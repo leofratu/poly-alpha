@@ -44,3 +44,49 @@ def test_net_edge_shrinks_as_costs_rise() -> None:
 
 
 def test_net_edge_flips_sign_for_marginal_edge() -> None:
+    fair, price = 0.55, 0.54
+    cheap = CostModel(fee_bps=10.0)
+    pricey = CostModel(fee_bps=500.0)
+    assert cheap.net_edge(fair_probability=fair, price=price) > 0.0
+    assert pricey.net_edge(fair_probability=fair, price=price) < 0.0
+
+
+def test_net_edge_sell_uses_other_side() -> None:
+    model = CostModel(fee_bps=100.0)
+    edge = model.net_edge(fair_probability=0.3, price=0.6, side="sell")
+    expected = (1.0 - 0.3) - (1.0 - model.effective_price(0.6, "sell"))
+    assert edge == pytest.approx(expected)
+    assert edge > 0.0
+
+
+@pytest.mark.parametrize("side", ["hold", "", "BUYS"])
+def test_invalid_side_raises(side: str) -> None:
+    model = CostModel()
+    with pytest.raises(ValueError):
+        model.effective_price(0.5, side)
+    with pytest.raises(ValueError):
+        model.net_edge(fair_probability=0.5, price=0.5, side=side)
+
+
+@pytest.mark.parametrize("bad", [-1.0, -0.01, float("nan"), float("inf")])
+def test_invalid_bps_raises(bad: float) -> None:
+    with pytest.raises(ValueError):
+        CostModel(fee_bps=bad)
+    with pytest.raises(ValueError):
+        CostModel(slippage_bps=bad)
+
+
+def test_effective_price_clamps_at_bounds() -> None:
+    huge = CostModel(fee_bps=1_000_000.0)
+    assert huge.effective_price(0.5, "buy") == 1.0
+    assert huge.effective_price(0.5, "sell") == 0.0
+    assert CostModel().effective_price(1.0, "buy") == 1.0
+    assert CostModel().effective_price(0.0, "sell") == 0.0
+
+
+def test_adjust_fair_returns_none_for_negative_cost_edge() -> None:
+    model = CostModel(fee_bps=500.0)
+    assert model.adjust_fair(0.51, 0.5) is None
+    assert model.adjust_fair(0.7, 0.6, side="sell") is None
+
+
