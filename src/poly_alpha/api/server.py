@@ -338,12 +338,12 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                     {"data": [to_jsonable(result) for result in results], "simulated": True},
                 )
             elif path == "/allocate":
-                from poly_alpha.adapters.fixtures import fixture_adapter
+                from poly_alpha.adapters.registry import default_markets
                 from poly_alpha.portfolio.allocate import allocate
                 from poly_alpha.research.analyst import research_markets
                 from poly_alpha.research.screen import rank_opportunities
 
-                markets = fixture_adapter().list_markets()
+                markets = default_markets()
                 opportunities = rank_opportunities(
                     research_markets(markets), min_edge_low=float("-inf")
                 )
