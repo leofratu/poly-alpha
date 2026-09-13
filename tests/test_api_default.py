@@ -153,10 +153,29 @@ def test_experiments_route_reports_recorded_count(
     assert verified["data"][0]["reproduced"] is True
 
 
+def test_experiments_verify_marks_invalid_records_unreproducible(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from dataclasses import replace
+
+    from poly_alpha.adapters.registry import default_markets
+    from poly_alpha.research import experiments as experiments_module
+    from poly_alpha.research.experiments import append_experiment, build_experiment
+    from poly_alpha.research.pipeline import run_pipeline
+
+    path = tmp_path / "experiments.jsonl"
+    record = build_experiment(run_pipeline(), default_markets(), {"bankroll": 1000.0})
+    append_experiment(path, replace(record, params={"bankroll": 0.0}))
+    monkeypatch.setattr(experiments_module, "DEFAULT_EXPERIMENTS_PATH", path)
+    with _served() as port:
+        _, body = _get(port, "/experiments?verify=1")
+    assert body["data"][0]["reproduced"] is False
+
+
 def test_sources_lists_configured_adapters() -> None:
     with _served() as port:
         _, body = _get(port, "/sources")
-    assert body["simulated"] is False
+    assert body["simulated"] is True
     names = {row["name"] for row in body["data"]}
     assert {"fixture", "series", "polymarket", "kalshi"} <= names
     assert any(row["network"] is True for row in body["data"])

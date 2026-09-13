@@ -411,7 +411,10 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                 data = [experiment_to_dict(record) for record in records]
                 if verify:
                     for row, record in zip(data, records, strict=True):
-                        row["reproduced"] = reproduce(record)
+                        try:
+                            row["reproduced"] = reproduce(record)
+                        except (ValueError, OverflowError):
+                            row["reproduced"] = False
                 self._send(
                     200,
                     {
@@ -436,7 +439,7 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                             }
                             for adapter in adapters
                         ],
-                        "simulated": False,
+                        "simulated": any(not adapter.source_kind.is_real for adapter in adapters),
                     },
                 )
             else:
