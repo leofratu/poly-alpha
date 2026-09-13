@@ -91,12 +91,18 @@ def entry_from_dict(data: dict[str, object]) -> JournalEntry:
         raise ValueError("kind_counts must be an object")
     kind_counts = {str(key): int(value) for key, value in raw_counts.items()}
     top = data.get("top_market_id")
+    market_count = data["market_count"]
+    if not isinstance(market_count, int):
+        raise ValueError("market_count must be an int")
+    mean_edge = data["mean_edge"]
+    if not isinstance(mean_edge, (int, float)):
+        raise ValueError("mean_edge must be a number")
     return JournalEntry(
         recorded_at=str(data["recorded_at"]),
-        market_count=int(data["market_count"]),
+        market_count=market_count,
         kind_counts=kind_counts,
         simulated=bool(data["simulated"]),
-        mean_edge=float(data["mean_edge"]),
+        mean_edge=float(mean_edge),
         top_market_id=None if top is None else str(top),
     )
 

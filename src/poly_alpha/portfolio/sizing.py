@@ -45,8 +45,12 @@ def kelly_fraction(
     Kelly for a binary paying 1.0 is ``edge / (1 - price)``; the returned fraction
     is the smaller of that and ``cap``.
     """
-    lower_bound_used = uncertainty is not None and use_lower_bound
-    raw = uncertainty.low if lower_bound_used else probability
+    if uncertainty is not None and use_lower_bound:
+        lower_bound_used = True
+        raw = uncertainty.low
+    else:
+        lower_bound_used = False
+        raw = probability
     effective = _clamp_probability(raw)
     bound_note = "lower bound used" if lower_bound_used else "point estimate used"
     if not 0.0 < cap <= 1.0:

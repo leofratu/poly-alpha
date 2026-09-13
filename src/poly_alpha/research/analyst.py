@@ -255,7 +255,7 @@ def research_market(snapshot: MarketSnapshot, *, now: datetime | None = None) ->
             f"Market data is {snapshot.provenance.kind.value} "
             f"({snapshot.provenance.source}) and is not a real observation."
         )
-    caveats = (
+    caveats: tuple[str, ...] = (
         data_caveat,
         "This is research and paper-trading output only, not investment advice.",
         "The model estimate is a simulated heuristic and is not a calibrated forecast.",
