@@ -98,3 +98,38 @@ class KalshiAdapter:
             if snapshot.market_id == market_id:
                 return snapshot
         return None
+
+    def _parse_market(self, market: dict[str, Any]) -> MarketSnapshot | None:
+        """Map one raw Kalshi market dict, skipping malformed payloads."""
+        ticker = str(market.get("ticker") or "").strip()
+        if not ticker:
+            return None
+        yes_price = _yes_price(market)
+        if yes_price is None:
+            return None
+        question = str(market.get("title") or market.get("yes_sub_title") or ticker).strip()
+        provenance = Provenance(
+            source="Kalshi public API",
+            kind=DataSourceKind.REAL,
+            url=KALSHI_API_BASE,
+            retrieved_at=datetime.now(UTC),
+            note=(
+                "YES price is the bid/ask midpoint in dollars; liquidity and volume are "
+                "contract counts (open interest / volume), not dollar amounts."
+            ),
+        )
+        return MarketSnapshot(
+            market_id=ticker,
+            question=question,
+            asset=AssetRef(
+                symbol=str(market.get("event_ticker") or ticker),
+                asset_class="prediction",
+                description=question,
+            ),
+            yes_price=yes_price,
+            no_price=1.0 - yes_price,
+            liquidity=_to_float(market.get("open_interest_fp")) or 0.0,
+            volume=_to_float(market.get("volume_fp")) or 0.0,
+            provenance=provenance,
+            close_time=_parse_datetime(market.get("close_time")),
+        )
