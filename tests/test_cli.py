@@ -90,3 +90,16 @@ def test_risk_json_reports_concentration() -> None:
     assert "n_positions" in payload
 
 
+def test_report_writes_markdown_dossier(tmp_path: Path) -> None:
+    target = tmp_path / "out.md"
+    result = _invoke(["research", "report", "--output", str(target)])
+    assert result.exit_code == 0
+    assert target.exists()
+    content = target.read_text(encoding="utf-8")
+    assert "not investment advice" in content
+    assert "Provenance summary" in content
+
+
+def test_help_succeeds() -> None:
+    result = _invoke(["--help"])
+    assert result.exit_code == 0
