@@ -136,3 +136,34 @@ def test_default_strategies_has_four_callable_entries() -> None:
     assert set(strategies) == STRATEGY_NAMES
     assert all(callable(strategy) for strategy in strategies.values())
 
+
+def test_default_strategies_returns_a_fresh_dict() -> None:
+    first = default_strategies()
+    second = default_strategies()
+    assert first is not second
+    assert first == second
+
+
+def test_all_strategy_outputs_are_probabilities_or_none() -> None:
+    markets = fixture_adapter().list_markets()
+    for strategy in default_strategies().values():
+        for market in markets:
+            result = strategy(market)
+            assert result is None or 0.0 <= result <= 1.0
+
+
+def test_describe_covers_all_strategies_and_disclaims_performance() -> None:
+    descriptions = describe()
+    assert set(descriptions) == STRATEGY_NAMES
+    assert all(isinstance(text, str) and text for text in descriptions.values())
+    assert all("\n" not in text for text in descriptions.values())
+    assert all("no validated performance" in text for text in descriptions.values())
+
+
+def test_default_strategies_plug_into_compare_strategies() -> None:
+    markets = [
+        ResolvedMarket(snapshot=market, resolved_yes=market.yes_price is not None)
+        for market in fixture_adapter().list_markets()
+    ]
+    results = compare_strategies(markets, default_strategies())
+    assert {metrics.name for metrics in results} == STRATEGY_NAMES
