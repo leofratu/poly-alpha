@@ -90,3 +90,35 @@ def test_polymarket_parses_top_level_market_event() -> None:
     assert markets[0].market_id == "poly-edge"
     assert markets[0].provenance.kind is DataSourceKind.REAL
 
+
+def test_series_skips_short_series() -> None:
+    """A series with fewer than two points produces no snapshot."""
+    adapter = BinaryFromSeriesAdapter({"BTC": [100.0]})
+    assert adapter.list_markets() == []
+    assert adapter.get_snapshot("series:BTC") is None
+
+
+def test_series_skips_zero_previous_price() -> None:
+    """A zero previous price cannot form a relative move and is skipped."""
+    assert BinaryFromSeriesAdapter({"BTC": [0.0, 5.0]}).list_markets() == []
+
+
+def test_series_handles_negative_previous_price() -> None:
+    """A negative previous price still yields probabilities strictly in (0, 1)."""
+    markets = BinaryFromSeriesAdapter({"BTC": [-100.0, -50.0]}).list_markets()
+    assert len(markets) == 1
+    yes_price = markets[0].yes_price
+    no_price = markets[0].no_price
+    assert yes_price is not None and 0.0 < yes_price < 1.0
+    assert no_price is not None and 0.0 < no_price < 1.0
+
+
+def test_series_is_deterministic_and_complementary() -> None:
+    """Repeated constructions agree and each pair of prices sums to one."""
+    series = {"BTC": [100.0, 110.0], "ETH": [-5.0, -6.0]}
+    first = BinaryFromSeriesAdapter(series).list_markets()
+    second = BinaryFromSeriesAdapter(series).list_markets()
+    assert first == second
+    for market in first:
+        assert market.yes_price is not None and market.no_price is not None
+        assert market.yes_price + market.no_price == 1.0
