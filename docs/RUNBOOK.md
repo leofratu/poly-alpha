@@ -45,7 +45,8 @@ always marked simulated even when the market data is real.
 uv run poly-alpha research compare            # in-sample strategy comparison (demo data)
 uv run poly-alpha research simulate           # paper equity curve over demo resolutions
 uv run poly-alpha research curves             # walk-forward over deterministic histories
-uv run poly-alpha research costs --fee-bps 100 --slippage-bps 50   # net-edge view
+uv run poly-alpha research costs --fee-bps 100 --slippage-bps 50   # net-edge view (--side buy|sell)
+uv run poly-alpha version                                          # package version
 uv run poly-alpha research calibration        # interval coverage vs demo outcomes
 ```
 
