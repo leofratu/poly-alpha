@@ -44,6 +44,19 @@ def make_history(market_id: str, yes_prices: Sequence[float]) -> MarketHistory:
     )
 
 
+def make_unsettleable_snapshot(market_id: str, no_price: float) -> MarketSnapshot:
+    return MarketSnapshot(
+        market_id=market_id,
+        question=f"Question {market_id}?",
+        asset=AssetRef(symbol="TEST", asset_class="sports"),
+        yes_price=None,
+        no_price=no_price,
+        liquidity=1000.0,
+        volume=500.0,
+        provenance=PROVENANCE,
+    )
+
+
 def strategy_returning(fair: float | None) -> Callable[[MarketSnapshot], float | None]:
     def strategy(snapshot: MarketSnapshot) -> float | None:
         return fair
@@ -140,3 +153,16 @@ def test_empty_history_raises() -> None:
     )
     with pytest.raises(ValueError):
         walk_forward(empty, strategy_returning(0.20))
+
+
+def test_final_snapshot_without_yes_price_is_not_appended() -> None:
+    early = tuple(make_snapshot("wf12", yes_price) for yes_price in (0.30, 0.30, 0.30))
+    history = MarketHistory(
+        asset=early[0].asset,
+        snapshots=(*early, make_unsettleable_snapshot("wf12", 0.70)),
+        provenance=PROVENANCE,
+    )
+    result = walk_forward(history, strategy_returning(0.20))
+    processed = sum(1 for snapshot in history.snapshots[:-1] if snapshot.is_tradeable)
+    assert len(result.equity_curve) == processed + 1
+    assert len(result.equity_curve) < len(history.snapshots) + 1

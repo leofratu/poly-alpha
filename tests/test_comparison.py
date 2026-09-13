@@ -116,3 +116,12 @@ def test_caveat_discloses_annualization_and_forecast() -> None:
 
 def test_max_drawdown_of_empty_curve_is_zero() -> None:
     assert max_drawdown([]) == 0.0
+
+
+def test_min_edge_boundary_requires_strict_edge() -> None:
+    at_edge = make_market("edge-equal", 0.75, resolved_yes=False)
+    above_edge = make_market("edge-above", 0.80, resolved_yes=False)
+    at_results = compare_strategies([at_edge], {"half": constant_half}, min_edge=0.25)
+    above_results = compare_strategies([above_edge], {"half": constant_half}, min_edge=0.25)
+    assert at_results[0].trades == 0
+    assert above_results[0].trades == 1
