@@ -44,3 +44,49 @@ def test_empty_market_id_reports_issue() -> None:
     assert any("market_id" in issue for issue in issues)
 
 
+def test_empty_question_reports_issue() -> None:
+    issues = validate_snapshot(replace(_valid_snapshot(), question=""))
+    assert any("question" in issue for issue in issues)
+
+
+def test_probability_bounds_are_exclusive() -> None:
+    for value in (0.0, 1.0):
+        yes_issues = validate_snapshot(replace(_valid_snapshot(), yes_price=value))
+        no_issues = validate_snapshot(replace(_valid_snapshot(), no_price=value))
+        assert any("yes_price" in issue for issue in yes_issues)
+        assert any("no_price" in issue for issue in no_issues)
+
+
+def test_none_prices_are_allowed() -> None:
+    assert validate_snapshot(replace(_valid_snapshot(), yes_price=None, no_price=None)) == ()
+
+
+def test_negative_liquidity_reports_issue() -> None:
+    issues = validate_snapshot(replace(_valid_snapshot(), liquidity=-1.0))
+    assert any("liquidity" in issue for issue in issues)
+
+
+def test_nan_volume_reports_issue() -> None:
+    issues = validate_snapshot(replace(_valid_snapshot(), volume=math.nan))
+    assert any("volume" in issue for issue in issues)
+
+
+def test_naive_close_time_reports_issue() -> None:
+    naive = datetime(2026, 6, 20)
+    issues = validate_snapshot(replace(_valid_snapshot(), close_time=naive))
+    assert any("close_time" in issue for issue in issues)
+
+
+def test_none_close_time_is_allowed() -> None:
+    assert validate_snapshot(replace(_valid_snapshot(), close_time=None)) == ()
+
+
+def test_bad_orderbook_level_reports_issue() -> None:
+    bad_price = replace(_valid_snapshot(), orderbook=(PriceLevel(price=0.0, size=1.0),))
+    bad_size = replace(_valid_snapshot(), orderbook=(PriceLevel(price=0.5, size=-1.0),))
+    assert any("orderbook" in issue for issue in validate_snapshot(bad_price))
+    assert any("orderbook" in issue for issue in validate_snapshot(bad_size))
+
+
+def test_empty_provenance_source_reports_issue() -> None:
+    bad = replace(
