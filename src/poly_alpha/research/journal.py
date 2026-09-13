@@ -44,3 +44,49 @@ def build_entry(notes: Sequence[ResearchNote], *, now: datetime | None = None) -
 
     Supplying ``now`` makes the result fully deterministic; otherwise the current UTC time
     is used. ``top_market_id`` is the note with the largest absolute edge, breaking ties by
+    ascending ``market_id``. ``mean_edge`` is ``0.0`` when there are no notes.
+    """
+    recorded = now if now is not None else datetime.now(UTC)
+    kind_counts: dict[str, int] = {}
+    for note in notes:
+        kind = note.provenance.kind.value
+        kind_counts[kind] = kind_counts.get(kind, 0) + 1
+
+    if notes:
+        mean_edge = sum(note.edge.estimate for note in notes) / len(notes)
+        top = min(notes, key=lambda note: (-abs(note.edge.estimate), note.market_id))
+        top_market_id: str | None = top.market_id
+    else:
+        mean_edge = 0.0
+        top_market_id = None
+
+    simulated = any(note.is_simulated() for note in notes)
+
+    return JournalEntry(
+        recorded_at=recorded.isoformat(),
+        market_count=len(notes),
+        kind_counts=kind_counts,
+        simulated=simulated,
+        mean_edge=mean_edge,
+        top_market_id=top_market_id,
+    )
+
+
+def entry_to_dict(entry: JournalEntry) -> dict[str, object]:
+    """Convert an entry to a JSON-serializable dict with sorted kind counts."""
+    return {
+        "recorded_at": entry.recorded_at,
+        "market_count": entry.market_count,
+        "kind_counts": dict(sorted(entry.kind_counts.items())),
+        "simulated": entry.simulated,
+        "mean_edge": entry.mean_edge,
+        "top_market_id": entry.top_market_id,
+    }
+
+
+def entry_from_dict(data: dict[str, object]) -> JournalEntry:
+    """Rebuild an entry from a dict, raising on missing or mistyped fields."""
+    raw_counts = data["kind_counts"]
+    if not isinstance(raw_counts, dict):
+        raise ValueError("kind_counts must be an object")
+    kind_counts = {str(key): int(value) for key, value in raw_counts.items()}
