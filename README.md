@@ -14,7 +14,11 @@ Poly-Alpha is a quantitative trading system that extracts systematic alpha from 
 
 Empirical calibration against Reichenbach & Walther (2025) — analyzing **124 million trades** across 77,000+ resolved markets on Polymarket — confirms the persistence of a statistically significant pricing anomaly ($d > 0.50$) in the No-side of markets priced below 15¢ Yes.
 
-The system targets an annualized **Sharpe ratio of 2.4–3.1** with maximum drawdown bounded at 15% of capital through diversification across 40–100 uncorrelated binary positions.
+> **Correction (research-platform revision).** This line previously claimed a validated
+> annualized Sharpe of 2.4–3.1. No such result exists. The historical backtest that produced
+> it synthesized market resolutions and returns instead of replaying observed outcomes, so it
+> cannot support any Sharpe, APY, or drawdown claim. Nothing in this document is a forecast
+> or a performance result. See `docs/DATA_PROVENANCE.md` and section 5.
 
 ---
 
@@ -34,13 +38,13 @@ $$\mathbb{E}_\mathbb{P}[\text{PnL}_{\text{No}}] = \underbrace{P_{\text{true}}(\t
 
 ### Predictions Table
 
-| # | Prediction | Metric | Acceptance Threshold | Observed |
+| # | Prediction | Metric | Acceptance Threshold | Legacy claim (unvalidated) |
 |---|---|---|---|---|
-| P1 | No-side win rate exceeds market-implied | $\hat{p} - p_{\text{mkt}}$ | > 0 (two-sided $t$-test, $\alpha=0.01$) | +3.1¢ |
-| P2 | Edge concentrates in sports derivatives | Sectoral Sharpe contribution | Sports $S_i > 60\%$ of portfolio $S$ | 68% |
-| P3 | Portfolio survives 3σ tail events | VaR₉₉ (MC, $N=300\text{K}$) | $> 0.85 \times K_0$ | $0.945 K_0$ |
-| P4 | Diversification eliminates absorbing barrier | $\Pr(\text{ruin}) < 0.01$ | Kelly fraction $< f^*/2$ | $f = 0.025$ |
-| P5 | Strategy capacity before slippage erosion | Impact cost $< 2\%$ edge | Bankroll $\leq \$100\text{K}$ | ~$75K |
+| P1 | No-side win rate exceeds market-implied | $\hat{p} - p_{\text{mkt}}$ | > 0 (two-sided $t$-test, $\alpha=0.01$) | none verified |
+| P2 | Edge concentrates in sports derivatives | Sectoral Sharpe contribution | Sports $S_i > 60\%$ of portfolio $S$ | none verified |
+| P3 | Portfolio survives 3σ tail events | VaR₉₉ (MC, $N=300\text{K}$) | $> 0.85 \times K_0$ | synthetic only |
+| P4 | Diversification eliminates absorbing barrier | $\Pr(\text{ruin}) < 0.01$ | Kelly fraction $< f^*/2$ | none verified |
+| P5 | Strategy capacity before slippage erosion | Impact cost $< 2\%$ edge | Bankroll $\leq \$100\text{K}$ | none verified |
 
 ---
 
@@ -221,9 +225,16 @@ The strategy is most sensitive to $\varepsilon_{\min}$ — tighter edge threshol
 
 ## 5. Performance Analytics
 
-### 5.1 Empirical Backtest (Reichenbach Table 3 Calibration)
+> **Correction.** The tables in this section are **unvalidated legacy output** from a
+> backtest that fabricated resolutions and returns for demonstration. They are kept only to
+> document the original hypothesis and must not be cited as results. The current comparison
+> harness (`poly_alpha.backtesting.comparison`) reports in-sample metrics only, is **not
+> annualized**, and is explicitly not a forecast.
 
-Configuration: 50 trades/cycle, 300K Monte Carlo paths, 2% position sizing.
+### 5.1 Legacy synthetic backtest (not evidence)
+
+Configuration: 50 trades/cycle, 300K synthetic paths, 2% position sizing. **Synthetic paths,
+not observed data.**
 
 | Statistic | Value |
 |---|---|
