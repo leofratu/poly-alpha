@@ -44,3 +44,23 @@ def aggregate_markets(adapters: Sequence[MarketAdapter]) -> list[MarketSnapshot]
     returned and resolving that collision is the caller's concern.
     """
     markets: list[MarketSnapshot] = []
+    for adapter in adapters:
+        try:
+            markets.extend(adapter.list_markets())
+        except (AdapterError, requests.RequestException):
+            continue
+    return markets
+
+
+def markets_by_kind(adapters: Sequence[MarketAdapter]) -> dict[str, int]:
+    """Count aggregated snapshots per `DataSourceKind.value`."""
+    counts: dict[str, int] = {}
+    for market in aggregate_markets(adapters):
+        kind = market.provenance.kind.value
+        counts[kind] = counts.get(kind, 0) + 1
+    return counts
+
+
+def default_markets() -> list[MarketSnapshot]:
+    """Return the snapshots produced by `default_adapters()`."""
+    return aggregate_markets(default_adapters())
