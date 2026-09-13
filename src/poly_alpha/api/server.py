@@ -136,3 +136,47 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                 research = provider.research()
                 simulated = any(not market.provenance.kind.is_real for market in provider.markets())
                 self._send(
+                    200,
+                    {"data": research, "count": len(research), "simulated": simulated},
+                )
+            elif path == "/risk":
+                self._send(200, {"data": provider.risk()})
+            elif path == "/compare":
+                self._send(200, {"data": provider.compare()})
+            else:
+                self._send(404, {"error": "not found", "path": path})
+
+        def _reject(self) -> None:
+            self._send(405, {"error": "method not allowed"})
+
+        do_POST = _reject
+        do_PUT = _reject
+        do_PATCH = _reject
+        do_DELETE = _reject
+
+        def _send(self, status: int, payload: object) -> None:
+            body = json.dumps(payload).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, format: str, *args: object) -> None:
+            pass
+
+    return Handler
+
+
+def create_server(
+    host: str = "127.0.0.1",
+    port: int = 0,
+    provider: DataProvider | None = None,
+) -> ThreadingHTTPServer:
+    """Return a configured read-only JSON server bound to (host, port)."""
+    active = provider if provider is not None else default_provider()
+    return ThreadingHTTPServer((host, port), _handler_class(active))
+
+
+if __name__ == "__main__":
+    create_server(port=8000).serve_forever()
