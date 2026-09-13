@@ -139,3 +139,27 @@ def test_strategy_lists_named_heuristics() -> None:
     payload = json.loads(result.output)
     assert "uncertainty_gated" in payload
     assert all("heuristic" in text for text in payload.values())
+
+
+def test_curves_json_emits_walk_forward_results() -> None:
+    result = _invoke(["research", "curves", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload
+    assert "equity_curve" in payload[0]["result"]
+
+
+def test_calibration_json_reports_coverage() -> None:
+    result = _invoke(["research", "calibration", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["report"]["n"] >= 1
+    assert "coverage" in payload["report"]
+
+
+def test_costs_json_applies_basis_points() -> None:
+    result = _invoke(["research", "costs", "--fee-bps", "100", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["total_bps"] == 100.0
+    assert payload["rows"]

@@ -35,6 +35,8 @@ non-real data.
 | `adapters/fixtures.py` | `FIXTURE` | Static `_SPECS`; fixed `FIXTURE_AS_OF` timestamp. |
 | `adapters/series.py` | `SYNTHETIC` | Probabilities derived from the last two points of a supplied series. |
 | `adapters/registry.py` | (carries) | Concatenates labeled snapshots; `markets_by_kind` counts them by kind. |
+| `adapters/history.py` | `FIXTURE` | Deterministic multi-step price paths; not real history. |
+| `research/calibration.py` | (consumes) | Reports interval coverage over supplied outcomes; simulated unless notes are real. |
 | `backtesting/simulation.py` | (consumes) | Equity curve from supplied resolved markets; fixed caveat, no provenance claim. |
 | `research/analyst.py` | `SIMULATED` | Heuristic adjustment provenance; model/edge `Uncertainty.simulated=True`. |
 | `research/notes.py` | (carries) | Re-exposes the snapshot's `Provenance`; `source_kinds()` lists all kinds cited. |

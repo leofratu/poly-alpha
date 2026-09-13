@@ -369,6 +369,9 @@ uv run poly-alpha research size               # conservative fractional-Kelly si
 uv run poly-alpha research report             # provenance-labeled Markdown dossier
 uv run poly-alpha research compare            # in-sample strategy comparison (demo data)
 uv run poly-alpha research simulate           # paper equity curve over demo resolutions
+uv run poly-alpha research curves             # walk-forward over deterministic histories
+uv run poly-alpha research calibration        # uncertainty coverage over demo outcomes
+uv run poly-alpha research costs --fee-bps 100  # fee/slippage-adjusted edges
 uv run poly-alpha research overview           # cross-market ranking by research edge
 uv run poly-alpha research validate           # contract invariant check on all markets
 uv run poly-alpha research journal            # append a provenance summary of a run
