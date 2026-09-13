@@ -313,3 +313,53 @@ def simulate(json_out: bool = JSON_OPTION) -> None:
     console.print(table)
     if results:
         console.print(f"[yellow]{results[0][1].caveat}[/yellow]")
+
+
+@app.command()
+def overview(json_out: bool = JSON_OPTION) -> None:
+    """Rank labeled offline markets by absolute research edge."""
+    from poly_alpha.adapters.registry import default_markets
+    from poly_alpha.api.server import _to_jsonable
+    from poly_alpha.research.overview import build_overview, dimensions, overview_rows
+
+    rows = build_overview(default_markets())
+    if json_out:
+        payload = {
+            "dimensions": dimensions(rows),
+            "rows": [_to_jsonable(row) for row in rows],
+        }
+        _print_json(payload)
+        return
+    table = Table(title="Market overview (labeled offline data; simulated estimates)")
+    table.add_column("Market")
+    table.add_column("Class")
+    table.add_column("Kind")
+    table.add_column("Implied", justify="right")
+    table.add_column("Model", justify="right")
+    table.add_column("Edge", justify="right")
+    table.add_column("Width", justify="right")
+    table.add_column("Sim")
+    for row in overview_rows(rows):
+        table.add_row(*row)
+    console.print(table)
+    console.print("[yellow]Model estimates are simulated heuristics; not investment advice.[/yellow]")
+
+
+@app.command()
+def validate(json_out: bool = JSON_OPTION) -> None:
+    """Check labeled offline markets against the shared contract invariants."""
+    from poly_alpha.adapters.registry import default_markets
+    from poly_alpha.validation import validate_snapshot
+
+    checks = [
+        {"market_id": market.market_id, "issues": list(validate_snapshot(market))}
+        for market in default_markets()
+    ]
+    invalid = sum(1 for check in checks if check["issues"])
+    if json_out:
+        _print_json({"invalid_count": invalid, "checks": checks})
+        return
+    console.print(f"[green]{len(checks)} markets checked; {invalid} with issues.[/green]")
+    for check in checks:
+        for issue in check["issues"]:
+            console.print(f"[yellow]{check['market_id']}: {issue}[/yellow]")
