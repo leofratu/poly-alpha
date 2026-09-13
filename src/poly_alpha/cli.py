@@ -5,11 +5,15 @@ from __future__ import annotations
 import typer
 from rich.console import Console
 
+from poly_alpha.cli_platform import app as platform_app
+
 app = typer.Typer(
     name="poly-alpha",
     help="Autonomous quantitative engine for prediction market alpha extraction.",
 )
 console = Console()
+
+app.add_typer(platform_app, name="research")
 
 
 @app.command()
