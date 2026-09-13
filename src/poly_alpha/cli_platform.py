@@ -656,6 +656,8 @@ def allocate(
     bankroll: float = typer.Option(1000.0, help="Bankroll to allocate."),
     max_positions: int = typer.Option(20, help="Maximum number of positions."),
     max_deploy: float = typer.Option(0.6, help="Maximum fraction deployed."),
+    min_edge_low: float = typer.Option(0.0, help="Minimum conservative edge bound."),
+    require_real: bool = typer.Option(False, "--require-real", help="Keep only real data."),
 ) -> None:
     """Allocate a bankroll across screened labeled opportunities."""
     from poly_alpha.adapters.registry import default_markets
@@ -665,7 +667,11 @@ def allocate(
     from poly_alpha.research.screen import rank_opportunities
 
     markets = default_markets()
-    opportunities = rank_opportunities(research_markets(markets), min_edge_low=float("-inf"))
+    opportunities = rank_opportunities(
+        research_markets(markets),
+        min_edge_low=min_edge_low,
+        require_real=require_real,
+    )
     prices = {
         market.market_id: market.yes_price if market.yes_price is not None else 0.5
         for market in markets

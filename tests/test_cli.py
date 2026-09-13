@@ -197,6 +197,14 @@ def test_allocate_json_reports_plan() -> None:
     assert abs(payload["cash"] + payload["total_stake"] - payload["bankroll"]) < 1e-6
 
 
+def test_allocate_require_real_yields_empty_plan() -> None:
+    result = _invoke(["research", "allocate", "--require-real", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["allocations"] == []
+    assert payload["cash"] == payload["bankroll"]
+
+
 def test_run_json_reports_bundle() -> None:
     result = _invoke(["research", "run", "--json"])
     assert result.exit_code == 0
