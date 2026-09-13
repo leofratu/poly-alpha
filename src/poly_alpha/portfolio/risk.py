@@ -24,7 +24,11 @@ DEMO_CAVEAT: str = (
 
 @dataclass(frozen=True)
 class Position:
-    """A single holding with its stake, YES probability, and data provenance."""
+    """A single holding with its stake, entry YES probability, and data provenance.
+
+    ``yes_probability`` is the cost basis used to mark the position: the market's
+    YES probability (entry price) when the position was opened, not a model estimate.
+    """
 
     market_id: str
     asset_class: str
@@ -114,9 +118,9 @@ def analyze_portfolio(
 def portfolio_value(positions: Sequence[Position], prices: Mapping[str, float]) -> float:
     """Mark positions to supplied YES prices with a simple stake * price / p mark.
 
-    Each position with a known YES probability and a supplied price contributes
-    ``stake * (price / yes_probability)``; positions missing either are carried at
-    their original stake.
+    ``p`` is each position's entry ``yes_probability`` (its cost basis), so a
+    position bought at 0.40 and marked at 0.60 is worth ``stake * 1.5``. Positions
+    missing a price or a positive entry probability are carried at their stake.
     """
     value = 0.0
     for position in positions:

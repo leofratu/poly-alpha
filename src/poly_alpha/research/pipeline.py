@@ -48,7 +48,11 @@ def _position_for(allocation: Allocation, note: ResearchNote, asset_class: str) 
         market_id=allocation.market_id,
         asset_class=asset_class,
         stake=allocation.stake,
-        yes_probability=note.model_yes.estimate,
+        yes_probability=(
+            note.market_implied_yes
+            if note.market_implied_yes is not None
+            else note.model_yes.estimate
+        ),
         provenance=note.provenance,
     )
 
