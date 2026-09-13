@@ -77,12 +77,14 @@ uv run poly-alpha research journal --path runs.jsonl    # append a provenance su
 uv run poly-alpha research history --path runs.jsonl    # list recorded runs
 uv run poly-alpha research experiment --path runs.jsonl # record a reproducible run (fingerprint)
 uv run poly-alpha research experiments --path runs.jsonl # list recorded experiments
+uv run poly-alpha research experiments --path runs.jsonl --verify  # re-run and check each
 ```
 
 An experiment record stores a deterministic sha256 `run_id` over the exact market inputs and
 parameters plus the resulting counts/allocations/stake/cash. `reproduce(experiment)` re-runs the
 pipeline and compares the fingerprint and outputs, so fixture, parameter, or code drift is
-detected. The journal remains the lightweight aggregate audit trail.
+detected; `research experiments --verify` does this for every recorded run. The journal remains
+the lightweight aggregate audit trail.
 
 ## API and dashboard
 
