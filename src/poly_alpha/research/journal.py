@@ -90,3 +90,44 @@ def entry_from_dict(data: dict[str, object]) -> JournalEntry:
     if not isinstance(raw_counts, dict):
         raise ValueError("kind_counts must be an object")
     kind_counts = {str(key): int(value) for key, value in raw_counts.items()}
+    top = data.get("top_market_id")
+    return JournalEntry(
+        recorded_at=str(data["recorded_at"]),
+        market_count=int(data["market_count"]),
+        kind_counts=kind_counts,
+        simulated=bool(data["simulated"]),
+        mean_edge=float(data["mean_edge"]),
+        top_market_id=None if top is None else str(top),
+    )
+
+
+def append_entry(path: str | Path, entry: JournalEntry) -> None:
+    """Append ``entry`` as one UTF-8 JSON line, creating parent directories."""
+    journal_path = Path(path)
+    journal_path.parent.mkdir(parents=True, exist_ok=True)
+    line = json.dumps(entry_to_dict(entry), sort_keys=True)
+    with journal_path.open("a", encoding="utf-8") as handle:
+        handle.write(line + "\n")
+
+
+def read_entries(path: str | Path) -> list[JournalEntry]:
+    """Read entries from a journal, returning ``[]`` when missing.
+
+    Malformed or unreadable lines are skipped rather than raising, so a partially written
+    or externally edited journal never blocks readers.
+    """
+    journal_path = Path(path)
+    if not journal_path.exists():
+        return []
+    entries: list[JournalEntry] = []
+    with journal_path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            try:
+                data = json.loads(stripped)
+                entries.append(entry_from_dict(data))
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                continue
+    return entries
