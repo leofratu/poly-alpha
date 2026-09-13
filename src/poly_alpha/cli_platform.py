@@ -7,7 +7,6 @@ and never requires network access.
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
 from typing import Any
 
 import typer
@@ -31,17 +30,26 @@ def _fixture_markets() -> list[Any]:
 
 
 @app.command()
-def markets(json_out: bool = JSON_OPTION) -> None:
-    """List labeled fixture markets available offline."""
-    snapshots = _fixture_markets()
+def markets(
+    json_out: bool = JSON_OPTION,
+    all_kinds: bool = typer.Option(False, "--all", help="Include synthetic asset markets."),
+) -> None:
+    """List labeled offline markets (fixtures, plus synthetic with --all)."""
+    if all_kinds:
+        from poly_alpha.adapters.registry import default_markets
+
+        snapshots = default_markets()
+    else:
+        snapshots = _fixture_markets()
     if json_out:
         from poly_alpha.api.server import snapshot_to_dict
 
         _print_json([snapshot_to_dict(snapshot) for snapshot in snapshots])
         return
-    table = Table(title="Fixture markets (FIXTURE data, not real)")
+    table = Table(title="Labeled markets (not real market data)")
     table.add_column("Market", style="cyan")
     table.add_column("Class")
+    table.add_column("Kind")
     table.add_column("Yes", justify="right")
     table.add_column("No", justify="right")
     table.add_column("Liquidity", justify="right")
@@ -49,12 +57,13 @@ def markets(json_out: bool = JSON_OPTION) -> None:
         table.add_row(
             snapshot.market_id,
             snapshot.asset.asset_class,
+            snapshot.provenance.kind.value,
             f"{snapshot.yes_price:.2f}" if snapshot.yes_price is not None else "n/a",
             f"{snapshot.no_price:.2f}" if snapshot.no_price is not None else "n/a",
             f"{snapshot.liquidity:,.0f}",
         )
     console.print(table)
-    console.print(f"[yellow]{len(snapshots)} fixture markets; source kind FIXTURE.[/yellow]")
+    console.print(f"[yellow]{len(snapshots)} labeled markets; see provenance kind column.[/yellow]")
 
 
 @app.command()
@@ -85,29 +94,15 @@ def research(json_out: bool = JSON_OPTION) -> None:
     console.print(table)
 
 
-def _strategies() -> dict[str, Callable[[Any], float | None]]:
-    from poly_alpha.strategy import classify_category, shin_debiasing
-
-    def market_implied(snapshot: Any) -> float | None:
-        return snapshot.implied_yes()
-
-    def shin_debiased(snapshot: Any) -> float | None:
-        implied = snapshot.implied_yes()
-        if implied is None:
-            return None
-        return shin_debiasing(implied, classify_category(snapshot.question))
-
-    return {"market_implied": market_implied, "shin_debiased": shin_debiased}
-
-
 @app.command()
 def compare(json_out: bool = JSON_OPTION) -> None:
     """Compare strategies over labeled demo resolved markets."""
     from poly_alpha.api.server import _to_jsonable
     from poly_alpha.backtesting.comparison import compare_strategies
     from poly_alpha.backtesting.demo_data import demo_resolved_markets
+    from poly_alpha.backtesting.strategies import default_strategies
 
-    metrics = compare_strategies(demo_resolved_markets(), _strategies())
+    metrics = compare_strategies(demo_resolved_markets(), default_strategies())
     if json_out:
         _print_json([_to_jsonable(item) for item in metrics])
         return
@@ -222,6 +217,7 @@ def report(
         demo_resolved_markets,
         demo_returns,
     )
+    from poly_alpha.backtesting.strategies import default_strategies
     from poly_alpha.portfolio.risk import analyze_portfolio
     from poly_alpha.research.analyst import research_markets
     from poly_alpha.research.report import render_markdown, write_markdown
@@ -229,7 +225,7 @@ def report(
 
     notes = research_markets(_fixture_markets())
     opportunities = rank_opportunities(notes, min_edge_low=float("-inf"))
-    metrics = compare_strategies(demo_resolved_markets(), _strategies())
+    metrics = compare_strategies(demo_resolved_markets(), default_strategies())
     risk = analyze_portfolio(demo_positions(), demo_returns())
     content = render_markdown(notes, opportunities=opportunities, metrics=metrics, risk=risk)
     if output:
@@ -283,3 +279,4 @@ def size(json_out: bool = JSON_OPTION) -> None:
             "yes" if decision.capped else "no",
         )
     console.print(table)
+
