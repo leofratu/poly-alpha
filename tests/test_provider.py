@@ -207,3 +207,16 @@ def test_select_provider_returns_ai_with_key(monkeypatch: pytest.MonkeyPatch) ->
     provider = select_provider(session=_FakeSession([]))
     assert isinstance(provider, OpenAICompatibleProvider)
     assert provider.is_ai is True
+
+
+def test_select_provider_honors_model_and_base_url_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(API_KEY_ENV, _SENTINEL_KEY)
+    monkeypatch.setenv(AI_MODEL_ENV, "custom-model")
+    monkeypatch.setenv(AI_BASE_URL_ENV, "https://example.test/v1")
+    session = _FakeSession([_FakeResponse(_model_response(estimate=0.5, low=0.4, high=0.6))])
+    provider = select_provider(session=session)
+    provider.research_market(_snapshot(), now=_NOW)
+    assert session.calls[0]["url"] == "https://example.test/v1/chat/completions"
+    assert session.calls[0]["json"]["model"] == "custom-model"
