@@ -367,6 +367,8 @@ uv run poly-alpha research compare            # in-sample strategy comparison (d
 uv run poly-alpha research simulate           # paper equity curve over demo resolutions
 uv run poly-alpha research overview           # cross-market ranking by research edge
 uv run poly-alpha research validate           # contract invariant check on all markets
+uv run poly-alpha research journal            # append a provenance summary of a run
+uv run poly-alpha research history            # list recorded research journal entries
 uv run poly-alpha research risk               # demo concentration + historical risk
 uv run poly-alpha research serve --port 8000  # read-only JSON API + dashboard at /
 ```

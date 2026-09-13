@@ -41,6 +41,7 @@ non-real data.
 | `research/screen.py` | (consumes) | Ranks by `note.edge.low`; `Opportunity.is_real` reflects the note's provenance. |
 | `research/report.py` | (exposes) | Renders a provenance summary and labels every note's kind in the dossier. |
 | `research/overview.py` | (consumes) | Row-level `simulated` flag combines model simulation with provenance kind. |
+| `research/journal.py` | (records) | Append-only JSONL with per-kind counts and an explicit `simulated` flag. |
 | `validation.py` | (consumes) | Flags malformed provenance or out-of-range values; returns issues, never raises. |
 | `portfolio/sizing.py` | (consumes) | Uses `Uncertainty` bounds; emits a rationale, not a market-data claim. |
 | `portfolio/risk.py` | (carries) | Each `Position` carries a `Provenance`; the report summarizes positions. |
