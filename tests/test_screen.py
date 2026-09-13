@@ -44,3 +44,49 @@ def make_snapshot(
         asset=ASSET,
         yes_price=yes_price,
         no_price=no_price,
+        liquidity=liquidity,
+        volume=5000.0,
+        provenance=Provenance(source="test-fixture", kind=kind, retrieved_at=NOW),
+        orderbook=orderbook,
+    )
+
+
+def test_opportunity_is_real_tracks_provenance() -> None:
+    real = rank_opportunities([research_market(make_snapshot(), now=NOW)])[0]
+    fixture = rank_opportunities(
+        [research_market(make_snapshot(kind=DataSourceKind.FIXTURE), now=NOW)]
+    )[0]
+    assert isinstance(real, Opportunity)
+    assert real.is_real is True
+    assert real.requires_real_data is False
+    assert fixture.is_real is False
+    assert fixture.requires_real_data is True
+
+
+def test_negative_lower_bound_is_excluded() -> None:
+    note = research_market(
+        make_snapshot(
+            yes_price=0.60,
+            no_price=0.40,
+            liquidity=1000.0,
+            orderbook=NEGATIVE_BOOK,
+        ),
+        now=NOW,
+    )
+    assert note.edge.low <= 0.0
+    assert rank_opportunities([note]) == []
+
+
+def test_min_edge_low_threshold_is_strict() -> None:
+    note = research_market(make_snapshot(), now=NOW)
+    assert rank_opportunities([note], min_edge_low=note.edge.low) == []
+    assert len(rank_opportunities([note], min_edge_low=note.edge.low - 0.001)) == 1
+
+
+def test_require_real_filters_fixture_out() -> None:
+    real = research_market(make_snapshot(market_id="real"), now=NOW)
+    fixture = research_market(
+        make_snapshot(market_id="fixture", kind=DataSourceKind.FIXTURE), now=NOW
+    )
+    both = rank_opportunities([real, fixture])
+    assert {opportunity.note.market_id for opportunity in both} == {"real", "fixture"}
