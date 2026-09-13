@@ -676,9 +676,10 @@ def costs(
     fee_bps: float = typer.Option(0.0, help="Fee in basis points."),
     slippage_bps: float = typer.Option(0.0, help="Slippage in basis points."),
     side: str = typer.Option("buy", help="Trade side: buy or sell."),
+    size: float = typer.Option(0.0, help="Shares to fill; > 0 adds a depth-aware edge."),
     json_out: bool = JSON_OPTION,
 ) -> None:
-    """Show fee/slippage-adjusted edges for the fixture markets."""
+    """Show fee/slippage-adjusted edges, optionally depth-aware for a given size."""
     from poly_alpha.backtesting.costs import CostModel
     from poly_alpha.research.analyst import research_markets
     from poly_alpha.research.screen import rank_opportunities
@@ -686,15 +687,24 @@ def costs(
     normalized_side = side.lower()
     if normalized_side not in {"buy", "sell"}:
         raise typer.BadParameter("side must be 'buy' or 'sell'")
+    if size < 0.0:
+        raise typer.BadParameter("size must be >= 0")
     model = CostModel(fee_bps=fee_bps, slippage_bps=slippage_bps)
-    opportunities = rank_opportunities(
-        research_markets(_fixture_markets()), min_edge_low=float("-inf")
-    )
-    rows: list[dict[str, float | str]] = []
+    markets = _fixture_markets()
+    book_by_id = {market.market_id: market.orderbook for market in markets}
+    opportunities = rank_opportunities(research_markets(markets), min_edge_low=float("-inf"))
+    rows: list[dict[str, float | str | None]] = []
     for opportunity in opportunities:
         implied = opportunity.note.market_implied_yes
         if implied is None:
             continue
+        depth_edge: float | None = None
+        if size > 0.0:
+            depth_edge = model.depth_net_edge(
+                fair_probability=opportunity.note.model_yes.estimate,
+                levels=book_by_id.get(opportunity.note.market_id, ()),
+                size=size,
+            )
         rows.append(
             {
                 "market_id": opportunity.note.market_id,
@@ -704,6 +714,7 @@ def costs(
                     price=implied,
                     side=normalized_side,
                 ),
+                "depth_net_edge": depth_edge,
             }
         )
     if json_out:
@@ -711,26 +722,36 @@ def costs(
             {
                 "total_bps": model.total_bps,
                 "side": normalized_side,
+                "size": size,
                 "rows": rows,
                 "simulated": True,
                 "caveat": "Simulated cost-adjusted edges over labeled fixture data; not advice.",
             }
         )
         return
-    table = Table(title=f"Cost-adjusted {normalized_side} edges (SIMULATED; gross vs net)")
+    title = f"Cost-adjusted {normalized_side} edges (SIMULATED; gross vs net"
+    title += ", depth-aware)" if size > 0.0 else ")"
+    table = Table(title=title)
     table.add_column("Market", style="cyan")
     table.add_column("Gross", justify="right")
     table.add_column("Net", justify="right")
+    if size > 0.0:
+        table.add_column("Depth", justify="right")
     for row in rows:
-        table.add_row(
+        columns = [
             str(row["market_id"]),
-            f"{float(row['gross_edge']):+.4f}",
-            f"{float(row['net_edge']):+.4f}",
-        )
+            f"{float(row['gross_edge'] or 0.0):+.4f}",
+            f"{float(row['net_edge'] or 0.0):+.4f}",
+        ]
+        if size > 0.0:
+            depth_value = row["depth_net_edge"]
+            columns.append("n/a" if depth_value is None else f"{float(depth_value):+.4f}")
+        table.add_row(*columns)
     console.print(table)
-    console.print(
-        f"[yellow]Assumed cost {model.total_bps:.0f} bps. Not investment advice.[/yellow]"
-    )
+    note = f"Assumed cost {model.total_bps:.0f} bps"
+    if size > 0.0:
+        note += f"; depth-aware fill for {size:g} shares"
+    console.print(f"[yellow]{note}. Not investment advice.[/yellow]")
 
 
 @app.command()
