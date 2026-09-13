@@ -75,3 +75,29 @@ def fingerprint(markets: Sequence[MarketSnapshot], params: Mapping[str, float]) 
     }
     canonical = json.dumps(payload, sort_keys=True, default=str)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def build_experiment(
+    bundle: ResearchBundle,
+    markets: Sequence[MarketSnapshot],
+    params: Mapping[str, float],
+    *,
+    created_at: datetime | None = None,
+) -> Experiment:
+    """Build an :class:`Experiment` recording ``bundle`` and its exact inputs.
+
+    Supplying ``created_at`` makes the record fully deterministic; otherwise the
+    current UTC time is used. ``run_id`` never depends on the timestamp.
+    """
+    created = created_at if created_at is not None else datetime.now(UTC)
+    return Experiment(
+        run_id=fingerprint(markets, params),
+        created_at=created.isoformat(),
+        params=dict(params),
+        market_count=bundle.market_count,
+        note_count=bundle.note_count,
+        opportunity_count=bundle.opportunity_count,
+        allocation_ids=tuple(allocation.market_id for allocation in bundle.allocations),
+        total_stake=bundle.total_stake,
+        cash=bundle.cash,
+    )
