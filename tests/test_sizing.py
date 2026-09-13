@@ -90,3 +90,12 @@ def test_mismatched_lengths_raise() -> None:
 def test_portfolio_fractions_are_pairwise_and_un_normalized() -> None:
     decisions = portfolio_fractions([0.9, 0.9], [0.1, 0.1], cap=0.05)
     assert [decision.fraction for decision in decisions] == pytest.approx([0.05, 0.05])
+    assert total_fraction(decisions) == pytest.approx(0.1)
+
+
+def test_total_fraction_sums() -> None:
+    decisions = [
+        SizingDecision(fraction=0.02, rationale="a", capped=False, probability_used=0.6),
+        SizingDecision(fraction=0.03, rationale="b", capped=True, probability_used=0.7),
+    ]
+    assert total_fraction(decisions) == pytest.approx(0.05)
