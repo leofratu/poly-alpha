@@ -547,6 +547,34 @@ def experiment(path: str = EXPERIMENTS_PATH, json_out: bool = JSON_OPTION) -> No
 
 
 @app.command()
+def experiments(path: str = EXPERIMENTS_PATH, json_out: bool = JSON_OPTION) -> None:
+    """List recorded reproducible experiments."""
+    import os
+
+    from poly_alpha.api.server import to_jsonable
+    from poly_alpha.research.experiments import read_experiments
+
+    records = read_experiments(os.path.expanduser(path))
+    if json_out:
+        _print_json([to_jsonable(record) for record in records])
+        return
+    table = Table(title="Recorded experiments (reproducible; simulated)")
+    table.add_column("Run", style="cyan")
+    table.add_column("Markets", justify="right")
+    table.add_column("Opps", justify="right")
+    table.add_column("Stake", justify="right")
+    for record in records:
+        table.add_row(
+            record.run_id[:12],
+            str(record.market_count),
+            str(record.opportunity_count),
+            f"{record.total_stake:.2f}",
+        )
+    console.print(table)
+    console.print(f"[yellow]{len(records)} recorded experiment(s).[/yellow]")
+
+
+@app.command()
 def strategy(json_out: bool = JSON_OPTION) -> None:
     """List the named heuristic strategies and what each one assumes."""
     from poly_alpha.backtesting.strategies import describe

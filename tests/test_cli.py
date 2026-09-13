@@ -251,3 +251,17 @@ def test_run_json_reports_bundle() -> None:
     assert payload["market_count"] >= 1
     assert payload["simulated"] is True
     assert abs(payload["total_stake"] + payload["cash"] - 1000.0) < 1e-6
+
+
+def test_experiment_records_and_lists(tmp_path: Path) -> None:
+    path = tmp_path / "experiments.jsonl"
+    result = _invoke(["research", "experiment", "--path", str(path), "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert payload["market_count"] >= 1
+
+    listed = _invoke(["research", "experiments", "--path", str(path), "--json"])
+    assert listed.exit_code == 0
+    records = json.loads(listed.output)
+    assert len(records) == 1
+    assert records[0]["run_id"] == payload["run_id"]
