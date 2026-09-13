@@ -50,7 +50,7 @@ def markets(
     all_kinds: bool = typer.Option(False, "--all", help="Include synthetic asset markets."),
     real: bool = REAL_OPTION,
 ) -> None:
-    """List labeled offline markets (fixtures, plus synthetic with --all)."""
+    """List markets: labeled fixtures, synthetic with --all, or real Polymarket with --real."""
     if real:
         snapshots = _real_markets()
     elif all_kinds:
@@ -64,7 +64,12 @@ def markets(
 
         _print_json([snapshot_to_dict(snapshot) for snapshot in snapshots])
         return
-    table = Table(title="Labeled markets (not real market data)")
+    title = (
+        "Real Polymarket markets (network; not investment advice)"
+        if real
+        else "Labeled markets (not real market data)"
+    )
+    table = Table(title=title)
     table.add_column("Market", style="cyan")
     table.add_column("Class")
     table.add_column("Kind")

@@ -45,9 +45,7 @@ def test_base_scenario_change_is_zero() -> None:
 
 def test_negative_shift_lowers_long_yes_value() -> None:
     positions = [make_position("m1", 100.0, yes_probability=0.5)]
-    result = apply_stress(
-        positions, {"m1": 0.5}, StressScenario("shock_down", -0.10)
-    )
+    result = apply_stress(positions, {"m1": 0.5}, StressScenario("shock_down", -0.10))
     assert result.change < 0.0
     assert result.stressed_value < result.start_value
 
@@ -109,3 +107,10 @@ def test_default_scenarios_contain_base_with_zero_shift() -> None:
     assert "base" in names
     base = next(scenario for scenario in scenarios if scenario.name == "base")
     assert base.yes_price_shift == 0.0
+
+
+def test_position_absent_from_prices_is_carried_at_stake() -> None:
+    positions = [make_position("m1", 100.0, yes_probability=0.5)]
+    result = apply_stress(positions, {}, StressScenario("shock_down", -0.10))
+    assert result.start_value == 100.0
+    assert result.change == 0.0

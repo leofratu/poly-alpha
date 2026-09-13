@@ -1,6 +1,6 @@
 """Standard-library-only read-only JSON API over the poly-alpha data contracts.
 
-Most endpoints read from the injected DataProvider; `/curves` and `/calibration` are
+Most endpoints read from the injected DataProvider; `/curves`, `/calibration`, and `/stress` are
 computed from the packaged fixture/demo datasets and are intentionally not provider-injected.
 """
 
@@ -309,9 +309,7 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                 from poly_alpha.portfolio.stress import run_scenarios
 
                 prices = {
-                    market.market_id: (
-                        market.yes_price if market.yes_price is not None else 0.5
-                    )
+                    market.market_id: market.yes_price if market.yes_price is not None else 0.5
                     for market in fixture_adapter().list_markets()
                 }
                 results = run_scenarios(demo_positions(), prices)

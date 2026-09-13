@@ -46,9 +46,7 @@ def default_scenarios() -> list[StressScenario]:
     ]
 
 
-def _shifted_prices(
-    prices: Mapping[str, float], yes_price_shift: float
-) -> dict[str, float]:
+def _shifted_prices(prices: Mapping[str, float], yes_price_shift: float) -> dict[str, float]:
     """Clamp every supplied price after shifting, preserving the original key set."""
     return {
         market_id: min(MAX_PRICE, max(MIN_PRICE, price + yes_price_shift))
