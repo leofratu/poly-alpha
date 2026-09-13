@@ -269,6 +269,16 @@ def test_experiment_records_and_lists(tmp_path: Path) -> None:
     assert records[0]["simulated"] is True
 
 
+def test_experiments_verify_reproduces_recorded_run(tmp_path: Path) -> None:
+    path = tmp_path / "experiments.jsonl"
+    assert _invoke(["research", "experiment", "--path", str(path), "--json"]).exit_code == 0
+    result = _invoke(["research", "experiments", "--path", str(path), "--verify", "--json"])
+    assert result.exit_code == 0
+    records = json.loads(result.output)
+    assert len(records) == 1
+    assert records[0]["reproduced"] is True
+
+
 def test_costs_without_size_has_no_depth_edges() -> None:
     result = _invoke(["research", "costs", "--json"])
     assert result.exit_code == 0

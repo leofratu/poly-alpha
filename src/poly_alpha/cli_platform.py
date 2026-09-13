@@ -550,18 +550,29 @@ def experiment(path: str = EXPERIMENTS_PATH, json_out: bool = JSON_OPTION) -> No
 
 
 @app.command()
-def experiments(path: str = EXPERIMENTS_PATH, json_out: bool = JSON_OPTION) -> None:
-    """List recorded reproducible experiments."""
+def experiments(
+    path: str = EXPERIMENTS_PATH,
+    verify: bool = typer.Option(
+        False, "--verify", help="Re-run each record and check reproducibility."
+    ),
+    json_out: bool = JSON_OPTION,
+) -> None:
+    """List recorded reproducible experiments, optionally re-running each."""
     import os
 
     from poly_alpha.api.server import to_jsonable
-    from poly_alpha.research.experiments import read_experiments
+    from poly_alpha.research.experiments import read_experiments, reproduce
 
     records = read_experiments(os.path.expanduser(path))
+    reproduced = {record.run_id: reproduce(record) for record in records} if verify else {}
     if json_out:
         _print_json(
             [
-                {**cast("dict[str, object]", to_jsonable(record)), "simulated": True}
+                {
+                    **cast("dict[str, object]", to_jsonable(record)),
+                    "simulated": True,
+                    **({"reproduced": reproduced[record.run_id]} if verify else {}),
+                }
                 for record in records
             ]
         )
@@ -571,13 +582,18 @@ def experiments(path: str = EXPERIMENTS_PATH, json_out: bool = JSON_OPTION) -> N
     table.add_column("Markets", justify="right")
     table.add_column("Opps", justify="right")
     table.add_column("Stake", justify="right")
+    if verify:
+        table.add_column("Reproduced")
     for record in records:
-        table.add_row(
+        columns = [
             record.run_id[:12],
             str(record.market_count),
             str(record.opportunity_count),
             f"{record.total_stake:.2f}",
-        )
+        ]
+        if verify:
+            columns.append("yes" if reproduced[record.run_id] else "no")
+        table.add_row(*columns)
     console.print(table)
     console.print(f"[yellow]{len(records)} recorded experiment(s).[/yellow]")
 
