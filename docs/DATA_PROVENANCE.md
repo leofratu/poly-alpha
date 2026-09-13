@@ -44,3 +44,11 @@ non-real data.
 
 Any UI, report, or exported artifact that shows a snapshot, note, metric, or risk report
 must display its `kind` alongside the value. At minimum:
+
+- Show the `DataSourceKind` label and `source` for every market and research note.
+- Surface the `/research` response's `simulated` flag, or recompute it from the kinds.
+- Never present `FIXTURE`, `SYNTHETIC`, or `SIMULATED` output as observed market data.
+- Never present in-sample backtest metrics as forecasts or as evidence of future returns.
+
+If a display cannot attribute a value to a `DataSourceKind`, treat the value as non-real
+and label it as such until provenance is available.
