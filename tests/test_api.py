@@ -90,3 +90,38 @@ def test_research() -> None:
     assert body["simulated"] is True
 
 
+def test_risk() -> None:
+    with _served(_provider()) as port:
+        status, body = _get(port, "/risk")
+    assert status == 200
+    assert body["data"] == {"sharpe": 1.0}
+
+
+def test_compare() -> None:
+    with _served(_provider()) as port:
+        status, body = _get(port, "/compare")
+    assert status == 200
+    assert body["data"] == [{"strategy": "a", "pnl": 2.0}]
+
+
+def test_unknown_path_returns_404() -> None:
+    with _served(_provider()) as port:
+        try:
+            _get(port, "/nope")
+        except urllib.error.HTTPError as exc:
+            assert exc.code == 404
+            assert json.loads(exc.read())["error"] == "not found"
+        else:
+            raise AssertionError("expected HTTPError 404")
+
+
+def test_non_get_method_returns_405() -> None:
+    with _served(_provider()) as port:
+        url = f"http://127.0.0.1:{port}/health"
+        request = urllib.request.Request(url, data=b"", method="POST")
+        try:
+            urllib.request.urlopen(request, timeout=5)
+        except urllib.error.HTTPError as exc:
+            assert exc.code == 405
+        else:
+            raise AssertionError("expected HTTPError 405")
