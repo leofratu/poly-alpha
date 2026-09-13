@@ -90,3 +90,25 @@ def test_empty_notes_yield_neutral_entry() -> None:
     assert entry.simulated is False
 
 
+def test_append_then_read_round_trips(tmp_path: Path) -> None:
+    path = tmp_path / "nested" / "journal.jsonl"
+    first = build_entry([make_note("m1", 0.1)], now=NOW)
+    second = build_entry([make_note("m2", -0.2)], now=NOW)
+    append_entry(path, first)
+    append_entry(path, second)
+    assert read_entries(path) == [first, second]
+
+
+def test_read_entries_missing_file_returns_empty(tmp_path: Path) -> None:
+    assert read_entries(tmp_path / "does-not-exist.jsonl") == []
+
+
+def test_read_entries_skips_malformed_lines(tmp_path: Path) -> None:
+    path = tmp_path / "journal.jsonl"
+    valid = entry_to_dict(build_entry([make_note("m1", 0.1)], now=NOW))
+    malformed = "not json at all\n" + json.dumps({"market_count": 1}) + "\n"
+    path.write_text(json.dumps(valid) + "\n" + malformed, encoding="utf-8")
+    entries = read_entries(path)
+    assert len(entries) == 1
+    assert isinstance(entries[0], JournalEntry)
+    assert entries[0].market_count == 1
