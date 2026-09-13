@@ -12,9 +12,9 @@ from rich.table import Table
 from poly_alpha.data.polymarket import PolymarketClient
 from poly_alpha.strategy import (
     MONTHS,
-    SHIN_GAMMA,
     classify_category,
     jaccard_similarity,
+    shin_debiasing,
 )
 
 console = Console()
@@ -144,9 +144,8 @@ def risk_filter_and_cluster(markets: list[dict[str, Any]]) -> list[dict[str, Any
             continue
 
         category = classify_category(m["question"])
-        gamma = SHIN_GAMMA.get(category, 1.18)
         retail_no = m["no_price"]
-        shin_no = (retail_no**gamma) / ((retail_no**gamma) + ((1.0 - retail_no) ** gamma))
+        shin_no = shin_debiasing(retail_no, category)
         shin_edge = shin_no - retail_no
 
         if shin_edge < MIN_SHIN_EDGE:
