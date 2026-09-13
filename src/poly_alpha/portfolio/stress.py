@@ -90,3 +90,23 @@ def apply_stress(
     the stressed minus start value, and ``worst_market_id`` names the position with
     the most negative change, or None when nothing loses value.
     """
+    start_value = portfolio_value(positions, prices)
+    shifted = _shifted_prices(prices, scenario.yes_price_shift)
+    stressed_value = portfolio_value(positions, shifted)
+    return StressResult(
+        scenario=scenario.name,
+        start_value=start_value,
+        stressed_value=stressed_value,
+        change=stressed_value - start_value,
+        worst_market_id=_worst_market_id(positions, prices, shifted),
+    )
+
+
+def run_scenarios(
+    positions: Sequence[Position],
+    prices: Mapping[str, float],
+    scenarios: Sequence[StressScenario] | None = None,
+) -> list[StressResult]:
+    """Apply each scenario in order, defaulting to :func:`default_scenarios`."""
+    active = default_scenarios() if scenarios is None else list(scenarios)
+    return [apply_stress(positions, prices, scenario) for scenario in active]
