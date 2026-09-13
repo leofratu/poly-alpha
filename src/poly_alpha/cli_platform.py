@@ -564,7 +564,13 @@ def experiments(
     from poly_alpha.research.experiments import read_experiments, reproduce
 
     records = read_experiments(os.path.expanduser(path))
-    reproduced = {record.run_id: reproduce(record) for record in records} if verify else {}
+    reproduced: dict[str, bool] = {}
+    if verify:
+        for record in records:
+            try:
+                reproduced[record.run_id] = reproduce(record)
+            except (ValueError, OverflowError):
+                reproduced[record.run_id] = False
     if json_out:
         _print_json(
             [

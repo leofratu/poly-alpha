@@ -311,3 +311,18 @@ def test_costs_depth_respects_the_side() -> None:
         if buy_edges[market_id] is not None and sell_edges.get(market_id) is not None
     ]
     assert any(buy_edges[market_id] != sell_edges[market_id] for market_id in common)
+
+
+def test_experiments_verify_handles_invalid_records(tmp_path: Path) -> None:
+    from dataclasses import replace
+
+    from poly_alpha.adapters.registry import default_markets
+    from poly_alpha.research.experiments import append_experiment, build_experiment
+    from poly_alpha.research.pipeline import run_pipeline
+
+    path = tmp_path / "experiments.jsonl"
+    record = build_experiment(run_pipeline(), default_markets(), {"bankroll": 1000.0})
+    append_experiment(path, replace(record, params={"bankroll": 0.0}))
+    result = _invoke(["research", "experiments", "--path", str(path), "--verify", "--json"])
+    assert result.exit_code == 0
+    assert json.loads(result.output)[0]["reproduced"] is False
