@@ -44,3 +44,7 @@ def test_caveat_labels_simulation_and_disclaims_advice() -> None:
 @pytest.mark.parametrize(
     ("bankroll", "cap"),
     [(0.0, 0.05), (-100.0, 0.05), (1000.0, 0.0), (1000.0, 1.5), (1000.0, -0.1)],
+)
+def test_invalid_constraints_propagate_value_error(bankroll: float, cap: float) -> None:
+    with pytest.raises(ValueError):
+        run_pipeline(bankroll=bankroll, cap=cap)
