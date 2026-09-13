@@ -94,7 +94,7 @@ def run(
 
     lifecycle_draws = rng.choice(lifecycles, size=(n_trials, trades_per_cycle), p=life_w)
     price_draws = rng.choice(prices, size=(n_trials, trades_per_cycle), p=price_w)
-    _ = rng.choice(categories, size=(n_trials, trades_per_cycle), p=cat_w)
+    category_draws = rng.choice(categories, size=(n_trials, trades_per_cycle), p=cat_w)
     outcome_draws = rng.random((n_trials, trades_per_cycle))
 
     win_rates = np.zeros((n_trials, trades_per_cycle))
@@ -102,10 +102,11 @@ def run(
 
     for lc in lifecycles:
         for p in prices:
-            mask = (lifecycle_draws == lc) & (price_draws == p)
-            wr, _ = get_win_rate(p, lc)
-            win_rates[mask] = wr
-            no_prices_arr[mask] = p
+            for cat in categories:
+                mask = (lifecycle_draws == lc) & (price_draws == p) & (category_draws == cat)
+                wr, _ = get_win_rate(p, lc, cat)
+                win_rates[mask] = wr
+                no_prices_arr[mask] = p
 
     bankrolls = np.full(n_trials, starting_capital)
     for t in range(trades_per_cycle):
