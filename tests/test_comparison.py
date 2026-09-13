@@ -90,3 +90,24 @@ def test_trades_and_drawdown_bounds() -> None:
         assert 0.0 <= metrics.max_drawdown <= 1.0
         assert metrics.total_stake >= 0.0
 
+
+def test_skip_strategy_takes_no_trades() -> None:
+    results = compare_strategies(MARKETS, {"skip": always_skip})
+    skip = results[0]
+    assert skip.trades == 0
+    assert skip.hit_rate == 0.0
+    assert skip.total_stake == 0.0
+    assert skip.total_pnl == 0.0
+    assert skip.max_drawdown == 0.0
+
+
+def test_ordering_is_stable_for_equal_pnl() -> None:
+    results = compare_strategies(MARKETS, {"skip_a": always_skip, "skip_b": always_skip})
+    assert [metrics.name for metrics in results] == ["skip_a", "skip_b"]
+
+
+def test_caveat_discloses_annualization_and_forecast() -> None:
+    metrics = compare_strategies(MARKETS, {"oracle": oracle(RESOLUTIONS)})[0]
+    assert "not annualized" in metrics.caveat
+    assert "in-sample" in metrics.caveat
+    assert "not a forecast" in metrics.caveat
