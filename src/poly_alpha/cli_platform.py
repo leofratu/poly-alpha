@@ -679,3 +679,31 @@ def allocate(
     console.print(table)
     console.print(f"[white]Deployed {plan.total_stake:,.2f}; cash {plan.cash:,.2f}[/white]")
     console.print(f"[yellow]{plan.caveat}[/yellow]")
+
+
+@app.command()
+def run(
+    json_out: bool = JSON_OPTION,
+    bankroll: float = typer.Option(1000.0, help="Bankroll to allocate."),
+) -> None:
+    """Run the full offline research pipeline and summarize the bundle."""
+    from poly_alpha.api.server import to_jsonable
+    from poly_alpha.research.pipeline import run_pipeline
+
+    bundle = run_pipeline(bankroll=bankroll)
+    if json_out:
+        _print_json(to_jsonable(bundle))
+        return
+    table = Table(title="Research pipeline (SIMULATED, in-sample; not advice)")
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", justify="right")
+    table.add_row("Markets", str(bundle.market_count))
+    table.add_row("Notes", str(bundle.note_count))
+    table.add_row("Opportunities", str(bundle.opportunity_count))
+    table.add_row("Allocations", str(len(bundle.allocations)))
+    table.add_row("Deployed", f"{bundle.total_stake:,.2f}")
+    table.add_row("Cash", f"{bundle.cash:,.2f}")
+    table.add_row("HHI", f"{bundle.risk.hhi:.3f}")
+    table.add_row("Coverage", f"{bundle.calibration.coverage:.0%}")
+    console.print(table)
+    console.print(f"[yellow]{bundle.caveat}[/yellow]")

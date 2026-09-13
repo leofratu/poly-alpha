@@ -28,6 +28,7 @@ CAPABILITIES: tuple[str, ...] = (
     "calibration",
     "stress",
     "allocate",
+    "run",
 )
 
 INDEX_HTML = """<!doctype html>
@@ -334,6 +335,10 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                     200,
                     {"data": to_jsonable(allocate(opportunities, prices)), "simulated": True},
                 )
+            elif path == "/run":
+                from poly_alpha.research.pipeline import run_pipeline
+
+                self._send(200, {"data": to_jsonable(run_pipeline()), "simulated": True})
             else:
                 self._send(404, {"error": "not found", "path": path})
 
