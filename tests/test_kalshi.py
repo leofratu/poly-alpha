@@ -86,3 +86,49 @@ def test_kalshi_adapter_maps_market() -> None:
     assert snapshot.provenance.source == "Kalshi public API"
     assert snapshot.close_time is not None
     assert snapshot.close_time.tzinfo is not None
+
+
+def test_kalshi_adapter_skips_malformed() -> None:
+    missing_ticker = _valid_market()
+    missing_ticker.pop("ticker")
+    missing_price = _valid_market()
+    for key in ("yes_bid_dollars", "yes_ask_dollars", "last_price_dollars"):
+        missing_price.pop(key)
+    assert _adapter([missing_ticker, missing_price]).list_markets() == []
+
+
+def test_kalshi_adapter_legacy_cent_fallback() -> None:
+    market = _valid_market()
+    for key in ("yes_bid_dollars", "yes_ask_dollars", "last_price_dollars"):
+        market.pop(key)
+    market["yes_bid"] = 40
+    market["yes_ask"] = 60
+    markets = _adapter([market]).list_markets()
+    assert len(markets) == 1
+    assert markets[0].yes_price == pytest.approx(0.5)
+    assert markets[0].no_price == pytest.approx(0.5)
+
+
+def test_kalshi_adapter_legacy_last_price_fallback() -> None:
+    market = _valid_market()
+    for key in ("yes_bid_dollars", "yes_ask_dollars", "last_price_dollars"):
+        market.pop(key)
+    market["last_price"] = 72
+    markets = _adapter([market]).list_markets()
+    assert len(markets) == 1
+    assert markets[0].yes_price == pytest.approx(0.72)
+
+
+def test_kalshi_adapter_get_snapshot_round_trip() -> None:
+    adapter = _adapter([_valid_market()])
+    snapshot = adapter.get_snapshot(TICKER)
+    assert snapshot is not None
+    assert _stable_fields(snapshot) == _stable_fields(adapter.list_markets()[0])
+    assert adapter.get_snapshot("does-not-exist") is None
+
+
+def test_kalshi_adapter_is_deterministic() -> None:
+    adapter = _adapter([_valid_market()])
+    first = [_stable_fields(market) for market in adapter.list_markets()]
+    second = [_stable_fields(market) for market in adapter.list_markets()]
+    assert first == second
