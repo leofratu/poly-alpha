@@ -136,8 +136,9 @@ _ESCAPED_KEYS = [re.escape(k) for k in sorted(ASSET_MAPPING.keys(), key=len, rev
 ASSET_PATTERN: Final[str] = r"\b(" + "|".join(_ESCAPED_KEYS) + r")\b"
 
 _PRICE_PATTERN: Final[str] = (
-    r"(?:above|below|reaches|hit|hits|reach|reaches|to|under|over|at least|>|<|=)"
-    r"\s*(?:\$?)\s*(\d+(?:,\d{3})*(?:\.\d+)?)\s*([kKmM]?)"
+    r"(above|below|reaches|hit|hits|reach|to|under|over|at least|>|<|=)"
+    r"\s*\$?\s*(\d+(?:,\d{3})*(?:\.\d+)?)\s*"
+    r"(k|m|b|thousand|million|billion|trillion)?\b"
 )
 _ABOVE_KEYWORDS: Final[str] = r"\b(above|over|higher|greater|exceed|surpass|reach|hit)\b"
 _BELOW_KEYWORDS: Final[str] = r"\b(below|under|lower|less|crash|down|drop|fall)\b"
@@ -325,29 +326,42 @@ def extract_financial_target(question: str) -> FinancialTarget | None:
     if not ticker:
         return None
 
-    price_match = re.search(_PRICE_PATTERN, question)
+    price_match = re.search(_PRICE_PATTERN, question, re.IGNORECASE)
     if not price_match:
         return None
 
-    price_str = price_match.group(1).replace(",", "")
+    price_str = price_match.group(2).replace(",", "")
     try:
         price = float(price_str)
     except ValueError:
         return None
 
-    suffix = (price_match.group(2) or "").lower()
-    if suffix == "k":
-        price *= 1000.0
-    elif suffix == "m":
-        price *= 1000000.0
+    unit = (price_match.group(3) or "").lower()
+    multipliers = {
+        "k": 1_000.0,
+        "thousand": 1_000.0,
+        "m": 1_000_000.0,
+        "million": 1_000_000.0,
+        "b": 1_000_000_000.0,
+        "billion": 1_000_000_000.0,
+        "trillion": 1_000_000_000_000.0,
+    }
+    price *= multipliers.get(unit, 1.0)
 
     if price <= 0:
         return None
 
-    above_match = re.search(_ABOVE_KEYWORDS, question, re.IGNORECASE)
-    below_match = re.search(_BELOW_KEYWORDS, question, re.IGNORECASE)
-
-    direction = PriceDirection.BELOW if below_match and not above_match else PriceDirection.ABOVE
+    token = price_match.group(1).lower()
+    if token in {"above", "over", ">"} or token == "at least":
+        direction = PriceDirection.ABOVE
+    elif token in {"below", "under", "<"}:
+        direction = PriceDirection.BELOW
+    else:
+        above_match = re.search(_ABOVE_KEYWORDS, question, re.IGNORECASE)
+        below_match = re.search(_BELOW_KEYWORDS, question, re.IGNORECASE)
+        direction = (
+            PriceDirection.BELOW if below_match and not above_match else PriceDirection.ABOVE
+        )
     return FinancialTarget(ticker=ticker, target_price=price, direction=direction)
 
 
@@ -394,6 +408,8 @@ def get_tradfi_implied_probability(question: str, target_date: datetime) -> floa
         return None
     if not isinstance(target_date, datetime):
         return None
+    if target_date.tzinfo is None:
+        target_date = target_date.replace(tzinfo=UTC)
 
     parsed = extract_financial_target(question)
     if parsed is None:
