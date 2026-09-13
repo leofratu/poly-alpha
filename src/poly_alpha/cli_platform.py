@@ -704,6 +704,7 @@ def costs(
                 fair_probability=opportunity.note.model_yes.estimate,
                 levels=book_by_id.get(opportunity.note.market_id, ()),
                 size=size,
+                side=normalized_side,
             )
         rows.append(
             {

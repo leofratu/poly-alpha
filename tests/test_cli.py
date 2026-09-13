@@ -284,3 +284,20 @@ def test_costs_size_adds_depth_aware_edges() -> None:
     payload = json.loads(result.output)
     assert payload["size"] == 1.0
     assert any(row["depth_net_edge"] is not None for row in payload["rows"])
+
+
+def test_costs_depth_respects_the_side() -> None:
+    buy = json.loads(
+        _invoke(["research", "costs", "--size", "1", "--side", "buy", "--json"]).output
+    )
+    sell = json.loads(
+        _invoke(["research", "costs", "--size", "1", "--side", "sell", "--json"]).output
+    )
+    buy_edges = {row["market_id"]: row["depth_net_edge"] for row in buy["rows"]}
+    sell_edges = {row["market_id"]: row["depth_net_edge"] for row in sell["rows"]}
+    common = [
+        market_id
+        for market_id in buy_edges
+        if buy_edges[market_id] is not None and sell_edges.get(market_id) is not None
+    ]
+    assert any(buy_edges[market_id] != sell_edges[market_id] for market_id in common)
