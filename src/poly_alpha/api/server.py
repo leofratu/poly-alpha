@@ -18,6 +18,8 @@ from urllib.parse import urlsplit
 
 from poly_alpha.contracts import MarketSnapshot
 
+JsonDict = dict[str, object]
+
 CAPABILITIES: tuple[str, ...] = (
     "markets",
     "research",
@@ -90,11 +92,11 @@ class DataProvider(Protocol):
 
     def markets(self) -> list[MarketSnapshot]: ...
 
-    def research(self) -> list[dict]: ...
+    def research(self) -> list[JsonDict]: ...
 
-    def risk(self) -> dict: ...
+    def risk(self) -> JsonDict: ...
 
-    def compare(self) -> list[dict]: ...
+    def compare(self) -> list[JsonDict]: ...
 
 
 class StaticProvider:
@@ -103,9 +105,9 @@ class StaticProvider:
     def __init__(
         self,
         markets: Sequence[MarketSnapshot] = (),
-        research: Sequence[dict] = (),
+        research: Sequence[JsonDict] = (),
         risk: Mapping[str, object] | None = None,
-        compare: Sequence[dict] = (),
+        compare: Sequence[JsonDict] = (),
     ) -> None:
         self._markets = list(markets)
         self._research = [dict(item) for item in research]
@@ -115,13 +117,13 @@ class StaticProvider:
     def markets(self) -> list[MarketSnapshot]:
         return list(self._markets)
 
-    def research(self) -> list[dict]:
+    def research(self) -> list[JsonDict]:
         return list(self._research)
 
-    def risk(self) -> dict:
+    def risk(self) -> JsonDict:
         return dict(self._risk)
 
-    def compare(self) -> list[dict]:
+    def compare(self) -> list[JsonDict]:
         return list(self._compare)
 
 
@@ -143,15 +145,15 @@ class _ModuleProvider:
     def markets(self) -> list[MarketSnapshot]:
         return list(self._markets_fn())
 
-    def research(self) -> list[dict]:
+    def research(self) -> list[JsonDict]:
         notes = self._research_fn(self.markets())
-        return [cast(dict, to_jsonable(note)) for note in notes]
+        return [cast(JsonDict, to_jsonable(note)) for note in notes]
 
-    def risk(self) -> dict:
-        return cast(dict, to_jsonable(self._risk_fn()))
+    def risk(self) -> JsonDict:
+        return cast(JsonDict, to_jsonable(self._risk_fn()))
 
-    def compare(self) -> list[dict]:
-        return [cast(dict, to_jsonable(metrics)) for metrics in self._compare_fn()]
+    def compare(self) -> list[JsonDict]:
+        return [cast(JsonDict, to_jsonable(metrics)) for metrics in self._compare_fn()]
 
 
 def _market_implied(snapshot: MarketSnapshot) -> float | None:
@@ -209,9 +211,9 @@ def to_jsonable(value: object) -> object:
     return value
 
 
-def snapshot_to_dict(s: MarketSnapshot) -> dict:
+def snapshot_to_dict(s: MarketSnapshot) -> JsonDict:
     """Convert a snapshot into JSON-safe primitives."""
-    return cast(dict, to_jsonable(s))
+    return cast(JsonDict, to_jsonable(s))
 
 
 def _markets_are_simulated(provider: DataProvider) -> bool:
