@@ -20,3 +20,5 @@ def test_yes_resolution_pays_nothing_on_no_shares(
     monkeypatch.setattr(monte_carlo.np.random, "rand", lambda: 0.0)
     result = monte_carlo.run(iterations=5, capital_per_trade=10_000.0, trades_per_sample=3)
     assert float(result["avg_roi"]) < 0.0
+    assert "avg_apy" not in result
+    assert "not annualized" in str(result["caveat"])

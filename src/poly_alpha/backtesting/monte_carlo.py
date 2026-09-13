@@ -39,8 +39,8 @@ def run(
     """Run a synthetic Monte Carlo with fabricated resolutions and returns.
 
     The GitHub market list is only used to seed questions and a count; outcomes are
-    generated, so the output is not a backtest of observed markets. Returns dict with
-    avg_roi, avg_apy, p5, p95, win_rate, a synthetic marker, and a caveat.
+    generated, so the output is not a backtest of observed markets. Returns a per-cycle
+    ROI (never annualized) plus p5, p95, win_rate, a synthetic marker, and a caveat.
     """
     banner = (
         "[bold red]SYNTHETIC Monte Carlo — resolutions and returns are fabricated, "
@@ -100,7 +100,6 @@ def run(
         mc_rois[i] = total_profit / total_capital if total_capital > 0 else 0.0
 
     avg_roi = float(np.mean(mc_rois))
-    avg_apy = avg_roi * (365 / 26)
     p5 = float(np.percentile(mc_rois, 5))
     p95 = float(np.percentile(mc_rois, 95))
     win_rate = float(np.sum(mc_rois > 0) / iterations)
@@ -111,23 +110,21 @@ def run(
     table.add_row("Iterations", f"{iterations:,}")
     table.add_row("Synthetic Markets", f"{len(historical_trades)}")
     table.add_row("Win Rate", f"{win_rate * 100:.2f}%")
-    table.add_row("Average ROI (per cycle)", f"{avg_roi * 100:.2f}%")
-    table.add_row(
-        "Annualized (synthetic, not a forecast)",
-        f"[bold yellow]{avg_apy * 100:.2f}%[/bold yellow]",
-    )
+    table.add_row("Average ROI (per cycle, not annualized)", f"{avg_roi * 100:.2f}%")
     table.add_row("5th Percentile", f"{p5 * 100:.2f}%")
     table.add_row("95th Percentile", f"{p95 * 100:.2f}%")
     console.print(table)
 
     return {
         "avg_roi": avg_roi,
-        "avg_apy": avg_apy,
         "p5": p5,
         "p95": p95,
         "win_rate": win_rate,
         "synthetic": 1.0,
-        "caveat": "Synthetic Monte Carlo; fabricated resolutions and returns, not a forecast.",
+        "caveat": (
+            "Synthetic Monte Carlo; fabricated resolutions and returns, not annualized, "
+            "not a forecast."
+        ),
     }
 
 
