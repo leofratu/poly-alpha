@@ -48,7 +48,7 @@ def simulate_portfolio(
 
     A market is skipped unless it is two-sided and the strategy returns a fair YES
     probability. A No-side bet is taken only when the strategy's fair No value
-    exceeds the quoted No price by at least ``min_edge``. The stake is
+    exceeds the quoted No price by more than ``min_edge``. The stake is
     ``kelly_fraction`` of the running bankroll with the lower-bound mode disabled,
     and it settles at ``1.0`` per share on a No resolution, otherwise at ``0.0``.
 

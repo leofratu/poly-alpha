@@ -55,7 +55,7 @@ def walk_forward(
     disabled. The position is marked at the current No price until the final
     snapshot, where it pays 1.0 per share if the final YES price is below 0.5 and
     otherwise 0.0. The curve starts at ``starting_bankroll`` and gains one point per
-    processed step.
+    step that has two-sided prices and a fair value.
 
     Raises:
         ValueError: If ``starting_bankroll`` is not positive, ``cap`` is not in
