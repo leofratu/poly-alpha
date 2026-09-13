@@ -1,7 +1,7 @@
 [project]
 name = "poly-alpha"
 version = "1.0.0"
-description = "Autonomous quantitative engine for prediction market alpha extraction via favorite-longshot bias"
+description = "Provenance-first research and paper-trading platform for prediction-market strategies"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

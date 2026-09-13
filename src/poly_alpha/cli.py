@@ -10,7 +10,7 @@ from poly_alpha.cli_platform import app as platform_app
 
 app = typer.Typer(
     name="poly-alpha",
-    help="Autonomous quantitative engine for prediction market alpha extraction.",
+    help="Research and paper-trading platform for prediction-market strategies.",
 )
 console = Console()
 
