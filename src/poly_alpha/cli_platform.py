@@ -170,3 +170,40 @@ def serve(
         f"http://{host}:{server.server_address[1]}[/green]"
     )
     server.serve_forever()
+
+
+@app.command()
+def screen(
+    json_out: bool = JSON_OPTION,
+    min_edge_low: float = typer.Option(0.0, help="Minimum conservative edge bound."),
+) -> None:
+    """Rank fixture markets by the lower bound of the model edge."""
+    from poly_alpha.api.server import _to_jsonable
+    from poly_alpha.research.analyst import research_markets
+    from poly_alpha.research.screen import rank_opportunities, summarize
+
+    opportunities = rank_opportunities(
+        research_markets(_fixture_markets()), min_edge_low=min_edge_low
+    )
+    if json_out:
+        payload = {
+            "summary": summarize(opportunities),
+            "opportunities": [_to_jsonable(item) for item in opportunities],
+        }
+        _print_json(payload)
+        return
+    table = Table(title="Screened opportunities (SIMULATED, conservative lower bound)")
+    table.add_column("Market", style="cyan")
+    table.add_column("Edge low", justify="right")
+    table.add_column("Edge high", justify="right")
+    table.add_column("Real")
+    for item in opportunities:
+        table.add_row(
+            item.note.market_id,
+            f"{item.edge_low:+.3f}",
+            f"{item.edge_high:+.3f}",
+            "yes" if item.is_real else "no",
+        )
+    console.print(table)
+
+
