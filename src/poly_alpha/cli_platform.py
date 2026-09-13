@@ -634,3 +634,50 @@ def stress(json_out: bool = JSON_OPTION) -> None:
             result.worst_market_id or "n/a",
         )
     console.print(table)
+
+
+@app.command()
+def allocate(
+    json_out: bool = JSON_OPTION,
+    bankroll: float = typer.Option(1000.0, help="Bankroll to allocate."),
+    max_positions: int = typer.Option(20, help="Maximum number of positions."),
+    max_deploy: float = typer.Option(0.6, help="Maximum fraction deployed."),
+) -> None:
+    """Allocate a bankroll across screened fixture opportunities."""
+    from poly_alpha.adapters.fixtures import fixture_adapter
+    from poly_alpha.api.server import to_jsonable
+    from poly_alpha.portfolio.allocate import allocate as build_plan
+    from poly_alpha.research.analyst import research_markets
+    from poly_alpha.research.screen import rank_opportunities
+
+    markets = fixture_adapter().list_markets()
+    opportunities = rank_opportunities(
+        research_markets(markets), min_edge_low=float("-inf")
+    )
+    prices = {
+        market.market_id: market.yes_price if market.yes_price is not None else 0.5
+        for market in markets
+    }
+    plan = build_plan(
+        opportunities,
+        prices,
+        bankroll=bankroll,
+        max_positions=max_positions,
+        max_deploy=max_deploy,
+    )
+    if json_out:
+        _print_json(to_jsonable(plan))
+        return
+    table = Table(title="Allocation (SIMULATED heuristic; not advice)")
+    table.add_column("Market", style="cyan")
+    table.add_column("Fraction", justify="right")
+    table.add_column("Stake", justify="right")
+    for allocation in plan.allocations:
+        table.add_row(
+            allocation.market_id,
+            f"{allocation.fraction:.3f}",
+            f"{allocation.stake:,.2f}",
+        )
+    console.print(table)
+    console.print(f"[white]Deployed {plan.total_stake:,.2f}; cash {plan.cash:,.2f}[/white]")
+    console.print(f"[yellow]{plan.caveat}[/yellow]")
