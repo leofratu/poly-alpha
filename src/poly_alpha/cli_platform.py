@@ -235,3 +235,47 @@ def report(
     typer.echo(content)
 
 
+@app.command()
+def size(json_out: bool = JSON_OPTION) -> None:
+    """Size fixture opportunities with conservative fractional Kelly."""
+    from poly_alpha.api.server import _to_jsonable
+    from poly_alpha.portfolio.sizing import kelly_fraction
+    from poly_alpha.research.analyst import research_markets
+
+    decisions = []
+    for note in research_markets(_fixture_markets()):
+        implied = note.market_implied_yes
+        if implied is None:
+            continue
+        decision = kelly_fraction(
+            probability=note.model_yes.estimate,
+            price=implied,
+            uncertainty=note.model_yes,
+        )
+        decisions.append((note.market_id, implied, decision))
+    if json_out:
+        payload = [
+            {
+                "market_id": market_id,
+                "price": price,
+                "decision": _to_jsonable(decision),
+            }
+            for market_id, price, decision in decisions
+        ]
+        _print_json(payload)
+        return
+    table = Table(title="Conservative sizing (SIMULATED, lower-bound Kelly)")
+    table.add_column("Market", style="cyan")
+    table.add_column("Price", justify="right")
+    table.add_column("Prob used", justify="right")
+    table.add_column("Fraction", justify="right")
+    table.add_column("Capped")
+    for market_id, price, decision in decisions:
+        table.add_row(
+            market_id,
+            f"{price:.2f}",
+            f"{decision.probability_used:.2f}",
+            f"{decision.fraction:.3f}",
+            "yes" if decision.capped else "no",
+        )
+    console.print(table)
