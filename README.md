@@ -76,6 +76,10 @@ This maps the risk-neutral $\mathbb{Q}$-measure to an estimator of the physical 
 | Weather | 1.15 | Anchoring bias on extreme events | 1,800 |
 | Esports | 1.18 | Fan loyalty overpricing | 5,600 |
 
+> **Correction.** The $\gamma$ values are heuristic presets in `strategy.py`, not fitted
+> estimates. The "Calibration Source" and $n$ columns were never produced by any artifact in
+> this repository and are withdrawn; no category was calibrated on observed markets.
+
 **Shin edge** (the signal we trade):
 
 $$\varepsilon_{\text{Shin}} = \hat{P}_{\text{true}}(\text{No}) - q_{\text{No}}$$
@@ -94,9 +98,10 @@ For the full portfolio of $n$ correlated positions, the multivariate Kelly vecto
 
 $$\mathbf{f^*} = \Sigma^{-1} \cdot \boldsymbol{\mu}$$
 
-In practice, we apply **half-Kelly** ($f = f^*/2$) as a concession to estimation error in $\hat{P}$ and model misspecification. Empirically this yields:
-
-$$f_{\text{deployed}} \approx 2.0\%–2.5\% \text{ per position}$$
+In practice the platform's sizing helper (`portfolio/sizing.py`) applies a **capped**
+fractional-Kelly rule and the research engine reports an uncertainty interval rather than a
+single deployed fraction. Any specific $f_{\text{deployed}}$ figure would be illustrative,
+not a measured result.
 
 ### 2.4 Covariance Estimation via Jaccard Distance
 
@@ -189,6 +194,10 @@ With $n \geq 40$ uncorrelated positions at equal weight, idiosyncratic variance 
 
 ### 4.2 Maximum Drawdown Bounds
 
+> **Correction.** The drawdown and ruin figures below came from the synthetic 300K-path
+> simulation that fabricated resolutions and returns. They are withdrawn as evidence and
+> retained only as legacy text. No validated drawdown bound exists.
+
 From the empirical Monte Carlo (300K simulations), the drawdown distribution:
 
 | Quantile | Max Drawdown | Recovery Trades |
@@ -211,6 +220,10 @@ The strategy monitors for regime shifts via:
 3. **Category concentration**: Halt deployment if any single category exceeds 60% of deployed capital
 
 ### 4.4 Parameter Sensitivity
+
+> **Correction.** This sensitivity table is legacy synthetic output; the Sharpe deltas were
+> not computed from observed data and are withdrawn. Current parameter meanings are documented
+> in `strategy.py`.
 
 | Parameter | Base | -20% | +20% | Sharpe Δ |
 |---|---|---|---|---|
@@ -318,10 +331,10 @@ uv run poly-alpha live --capital 5000
 ### 6.4 Backtesting
 
 ```bash
-# Empirical Monte Carlo (calibrated to Reichenbach 2025)
+# Synthetic Monte Carlo over hardcoded win-rate assumptions (not a backtest)
 uv run poly-alpha backtest empirical --iterations 300000
 
-# Historical market replay
+# Synthetic market replay with fabricated resolutions (not a backtest)
 uv run poly-alpha backtest mc --iterations 10000
 ```
 

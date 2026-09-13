@@ -67,14 +67,18 @@ def run(
     n_trials: int = 300_000,
     position_size_pct: float = 0.02,
     seed: int = 42,
-) -> dict[str, float]:
-    """Run empirical backtest with vectorized Monte Carlo.
+) -> dict[str, float | str]:
+    """Run a synthetic Monte Carlo over hardcoded win-rate assumptions.
 
-    Returns dict with median, mean, p1, p5, p95, p99, profit_probability.
+    This is not a backtest of observed markets: outcomes are generated and the win
+    rates are hand-set in this module. Returns a dict with median, mean, p1, p5, p95,
+    p99, profit_probability, plus a synthetic marker and caveat.
     """
     console.print(
         Panel(
-            f"[bold green]EMPIRICAL BACKTEST[/bold green]\n"
+            f"[bold red]SYNTHETIC Monte Carlo[/bold red]\n"
+            f"[white]hardcoded win rates + generated outcomes; not observed data, "
+            f"not a backtest[/white]\n"
             f"[white]{trades_per_cycle} trades/cycle | {n_trials:,} simulations[/white]"
         )
     )
@@ -153,6 +157,8 @@ def run(
         "p95": p95 / starting_capital,
         "p99": p99 / starting_capital,
         "profit_probability": profitable,
+        "synthetic": 1.0,
+        "caveat": "Synthetic Monte Carlo over assumed win rates; not a backtest or forecast.",
     }
 
 

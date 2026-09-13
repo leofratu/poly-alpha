@@ -88,8 +88,11 @@ Therefore, `poly-alpha-cli` is strictly an **Early Window (`t < 0.25`) Structura
 2. **Monotonicity Violations:** A structural combinatorial arbitrage exists if $P(\text{BTC} > \$150k) > P(\text{BTC} > \$100k)$ for the same expiry date. By buying the lower strike "Yes" and buying the higher strike "No", a trader constructs a risk-free portfolio guaranteed to yield $\ge \$1.00$.
 3. **Extraction Reality:** The authors empirically proved that **\$40 million USD** of pure, risk-free arbitrage profit was extracted via Combinatorial Arbitrage on Polymarket during their measurement window.
 
-**Our Architecture Integration:**
-`poly-alpha` now includes `hunt_combinatorial.py`, an autonomous script that maps the semantic dependency graphs of Polymarket strike chains (e.g., BTC targets by date). It constantly scans the L2 order books for *probability monotonicity violations*. When retail panic-bids a higher-strike lotto ticket above the probability of a lower-strike baseline, the engine executes a zero-risk Combinatorial Arbitrage spread.
+**Our Architecture Integration (historical):**
+An earlier prototype, `archive/hunt_combinatorial.py`, explored mapping semantic dependency
+graphs of Polymarket strike chains and scanning for probability monotonicity violations. It is
+not part of the current packaged platform, is not tested here, and no result from it is
+verified. Combinatorial arbitrage remains a research direction only.
 
 ## Market Selection Pivot (Moving Beyond Crypto)
 * **Retail Narrative Bias:** Retail overpays for "lottery tickets" (the 5% to 30% range) heavily in sports, politics, and pop culture due to fan loyalty and emotional attachment (the "favorite-longshot bias"). 
