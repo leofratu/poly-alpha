@@ -195,6 +195,7 @@ def screen(
     json_out: bool = JSON_OPTION,
     min_edge_low: float = typer.Option(0.0, help="Minimum conservative edge bound."),
     require_real: bool = typer.Option(False, "--require-real", help="Keep only real data."),
+    real: bool = REAL_OPTION,
 ) -> None:
     """Rank labeled offline markets by the lower bound of the model edge."""
     from poly_alpha.adapters.registry import default_markets
@@ -202,8 +203,9 @@ def screen(
     from poly_alpha.research.analyst import research_markets
     from poly_alpha.research.screen import rank_opportunities, summarize
 
+    markets = _real_markets() if real else default_markets()
     opportunities = rank_opportunities(
-        research_markets(default_markets()),
+        research_markets(markets),
         min_edge_low=min_edge_low,
         require_real=require_real,
     )
