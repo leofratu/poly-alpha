@@ -197,3 +197,21 @@ def read_experiments(path: str | Path) -> list[Experiment]:
             except (json.JSONDecodeError, KeyError, TypeError, ValueError):
                 continue
     return experiments
+
+
+def reproduce(experiment: Experiment, *, markets: Sequence[MarketSnapshot] | None = None) -> bool:
+    """Return whether a fresh offline run reproduces ``experiment``'s fingerprint.
+
+    Markets default to the deterministic registry fixtures. A changed fixture or
+    parameter changes the fresh ``run_id``, so the comparison returns ``False``.
+    """
+    chosen = markets or default_markets()
+    params = experiment.params
+    bundle = run_pipeline(
+        bankroll=float(params.get("bankroll", 1000.0)),
+        cap=float(params.get("cap", 0.05)),
+        max_positions=int(params.get("max_positions", 20)),
+        max_deploy=float(params.get("max_deploy", 0.6)),
+    )
+    fresh = build_experiment(bundle, chosen, experiment.params)
+    return fresh.run_id == experiment.run_id
