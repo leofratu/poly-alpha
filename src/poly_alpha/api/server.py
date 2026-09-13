@@ -393,18 +393,31 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
 
                 self._send(200, {"data": to_jsonable(run_pipeline()), "simulated": True})
             elif path == "/experiments":
+                from urllib.parse import parse_qs
+
                 from poly_alpha.research.experiments import (
                     DEFAULT_EXPERIMENTS_PATH,
                     experiment_to_dict,
                     read_experiments,
+                    reproduce,
                 )
 
                 records = read_experiments(DEFAULT_EXPERIMENTS_PATH)
+                verify = parse_qs(urlsplit(self.path).query).get("verify", ["0"])[0].lower() in {
+                    "1",
+                    "true",
+                    "yes",
+                }
+                data = [experiment_to_dict(record) for record in records]
+                if verify:
+                    for row, record in zip(data, records, strict=True):
+                        row["reproduced"] = reproduce(record)
                 self._send(
                     200,
                     {
-                        "data": [experiment_to_dict(record) for record in records],
+                        "data": data,
                         "count": len(records),
+                        "verified": verify,
                         "simulated": True,
                     },
                 )

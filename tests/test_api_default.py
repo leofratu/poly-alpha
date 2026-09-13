@@ -147,6 +147,11 @@ def test_experiments_route_reports_recorded_count(
     assert body["count"] == 1
     assert body["data"][0]["run_id"] == record.run_id
 
+    with _served() as port:
+        _, verified = _get(port, "/experiments?verify=1")
+    assert verified["verified"] is True
+    assert verified["data"][0]["reproduced"] is True
+
 
 def test_sources_lists_configured_adapters() -> None:
     with _served() as port:
