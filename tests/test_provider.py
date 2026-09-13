@@ -174,3 +174,28 @@ def test_ai_provider_falls_back_on_bad_content() -> None:
         )
         == expected
     )
+
+
+def test_api_key_never_appears_in_note() -> None:
+    snapshot = _snapshot()
+    session = _FakeSession([_FakeResponse(_model_response(estimate=0.65, low=0.55, high=0.75))])
+    provider = OpenAICompatibleProvider(_SENTINEL_KEY, session=session)
+    note = provider.research_market(snapshot, now=_NOW)
+
+    rendered = " ".join([note.summary, *note.caveats, *(claim.text for claim in note.claims)])
+    assert _SENTINEL_KEY not in rendered
+
+
+def test_select_provider_returns_heuristic_without_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv(API_KEY_ENV, raising=False)
+    provider = select_provider()
+    assert isinstance(provider, HeuristicProvider)
+
+
+def test_select_provider_returns_ai_with_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(API_KEY_ENV, _SENTINEL_KEY)
+    monkeypatch.delenv(AI_MODEL_ENV, raising=False)
+    monkeypatch.delenv(AI_BASE_URL_ENV, raising=False)
+    provider = select_provider(session=_FakeSession([]))
+    assert isinstance(provider, OpenAICompatibleProvider)
+    assert provider.is_ai is True
