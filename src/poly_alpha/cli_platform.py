@@ -112,7 +112,12 @@ def research(
     if json_out:
         _print_json([to_jsonable(note) for note in notes])
         return
-    label = f"AI provider: {provider.name}" if provider is not None else "SIMULATED heuristic"
+    if provider is not None and provider.is_ai:
+        label = f"AI provider: {provider.name}"
+    elif provider is not None:
+        label = "SIMULATED heuristic (AI provider unavailable)"
+    else:
+        label = "SIMULATED heuristic"
     table = Table(title=f"Research notes ({label}; check provenance)")
     table.add_column("Market", style="cyan")
     table.add_column("Mkt", justify="right")

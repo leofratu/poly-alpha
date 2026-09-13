@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+import pytest
 from typer.testing import CliRunner
 
 from poly_alpha.cli import app
@@ -39,6 +40,18 @@ def test_research_json_emits_notes() -> None:
     for note in payload:
         assert "market_id" in note
         assert "model_yes" in note
+
+
+def test_research_ai_without_key_falls_back_offline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("POLY_ALPHA_AI_API_KEY", raising=False)
+    result = _invoke(["research", "research", "--ai", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert isinstance(payload, list) and payload
+    assert all(note["model_yes"]["simulated"] is True for note in payload)
+    assert all(not note["model_yes"]["basis"].startswith("ai:") for note in payload)
 
 
 def test_screen_json_has_summary_and_opportunities() -> None:
