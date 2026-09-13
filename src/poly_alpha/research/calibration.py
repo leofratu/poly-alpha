@@ -1,0 +1,46 @@
+"""Offline evaluation of whether research uncertainty intervals cover known outcomes.
+
+Everything here is simulated and deterministic: the research engine is a heuristic over
+fixture or synthetic snapshots, so coverage measured on demo data says nothing about
+real-world calibration. These helpers expose that gap honestly rather than close it.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from dataclasses import dataclass
+
+from poly_alpha.backtesting.demo_data import demo_resolved_markets
+from poly_alpha.research.analyst import research_market
+from poly_alpha.research.notes import ResearchNote
+
+_SIMULATION_NOTE = (
+    "Intervals come from a deterministic heuristic; coverage over demo data is not "
+    "evidence of real-world calibration."
+)
+
+
+@dataclass(frozen=True)
+class CalibrationReport:
+    """How often model intervals covered realized outcomes over labeled data."""
+
+    n: int
+    coverage: float
+    mean_width: float
+    simulated: bool
+    notes: tuple[str, ...]
+
+
+def interval_coverage(
+    notes: Sequence[ResearchNote], resolved_yes: Sequence[bool]
+) -> CalibrationReport:
+    """Measure model-interval coverage against known YES/NO resolutions.
+
+    Each resolution becomes a realized value of 1.0 for YES and 0.0 for NO, which is
+    covered when it falls within ``note.model_yes`` inclusive.
+    """
+    if len(notes) != len(resolved_yes):
+        raise ValueError(
+            "notes and resolved_yes must have equal length, got "
+            f"{len(notes)} and {len(resolved_yes)}"
+        )
