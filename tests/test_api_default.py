@@ -24,6 +24,7 @@ JSON_ROUTES = (
     "/stress",
     "/allocate",
     "/run",
+    "/experiments",
 )
 
 SIMULATED_ROUTES = (
@@ -36,6 +37,7 @@ SIMULATED_ROUTES = (
     "/stress",
     "/allocate",
     "/run",
+    "/experiments",
 )
 
 
@@ -115,4 +117,15 @@ def test_health_lists_capabilities() -> None:
     capabilities = body["capabilities"]
     assert "run" in capabilities
     assert "allocate" in capabilities
+    assert "experiments" in capabilities
     assert isinstance(body["version"], str)
+
+
+def test_experiments_route_reports_recorded_count() -> None:
+    """The experiments route returns the recorded list and its count."""
+    with _served() as port:
+        _, body = _get(port, "/experiments")
+    assert isinstance(body, dict)
+    assert body["simulated"] is True
+    assert isinstance(body["count"], int)
+    assert isinstance(body["data"], list)

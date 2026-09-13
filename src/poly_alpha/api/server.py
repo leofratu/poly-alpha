@@ -32,6 +32,7 @@ CAPABILITIES: tuple[str, ...] = (
     "stress",
     "allocate",
     "run",
+    "experiments",
 )
 
 INDEX_HTML = """<!doctype html>
@@ -381,6 +382,22 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
                 from poly_alpha.research.pipeline import run_pipeline
 
                 self._send(200, {"data": to_jsonable(run_pipeline()), "simulated": True})
+            elif path == "/experiments":
+                from poly_alpha.research.experiments import (
+                    DEFAULT_EXPERIMENTS_PATH,
+                    experiment_to_dict,
+                    read_experiments,
+                )
+
+                records = read_experiments(DEFAULT_EXPERIMENTS_PATH)
+                self._send(
+                    200,
+                    {
+                        "data": [experiment_to_dict(record) for record in records],
+                        "count": len(records),
+                        "simulated": True,
+                    },
+                )
             else:
                 self._send(404, {"error": "not found", "path": path})
 
