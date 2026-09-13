@@ -63,11 +63,12 @@ def fingerprint(markets: Sequence[MarketSnapshot], params: Mapping[str, float]) 
         "markets": [
             [
                 market.market_id,
+                market.question,
                 market.yes_price,
                 market.no_price,
                 market.provenance.kind.value,
                 market.liquidity,
-                market.volume,
+                [[level.price, level.size] for level in market.orderbook],
             ]
             for market in sorted(markets, key=lambda market: market.market_id)
         ],
@@ -127,14 +128,14 @@ def _require_str(data: Mapping[str, object], key: str) -> str:
 
 def _require_int(data: Mapping[str, object], key: str) -> int:
     value = data.get(key)
-    if not isinstance(value, int):
+    if isinstance(value, bool) or not isinstance(value, int):
         raise ValueError(f"{key} must be an int")
     return value
 
 
 def _require_number(data: Mapping[str, object], key: str) -> float:
     value = data.get(key)
-    if not isinstance(value, (int, float)):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{key} must be a number")
     return float(value)
 
@@ -146,7 +147,7 @@ def experiment_from_dict(data: dict[str, object]) -> Experiment:
         raise ValueError("params must be an object")
     params: dict[str, float] = {}
     for key, value in raw_params.items():
-        if not isinstance(value, (int, float)):
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise ValueError("params values must be numbers")
         params[str(key)] = float(value)
 
@@ -171,9 +172,15 @@ def append_experiment(path: str | Path, experiment: Experiment) -> None:
     """Append ``experiment`` as one UTF-8 JSON line, creating parent directories."""
     experiments_path = Path(path)
     experiments_path.parent.mkdir(parents=True, exist_ok=True)
+    needs_separator = False
+    if experiments_path.exists() and experiments_path.stat().st_size > 0:
+        with experiments_path.open("rb") as handle:
+            handle.seek(-1, 2)
+            needs_separator = handle.read(1) != b"\n"
     line = json.dumps(experiment_to_dict(experiment), sort_keys=True)
+    separator = "\n" if needs_separator else ""
     with experiments_path.open("a", encoding="utf-8") as handle:
-        handle.write(line + "\n")
+        handle.write(separator + line + "\n")
 
 
 def read_experiments(path: str | Path) -> list[Experiment]:
@@ -193,19 +200,35 @@ def read_experiments(path: str | Path) -> list[Experiment]:
                 continue
             try:
                 data = json.loads(stripped)
+                if not isinstance(data, dict):
+                    continue
                 experiments.append(experiment_from_dict(data))
             except (json.JSONDecodeError, KeyError, TypeError, ValueError):
                 continue
     return experiments
 
 
-def reproduce(experiment: Experiment, *, markets: Sequence[MarketSnapshot] | None = None) -> bool:
-    """Return whether a fresh offline run reproduces ``experiment``'s fingerprint.
+def _signature(experiment: Experiment) -> tuple[object, ...]:
+    """The reproducible fields compared by :func:`reproduce`."""
+    return (
+        experiment.run_id,
+        experiment.market_count,
+        experiment.note_count,
+        experiment.opportunity_count,
+        experiment.allocation_ids,
+        experiment.total_stake,
+        experiment.cash,
+    )
 
-    Markets default to the deterministic registry fixtures. A changed fixture or
-    parameter changes the fresh ``run_id``, so the comparison returns ``False``.
+
+def reproduce(experiment: Experiment, *, markets: Sequence[MarketSnapshot] | None = None) -> bool:
+    """Return whether a fresh offline run reproduces ``experiment``.
+
+    Markets default to the deterministic registry fixtures. A changed fixture,
+    parameter, or pipeline result changes the fresh signature, so the comparison
+    returns ``False``.
     """
-    chosen = markets or default_markets()
+    chosen = default_markets() if markets is None else markets
     params = experiment.params
     bundle = run_pipeline(
         bankroll=float(params.get("bankroll", 1000.0)),
@@ -214,4 +237,4 @@ def reproduce(experiment: Experiment, *, markets: Sequence[MarketSnapshot] | Non
         max_deploy=float(params.get("max_deploy", 0.6)),
     )
     fresh = build_experiment(bundle, chosen, experiment.params)
-    return fresh.run_id == experiment.run_id
+    return _signature(fresh) == _signature(experiment)
