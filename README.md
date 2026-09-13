@@ -356,9 +356,10 @@ export POLY_ALPHA_PRESET=acceleration
 
 ### 6.6 Research platform (offline, labeled data)
 
-These commands run entirely on deterministic fixtures and demo data and make no network
-calls. Every value carries `Provenance`; outputs are tagged `FIXTURE`, `SIMULATED`, or
-`SYNTHETIC`, never presented as real observations. See `docs/DATA_PROVENANCE.md`.
+These commands run offline on deterministic fixtures and demo data by default; the `--real`
+flags reach the Polymarket Gamma API and tag results `REAL`. Every value carries `Provenance`;
+outputs are tagged `FIXTURE`, `SIMULATED`, or `SYNTHETIC`, never presented as real
+observations. See `docs/DATA_PROVENANCE.md` and `docs/RUNBOOK.md`.
 
 ```bash
 uv run poly-alpha research markets --all      # labeled fixture + synthetic markets
