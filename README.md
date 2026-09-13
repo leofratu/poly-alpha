@@ -357,13 +357,14 @@ export POLY_ALPHA_PRESET=acceleration
 ### 6.6 Research platform (offline, labeled data)
 
 These commands run offline on deterministic fixtures and demo data by default; the `--real`
-flags reach the Polymarket Gamma API and tag results `REAL`. Every value carries `Provenance`;
+flags reach the read-only Polymarket Gamma and Kalshi Trade APIs and tag results `REAL`. Every
+value carries `Provenance`;
 outputs are tagged `FIXTURE`, `SIMULATED`, or `SYNTHETIC`, never presented as real
 observations. See `docs/DATA_PROVENANCE.md` and `docs/RUNBOOK.md`.
 
 ```bash
 uv run poly-alpha research markets --all      # labeled fixture + synthetic markets
-uv run poly-alpha research markets --real     # real Polymarket markets (network, REAL)
+uv run poly-alpha research markets --real     # real Polymarket + Kalshi markets (network, REAL)
 uv run poly-alpha research research --real    # research notes over real markets (network)
 uv run poly-alpha research research --json    # research notes with uncertainty + sources
 uv run poly-alpha research screen             # rank by the conservative edge lower bound
@@ -396,7 +397,7 @@ src/poly_alpha/
 ├── strategy.py              # Signal: classification, Shin debiasing, Kelly
 ├── cli.py                   # Interface: Typer CLI
 ├── cli_platform.py          # Interface: research/compare/risk/serve commands
-├── adapters/                # Data: fixture, Polymarket (REAL), synthetic series
+├── adapters/                # Data: fixture, Polymarket/Kalshi (REAL), synthetic series
 ├── research/                # Research: provenance-tagged notes + uncertainty
 ├── portfolio/               # Risk: concentration, HHI, historical VaR
 ├── api/server.py            # Interface: stdlib read-only JSON API

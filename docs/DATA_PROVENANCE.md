@@ -32,6 +32,8 @@ non-real data.
 | Producer | Kind | Notes |
 |----------|------|-------|
 | `adapters/polymarket.py` | `REAL` | Polymarket Gamma API; `Provenance.url` set to the API base. |
+| `adapters/kalshi.py` | `REAL` | Kalshi Trade API v2, read-only `GET /markets`; YES bid/ask midpoint in dollars, liquidity/volume are contract counts (see the provenance note). |
+| `data/kalshi.py` | (n/a) | Read-only Kalshi client; no auth headers, no secrets. |
 | `adapters/fixtures.py` | `FIXTURE` | Static `_SPECS`; fixed `FIXTURE_AS_OF` timestamp. |
 | `adapters/series.py` | `SYNTHETIC` | Probabilities derived from the last two points of a supplied series. |
 | `adapters/registry.py` | (carries) | Concatenates labeled snapshots; `markets_by_kind` counts them by kind. |
