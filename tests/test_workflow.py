@@ -61,9 +61,7 @@ def test_workflow_report_writes_dossier(tmp_path: Path) -> None:
 def test_workflow_journal_then_history_summary(tmp_path: Path) -> None:
     log = tmp_path / "runs.jsonl"
     assert _invoke(["research", "journal", "--path", str(log), "--json"]).exit_code == 0
-    payload = _payload(
-        _invoke(["research", "history", "--path", str(log), "--summary", "--json"])
-    )
+    payload = _payload(_invoke(["research", "history", "--path", str(log), "--summary", "--json"]))
     assert payload["runs"] >= 1
     assert payload["any_simulated"] is True
 

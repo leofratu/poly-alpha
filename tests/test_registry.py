@@ -37,7 +37,7 @@ def test_sample_series_is_deterministic_and_complete() -> None:
     first = sample_series()
     second = sample_series()
     assert first == second
-    assert _REQUIRED_SYMBOLS <= set(first)
+    assert set(first) >= _REQUIRED_SYMBOLS
     for prices in first.values():
         assert len(prices) >= 4
 

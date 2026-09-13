@@ -379,10 +379,10 @@ def _handler_class(provider: DataProvider) -> type[BaseHTTPRequestHandler]:
         def _reject(self) -> None:
             self._send(405, {"error": "method not allowed"})
 
-        do_POST = _reject
-        do_PUT = _reject
-        do_PATCH = _reject
-        do_DELETE = _reject
+        do_POST = _reject  # noqa: N815 - method name required by BaseHTTPRequestHandler
+        do_PUT = _reject  # noqa: N815 - method name required by BaseHTTPRequestHandler
+        do_PATCH = _reject  # noqa: N815 - method name required by BaseHTTPRequestHandler
+        do_DELETE = _reject  # noqa: N815 - method name required by BaseHTTPRequestHandler
 
         def _send(self, status: int, payload: object) -> None:
             body = json.dumps(payload).encode("utf-8")

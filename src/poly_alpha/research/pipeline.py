@@ -72,9 +72,7 @@ def run_pipeline(
     opportunities = rank_opportunities(notes, min_edge_low=float("-inf"))
 
     prices = {
-        market.market_id: market.yes_price
-        for market in markets
-        if market.yes_price is not None
+        market.market_id: market.yes_price for market in markets if market.yes_price is not None
     }
     plan = allocate(
         opportunities,

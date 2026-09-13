@@ -184,8 +184,7 @@ def serve(
 
     server = create_server(host=host, port=port)
     console.print(
-        f"[green]Serving read-only research API on "
-        f"http://{host}:{server.server_address[1]}[/green]"
+        f"[green]Serving read-only research API on http://{host}:{server.server_address[1]}[/green]"
     )
     server.serve_forever()
 
@@ -240,13 +239,13 @@ def report(
     output: str = typer.Option("", help="Write Markdown here instead of stdout."),
 ) -> None:
     """Render a provenance-tagged Markdown dossier over the fixtures."""
+    from poly_alpha.adapters.registry import default_markets
     from poly_alpha.backtesting.comparison import compare_strategies
     from poly_alpha.backtesting.demo_data import (
         demo_positions,
         demo_resolved_markets,
         demo_returns,
     )
-    from poly_alpha.adapters.registry import default_markets
     from poly_alpha.backtesting.strategies import default_strategies
     from poly_alpha.portfolio.allocate import allocate
     from poly_alpha.portfolio.risk import analyze_portfolio

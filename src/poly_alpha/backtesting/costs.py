@@ -58,10 +58,7 @@ class CostModel:
         """
         normalized = _normalize_side(side)
         fraction = self.total_bps / _BPS_PER_UNIT
-        if normalized == _BUY:
-            adjusted = price * (1.0 + fraction)
-        else:
-            adjusted = price * (1.0 - fraction)
+        adjusted = price * (1.0 + fraction) if normalized == _BUY else price * (1.0 - fraction)
         return max(0.0, min(1.0, adjusted))
 
     def net_edge(
