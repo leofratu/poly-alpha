@@ -168,3 +168,13 @@ def test_root_serves_html_dashboard() -> None:
     assert status == 200
     assert "Poly-Alpha Research" in body
     assert "not investment advice" in body.lower()
+
+
+def test_curves_and_calibration_routes() -> None:
+    with _served(_provider()) as port:
+        _, curves = _get(port, "/curves")
+        _, calibration = _get(port, "/calibration")
+    assert curves["data"]
+    assert curves["simulated"] is True
+    assert calibration["by_kind"]["fixture"]["n"] >= 1
+    assert "coverage" in calibration["data"]
