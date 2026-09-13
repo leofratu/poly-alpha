@@ -48,6 +48,23 @@ def test_positions_have_positive_total_and_valid_probabilities() -> None:
     assert all(0.0 < position.yes_probability < 1.0 for position in positions)
 
 
+def test_resolve_uses_the_devigged_probability() -> None:
+    from dataclasses import replace
+
+    from poly_alpha.backtesting import demo_data
+
+    base = fixture_adapter().list_markets()[0]
+    vigged = replace(base, yes_price=0.6, no_price=0.5)
+    implied = vigged.implied_yes()
+    assert implied is not None and implied < 0.6
+    market_id = next(
+        f"vig-{index}"
+        for index in range(1, 200_000)
+        if implied <= demo_data._hash_uniform(f"vig-{index}") < 0.6
+    )
+    assert demo_data._resolve(replace(vigged, market_id=market_id)) is False
+
+
 def test_returns_have_requested_length_and_are_deterministic() -> None:
     assert len(demo_returns(60)) == 60
     assert len(demo_returns(17)) == 17

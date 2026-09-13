@@ -35,9 +35,11 @@ def _hash_uniform(market_id: str) -> float:
 
 
 def _resolve(snapshot: MarketSnapshot) -> bool:
-    """Resolve a snapshot by comparing a hash draw against its YES price."""
-    yes_price = snapshot.yes_price if snapshot.yes_price is not None else _FALLBACK_YES
-    return _hash_uniform(snapshot.market_id) < yes_price
+    """Resolve a snapshot by comparing a hash draw against its de-vigged YES probability."""
+    fair = snapshot.implied_yes()
+    if fair is None:
+        fair = snapshot.yes_price if snapshot.yes_price is not None else _FALLBACK_YES
+    return _hash_uniform(snapshot.market_id) < fair
 
 
 def demo_resolved_markets() -> list[ResolvedMarket]:
