@@ -90,3 +90,32 @@ def test_bad_orderbook_level_reports_issue() -> None:
 
 def test_empty_provenance_source_reports_issue() -> None:
     bad = replace(
+        _valid_snapshot(),
+        provenance=Provenance(source="   ", kind=DataSourceKind.FIXTURE),
+    )
+    assert any("provenance" in issue for issue in validate_snapshot(bad))
+
+
+def test_is_valid_mirrors_validate_snapshot() -> None:
+    assert is_valid(_valid_snapshot()) is True
+    assert is_valid(replace(_valid_snapshot(), market_id="")) is False
+
+
+def test_uncertainty_valid_band_passes() -> None:
+    band = Uncertainty(estimate=0.5, low=0.4, high=0.6)
+    assert validate_uncertainty(band) == ()
+
+
+def test_uncertainty_out_of_order_reports_issue() -> None:
+    band = Uncertainty(estimate=0.1, low=0.4, high=0.6)
+    assert any("estimate" in issue for issue in validate_uncertainty(band))
+
+
+def test_uncertainty_out_of_range_reports_issue() -> None:
+    band = Uncertainty(estimate=1.2, low=0.4, high=1.5)
+    assert any("high" in issue for issue in validate_uncertainty(band))
+
+
+def test_uncertainty_non_finite_reports_issue() -> None:
+    band = Uncertainty(estimate=0.5, low=0.4, high=math.inf)
+    assert any("high" in issue for issue in validate_uncertainty(band))
