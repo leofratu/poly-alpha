@@ -34,9 +34,7 @@ def default_adapters() -> list[MarketAdapter]:
     """Return the fixture adapter plus crypto and equity synthetic-series adapters."""
     series = sample_series()
     crypto = {symbol: prices for symbol, prices in series.items() if symbol in {"BTC", "ETH"}}
-    equities = {
-        symbol: prices for symbol, prices in series.items() if symbol not in {"BTC", "ETH"}
-    }
+    equities = {symbol: prices for symbol, prices in series.items() if symbol not in {"BTC", "ETH"}}
     return [
         fixture_adapter(),
         BinaryFromSeriesAdapter(crypto, asset_class="crypto"),

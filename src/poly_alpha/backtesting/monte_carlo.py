@@ -68,7 +68,9 @@ def run(
         console.print("[red]No historical data available.[/red]")
         return {}
 
-    console.print(f"Generated {len(historical_trades)} synthetic market samples (random resolutions).")
+    console.print(
+        f"Generated {len(historical_trades)} synthetic market samples (random resolutions)."
+    )
 
     mc_rois = np.zeros(iterations)
 

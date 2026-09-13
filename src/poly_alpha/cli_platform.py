@@ -295,9 +295,7 @@ def simulate(json_out: bool = JSON_OPTION) -> None:
         for name, strategy in default_strategies().items()
     ]
     if json_out:
-        payload = [
-            {"strategy": name, "result": _to_jsonable(result)} for name, result in results
-        ]
+        payload = [{"strategy": name, "result": _to_jsonable(result)} for name, result in results]
         _print_json(payload)
         return
     table = Table(title="Paper simulation (DEMO resolutions, in-sample, simulated)")

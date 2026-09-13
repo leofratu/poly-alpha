@@ -1,7 +1,7 @@
 """Deterministic paper-portfolio simulation over already-resolved markets.
 
 The simulator replays a fixed sequence of resolved markets through a fair-probability
-strategy, sizes each No-side bet with uncertainty-aware Kelly sizing, and records the
+strategy, sizes each No-side bet with a capped Kelly fraction, and records the
 resulting equity curve. It uses no randomness and no network access, so identical
 inputs always produce identical output.
 """
@@ -81,7 +81,7 @@ def simulate_portfolio(
         fair = strategy(snapshot)
         if fair is None:
             continue
-        if (1.0 - fair) - no_price < min_edge:
+        if (1.0 - fair) - no_price <= min_edge:
             continue
         decision = kelly_fraction(
             probability=1.0 - fair,
@@ -89,9 +89,9 @@ def simulate_portfolio(
             cap=cap,
             use_lower_bound=False,
         )
-        if decision.fraction <= 0.0:
-            continue
         stake = bankroll * decision.fraction
+        if stake <= 0.0:
+            continue
         payout = stake / no_price if not market.resolved_yes else 0.0
         bankroll = bankroll - stake + payout
         equity_curve.append(bankroll)
