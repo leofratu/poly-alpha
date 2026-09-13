@@ -44,3 +44,44 @@ def test_sample_series_is_deterministic_and_complete() -> None:
 
 def test_default_adapters_span_distinct_kinds() -> None:
     adapters = default_adapters()
+    assert len(adapters) >= 2
+    kinds = {adapter.source_kind for adapter in adapters}
+    assert len(kinds) >= 2
+
+
+def test_aggregate_markets_sums_fixture_and_synthetic() -> None:
+    adapters: list[MarketAdapter] = default_adapters()
+    expected = sum(len(adapter.list_markets()) for adapter in adapters)
+    markets = aggregate_markets(adapters)
+    assert len(markets) == expected
+    kinds = {market.provenance.kind for market in markets}
+    assert DataSourceKind.FIXTURE in kinds
+    assert DataSourceKind.SYNTHETIC in kinds
+
+
+def test_markets_by_kind_reports_fixture_and_synthetic() -> None:
+    counts = markets_by_kind(default_adapters())
+    fixture_count = len(fixture_adapter().list_markets())
+    synthetic_count = len(BinaryFromSeriesAdapter(sample_series()).list_markets())
+    assert counts[DataSourceKind.FIXTURE.value] == fixture_count
+    assert counts[DataSourceKind.SYNTHETIC.value] == synthetic_count
+
+
+def test_failing_adapter_is_skipped_without_losing_others() -> None:
+    good: MarketAdapter = fixture_adapter()
+    markets = aggregate_markets([_FailingAdapter(), good, _FailingAdapter()])
+    assert len(markets) == len(good.list_markets())
+    assert all(market.provenance.kind is DataSourceKind.FIXTURE for market in markets)
+
+
+def test_duplicate_ids_are_kept_not_deduplicated() -> None:
+    first: MarketAdapter = fixture_adapter()
+    second: MarketAdapter = fixture_adapter()
+    markets = aggregate_markets([first, second])
+    assert len(markets) == 2 * len(first.list_markets())
+    ids = [market.market_id for market in markets]
+    assert len(ids) == len(set(ids)) * 2
+
+
+def test_default_markets_matches_aggregate() -> None:
+    assert default_markets() == aggregate_markets(default_adapters())
