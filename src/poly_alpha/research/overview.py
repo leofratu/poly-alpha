@@ -90,3 +90,4 @@ def overview_rows(overviews: Sequence[MarketOverview]) -> list[tuple[str, ...]]:
                 "yes" if overview.simulated else "no",
             )
         )
+    return rows
