@@ -226,14 +226,13 @@ def _signature(experiment: Experiment) -> tuple[object, ...]:
     )
 
 
-def reproduce(experiment: Experiment, *, markets: Sequence[MarketSnapshot] | None = None) -> bool:
+def reproduce(experiment: Experiment) -> bool:
     """Return whether a fresh offline run reproduces ``experiment``.
 
-    Markets default to the deterministic registry fixtures. A changed fixture,
-    parameter, or pipeline result changes the fresh signature, so the comparison
-    returns ``False``.
+    The pipeline always runs over the deterministic registry fixtures. A changed
+    fixture, parameter, or pipeline result changes the fresh signature, so the
+    comparison returns ``False``.
     """
-    chosen = default_markets() if markets is None else markets
     params = experiment.params
     bundle = run_pipeline(
         bankroll=float(params.get("bankroll", 1000.0)),
@@ -241,5 +240,5 @@ def reproduce(experiment: Experiment, *, markets: Sequence[MarketSnapshot] | Non
         max_positions=int(params.get("max_positions", 20)),
         max_deploy=float(params.get("max_deploy", 0.6)),
     )
-    fresh = build_experiment(bundle, chosen, experiment.params)
+    fresh = build_experiment(bundle, default_markets(), experiment.params)
     return _signature(fresh) == _signature(experiment)
