@@ -148,6 +148,15 @@ class TestCandidateFromMarket:
         assert candidate is None
         assert reason == "long_term"
 
+    def test_uses_quoted_no_price_over_derived_complement(self) -> None:
+        market = make_market("Spread: Team A (-1.5)")
+        market["outcomePrices"] = '["0.10", "0.92"]'
+        candidate, reason = candidate_from_market(market, NOW, CFG)
+        # The quoted NO price (0.92) leaves a Shin edge below the sports minimum,
+        # whereas the old derived complement (0.90) would have passed the gate.
+        assert candidate is None
+        assert reason == "low_edge"
+
 
 class TestDescribeMarket:
     def test_emotional_headline(self) -> None:

@@ -594,7 +594,12 @@ def candidate_from_market(
     except (ValueError, IndexError):
         return None, "parse_error"
 
-    no_price = 1.0 - yes_price
+    try:
+        no_price = float(tokens[1])
+    except (ValueError, IndexError):
+        no_price = 1.0 - yes_price
+    if not 0.0 < no_price < 1.0:
+        no_price = 1.0 - yes_price
     if yes_price < cfg.min_yes_price or yes_price > cfg.max_yes_price:
         return None, "outside_price"
 
