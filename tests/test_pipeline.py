@@ -44,3 +44,49 @@ def test_overview_has_one_simulated_row_per_market() -> None:
 def test_rank_opportunities_is_deterministic_and_keeps_all_at_negative_infinity() -> None:
     notes = research_markets(default_markets())
     first = rank_opportunities(notes)
+    second = rank_opportunities(notes)
+    assert [item.note.market_id for item in first] == [item.note.market_id for item in second]
+
+    everything = rank_opportunities(notes, min_edge_low=float("-inf"))
+    assert len(everything) == len(notes)
+    assert {item.note.market_id for item in everything} == {note.market_id for note in notes}
+
+
+def test_kelly_fraction_stays_within_cap_for_every_overview_row() -> None:
+    for row in build_overview(default_markets()):
+        assert row.implied_yes is not None
+        decision = kelly_fraction(probability=row.model_yes, price=row.implied_yes)
+        assert 0.0 <= decision.fraction <= 0.05
+
+
+def test_compare_strategies_returns_bounded_metrics_per_strategy() -> None:
+    strategies = default_strategies()
+    metrics = compare_strategies(demo_resolved_markets(), strategies)
+    assert len(metrics) == len(strategies)
+    assert all(0.0 <= metric.max_drawdown <= 1.0 for metric in metrics)
+    assert all("not annualized" in metric.caveat for metric in metrics)
+
+
+def test_simulate_portfolio_equity_curve_matches_trade_count() -> None:
+    markets = demo_resolved_markets()
+    for strategy in default_strategies().values():
+        result = simulate_portfolio(markets, strategy)
+        assert len(result.equity_curve) == result.trades + 1
+        assert 0.0 <= result.max_drawdown <= 1.0
+        assert "not a forecast" in result.caveat
+
+
+def test_render_markdown_includes_disclaimer_and_is_deterministic() -> None:
+    notes = research_markets(default_markets())
+    opportunities = rank_opportunities(notes)
+    metrics = compare_strategies(demo_resolved_markets(), default_strategies())
+    risk = analyze_portfolio(demo_positions(), demo_returns())
+    first = render_markdown(
+        notes,
+        opportunities=opportunities,
+        metrics=metrics,
+        risk=risk,
+        generated_at=NOW,
+    )
+    second = render_markdown(
+        notes,
