@@ -44,3 +44,49 @@ def _sources_text(sources: Sequence[Provenance]) -> str:
 
 def _provenance_lines(notes: Sequence[ResearchNote]) -> list[str]:
     """Summarize note counts per source kind and whether any real data is present."""
+    lines = ["## Provenance summary", ""]
+    for kind in DataSourceKind:
+        count = sum(1 for note in notes if note.provenance.kind is kind)
+        lines.append(f"- {kind.value}: {count}")
+    real_present = any(note.provenance.kind.is_real for note in notes)
+    lines.extend(["", f"Real data present: {_yes_no(real_present)}", ""])
+    return lines
+
+
+def _note_lines(note: ResearchNote) -> list[str]:
+    """Render one note as a heading, an estimate line, its claims, and its caveats."""
+    implied = "n/a" if note.market_implied_yes is None else f"{note.market_implied_yes:.1%}"
+    interval = f"[{note.model_yes.low:.1%}, {note.model_yes.high:.1%}]"
+    estimate_line = (
+        f"- Market implied: {implied}; Model estimate: {note.model_yes.estimate:.1%} "
+        f"{interval}; Signed edge: {note.edge.estimate:+.1%}"
+    )
+    lines = [
+        f"## {note.question}",
+        "",
+        f"- Market: `{note.market_id}`",
+        f"- Provenance: {note.provenance.source} ({note.provenance.kind.value})",
+        estimate_line,
+        f"- Model basis: {note.model_yes.basis}",
+        "",
+        "**Claims:**",
+        "",
+    ]
+    for claim in note.claims:
+        lines.append(
+            f"- {claim.text} (direction: {claim.direction}, support: {claim.support:.0%}; "
+            f"sources: {_sources_text(claim.sources)})"
+        )
+    lines.extend(["", "**Caveats:**", ""])
+    lines.extend(f"- {caveat}" for caveat in note.caveats)
+    lines.append("")
+    return lines
+
+
+def _opportunity_lines(opportunities: Sequence[Opportunity]) -> list[str]:
+    """Render the screened-opportunities section."""
+    lines = ["## Screened opportunities", ""]
+    if not opportunities:
+        lines.extend(["(none)", ""])
+        return lines
+    for opportunity in opportunities:
