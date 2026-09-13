@@ -90,3 +90,49 @@ _SPECS: tuple[_HistorySpec, ...] = (
 )
 
 
+def _clamp_probability(value: float) -> float:
+    """Force a probability strictly inside the open unit interval."""
+    return min(max(value, _PROBABILITY_FLOOR), 1.0 - _PROBABILITY_FLOOR)
+
+
+def _yes_price(spec: _HistorySpec, index: int, steps: int) -> float:
+    """Closed-form drift plus a small deterministic sinusoid, clamped to (0, 1)."""
+    progress = index / (steps - 1)
+    drift = spec.start_yes + (spec.target_yes - spec.start_yes) * progress
+    wave = _AMPLITUDE * math.sin(_OMEGA * index + spec.phase)
+    return _clamp_probability(drift + wave)
+
+
+def _asset(spec: _HistorySpec) -> AssetRef:
+    """Build the asset reference shared by every snapshot in a history."""
+    return AssetRef(symbol=spec.symbol, asset_class=spec.asset_class, description=spec.question)
+
+
+def _snapshot(
+    spec: _HistorySpec,
+    index: int,
+    steps: int,
+    provenance: Provenance,
+) -> MarketSnapshot:
+    """Materialize one snapshot, stepping the close time back one day per index."""
+    yes_price = _yes_price(spec, index, steps)
+    close_time = spec.close_time - timedelta(days=steps - 1 - index)
+    return MarketSnapshot(
+        market_id=spec.market_id,
+        question=spec.question,
+        asset=_asset(spec),
+        yes_price=yes_price,
+        no_price=1.0 - yes_price,
+        liquidity=spec.liquidity,
+        volume=spec.volume,
+        provenance=provenance,
+        close_time=close_time,
+    )
+
+
+@dataclass(frozen=True)
+class MarketHistory:
+    """A time-ordered series of snapshots for one market."""
+
+    asset: AssetRef
+    snapshots: tuple[MarketSnapshot, ...]
