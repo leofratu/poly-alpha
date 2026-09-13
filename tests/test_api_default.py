@@ -92,6 +92,7 @@ def test_default_provider_root_serves_dashboard() -> None:
     assert "Poly-Alpha Research" in body
     assert "not investment advice" in body.lower()
     assert "Recorded experiments" in body
+    assert "Data sources" in body
     assert "failed to load" in body
 
 

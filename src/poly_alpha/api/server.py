@@ -54,6 +54,7 @@ data are labeled and are not real. Not investment advice.</p>
 <h2>Allocation (demo)</h2><div id="allocation"></div>
 <h2>Uncertainty coverage (demo)</h2><div id="calibration"></div>
 <h2>Recorded experiments</h2><div id="experiments"></div>
+<h2>Data sources</h2><div id="sources"></div>
 <script>
 async function load(){
   const h = await (await fetch('/health')).json();
@@ -88,6 +89,9 @@ async function load(){
   const ex = await (await fetch('/experiments')).json();
   document.getElementById('experiments').textContent =
     'recorded=' + ex.count + ' simulated=' + ex.simulated;
+  const src = await (await fetch('/sources')).json();
+  document.getElementById('sources').textContent =
+    (src.data || []).map(s => s.name + ' (' + s.kind + ')').join(', ');
 }
 load().catch(e => {
   document.body.insertAdjacentHTML('afterbegin',
