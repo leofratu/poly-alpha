@@ -90,3 +90,17 @@ def simulate_portfolio(
             use_lower_bound=False,
         )
         if decision.fraction <= 0.0:
+            continue
+        stake = bankroll * decision.fraction
+        payout = stake / no_price if not market.resolved_yes else 0.0
+        bankroll = bankroll - stake + payout
+        equity_curve.append(bankroll)
+        trades += 1
+    return SimulationResult(
+        starting_bankroll=starting_bankroll,
+        ending_bankroll=bankroll,
+        equity_curve=tuple(equity_curve),
+        max_drawdown=_max_drawdown(equity_curve),
+        trades=trades,
+        caveat=CAVEAT,
+    )
