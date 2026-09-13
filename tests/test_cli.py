@@ -44,3 +44,49 @@ def test_research_json_emits_notes() -> None:
 def test_screen_json_has_summary_and_opportunities() -> None:
     result = _invoke(["research", "screen", "--json"])
     assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert "summary" in payload
+    assert "opportunities" in payload
+
+
+def test_size_json_emits_decisions() -> None:
+    result = _invoke(["research", "size", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert isinstance(payload, list) and payload
+    for item in payload:
+        assert "market_id" in item
+        assert "decision" in item
+
+
+def test_compare_json_emits_strategy_metrics() -> None:
+    result = _invoke(["research", "compare", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert isinstance(payload, list) and payload
+    for item in payload:
+        assert "roi" in item
+        assert "trades" in item
+
+
+def test_simulate_json_emits_results() -> None:
+    result = _invoke(["research", "simulate", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert isinstance(payload, list) and payload
+    for item in payload:
+        assert "strategy" in item
+        simulated = item["result"]
+        assert "equity_curve" in simulated
+        assert "caveat" in simulated
+
+
+def test_risk_json_reports_concentration() -> None:
+    result = _invoke(["research", "risk", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.output)
+    assert isinstance(payload, dict)
+    assert "hhi" in payload
+    assert "n_positions" in payload
+
+
