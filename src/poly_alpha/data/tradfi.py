@@ -141,7 +141,10 @@ _PRICE_PATTERN: Final[str] = (
     r"(k|m|b|thousand|million|billion|trillion)?\b"
 )
 _ABOVE_KEYWORDS: Final[str] = r"\b(above|over|higher|greater|exceed|surpass|reach|hit)\b"
-_BELOW_KEYWORDS: Final[str] = r"\b(below|under|lower|less|crash|down|drop|fall)\b"
+_BELOW_KEYWORDS: Final[str] = (
+    r"\b(below|under|lower|less|crash|down|drop|dip|fall|decline|plunge|tumble"
+    r"|sink|slide|plummet|retreat|decrease|slump)(?:s|es|d|ed|ing|ped|ping)?\b"
+)
 _DIRECTION_WINDOW: Final[int] = 40
 
 

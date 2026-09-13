@@ -132,3 +132,15 @@ def test_extract_scales_units_and_matches_case_insensitively() -> None:
     million = extract_financial_target("Will Bitcoin Reach $1 million?")
     assert million is not None
     assert million.target_price == 1_000_000.0
+
+
+def test_extract_direction_recognizes_bearish_verbs() -> None:
+    from poly_alpha.data.tradfi import PriceDirection, extract_financial_target
+
+    dip = extract_financial_target("Will Bitcoin dip to $80,000?")
+    assert dip is not None
+    assert dip.direction is PriceDirection.BELOW
+    assert dip.target_price == 80_000.0
+    plunge = extract_financial_target("Will Ethereum plunge to $1500?")
+    assert plunge is not None
+    assert plunge.direction is PriceDirection.BELOW
