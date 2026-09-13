@@ -127,3 +127,46 @@ class OpenAICompatibleProvider:
         )
         resp.raise_for_status()
         return resp.json()  # type: ignore[no-any-return]
+
+    def _note_from(
+        self, snapshot: MarketSnapshot, data: dict[str, Any], now: datetime | None
+    ) -> ResearchNote:
+        """Parse a model response into a note, raising on any malformed field."""
+        content = data["choices"][0]["message"]["content"]
+        if not isinstance(content, str) or not content.strip():
+            raise ValueError("AI response content must be a non-empty string")
+        parsed = json.loads(content)
+        if not isinstance(parsed, dict):
+            raise ValueError("AI response content must be a JSON object")
+
+        estimate = float(parsed["estimate"])
+        low = float(parsed["low"])
+        high = float(parsed["high"])
+        if not 0.0 <= low <= estimate <= high <= 1.0:
+            raise ValueError(
+                f"invalid estimate interval: low={low}, estimate={estimate}, high={high}"
+            )
+
+        rationale_raw = parsed.get("rationale", "")
+        if not isinstance(rationale_raw, str):
+            raise ValueError("rationale must be a string")
+        rationale = rationale_raw
+
+        citations_raw = parsed.get("citations", [])
+        if not isinstance(citations_raw, list):
+            raise ValueError("citations must be a list")
+        citations: list[str] = []
+        for item in citations_raw:
+            if not isinstance(item, str) or not item.strip():
+                raise ValueError("citations entries must be non-empty strings")
+            citations.append(item)
+
+        implied = snapshot.implied_yes()
+        center = implied if implied is not None else 0.5
+
+        if estimate > center:
+            direction = "bullish_yes"
+        elif estimate < center:
+            direction = "bearish_yes"
+        else:
+            direction = "neutral"
