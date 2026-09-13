@@ -145,3 +145,32 @@ def test_ai_provider_parses_response() -> None:
     assert session.calls[0]["url"] == "https://api.openai.com/v1/chat/completions"
     assert session.calls[0]["headers"] == {"Authorization": f"Bearer {_SENTINEL_KEY}"}
     assert session.calls[0]["json"]["response_format"] == {"type": "json_object"}
+
+
+def test_ai_provider_falls_back_on_request_error() -> None:
+    snapshot = _snapshot()
+    session = _FakeSession([requests.ConnectionError("offline")])
+    provider = OpenAICompatibleProvider(_SENTINEL_KEY, session=session)
+    assert provider.research_market(snapshot, now=_NOW) == research_market(snapshot, now=_NOW)
+
+
+def test_ai_provider_falls_back_on_bad_content() -> None:
+    snapshot = _snapshot()
+    expected = research_market(snapshot, now=_NOW)
+    malformed = _FakeSession([_FakeResponse(_content_response("not json"))])
+    out_of_range = _FakeSession(
+        [_FakeResponse(_model_response(estimate=0.90, low=0.40, high=1.20))]
+    )
+
+    assert (
+        OpenAICompatibleProvider(_SENTINEL_KEY, session=malformed).research_market(
+            snapshot, now=_NOW
+        )
+        == expected
+    )
+    assert (
+        OpenAICompatibleProvider(_SENTINEL_KEY, session=out_of_range).research_market(
+            snapshot, now=_NOW
+        )
+        == expected
+    )
