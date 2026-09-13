@@ -90,11 +90,28 @@ Adding an adapter:
 Other extension points: add a new `strategy` callable for `compare_strategies`, or a new
 `DataProvider` to serve a different composition of the same contracts.
 
+## Optional AI research provider
+
+The default engine stays the offline heuristic. `research/provider.py` adds an optional,
+clearly separated AI path behind the same `ResearchNote` contract:
+
+- `HeuristicProvider` wraps the deterministic engine; `is_ai` is `False`.
+- `OpenAICompatibleProvider` calls an OpenAI-compatible `POST /chat/completions` endpoint
+  with `response_format={"type": "json_object"}` and requires `POLY_ALPHA_AI_API_KEY`;
+  `POLY_ALPHA_AI_MODEL` and `POLY_ALPHA_AI_BASE_URL` override the model and endpoint.
+- On a missing key, a request error, or a malformed/out-of-range response it falls back to
+  the heuristic, so `poly-alpha research --ai` still works fully offline.
+- AI estimates are model output, not observations: `Uncertainty.simulated` is `True`, the
+  basis is `ai:<model>`, and model-supplied citations are tagged `SIMULATED` and labeled
+  unverified. The API key is only sent as an Authorization header and never written to a
+  note, caveat, or log.
+
 ## Limitations and honesty
 
 - The research engine is a **deterministic offline heuristic, not a trained model**. It is
   a pure function of the snapshot (de-vigged price, order-book depth/imbalance, liquidity),
-  with no learning and no external inputs.
+  with no learning and no external inputs. The optional AI provider above is the only path
+  that makes model or network calls, and it is off unless explicitly enabled.
 - Fixture, synthetic, and simulated data are **labeled** via `DataSourceKind` and
   `Provenance`, and **are not real market data**. Fixture markets are hand-authored;
   series markets are generated; the model's own intervals are marked `simulated`.

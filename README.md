@@ -366,6 +366,7 @@ observations. See `docs/DATA_PROVENANCE.md` and `docs/RUNBOOK.md`.
 uv run poly-alpha research markets --all      # labeled fixture + synthetic markets
 uv run poly-alpha research markets --real     # real Polymarket + Kalshi markets (network, REAL)
 uv run poly-alpha research research --real    # research notes over real markets (network)
+uv run poly-alpha research research --ai      # optional AI provider (needs a key; offline fallback)
 uv run poly-alpha research research --json    # research notes with uncertainty + sources
 uv run poly-alpha research screen             # rank by the conservative edge lower bound
 uv run poly-alpha research strategy           # list the named heuristic strategy ideas
