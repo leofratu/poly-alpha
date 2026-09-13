@@ -330,6 +330,11 @@ _AMBIGUOUS_WORDS = frozenset(
         "dota",
         "csgo",
         "bo3",
+        "vote",
+        "coup",
+        "trump",
+        "premier",
+        "china",
     }
 )
 _KEYWORD_SUFFIX = r"(?:s|es|ed|ing|y|ment|ian|an|i|n|r|rs|ial|\d+)?"

@@ -32,6 +32,9 @@ class TestClassifyCategory:
         assert classify_category("Will Netflix add subscribers?") == "other"
         assert classify_category("Will the Pentagon release new videos?") == "other"
         assert classify_category("Will the company's computing revenue grow?") == "other"
+        assert classify_category("Will the movie premiere this weekend?") != "sports"
+        assert classify_category("Will the band play a trumpet solo?") != "politics"
+        assert classify_category("How many people devote time to this?") != "politics"
 
     def test_sports_keywords(self) -> None:
         assert classify_category("Lakers vs. Warriors: O/U 220.5") == "sports"
