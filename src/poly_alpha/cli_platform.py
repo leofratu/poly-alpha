@@ -514,6 +514,38 @@ def history(
     console.print(table)
 
 
+EXPERIMENTS_PATH = typer.Option(
+    "~/.poly_alpha/experiments.jsonl", help="Append-only experiments file path."
+)
+
+
+@app.command()
+def experiment(path: str = EXPERIMENTS_PATH, json_out: bool = JSON_OPTION) -> None:
+    """Record a reproducible offline pipeline run (fingerprint + outputs)."""
+    import os
+
+    from poly_alpha.adapters.registry import default_markets
+    from poly_alpha.research.experiments import (
+        append_experiment,
+        build_experiment,
+        experiment_to_dict,
+    )
+    from poly_alpha.research.pipeline import run_pipeline
+
+    params = {"bankroll": 1000.0, "cap": 0.05, "max_positions": 20.0, "max_deploy": 0.6}
+    record = build_experiment(run_pipeline(), default_markets(), params)
+    target = os.path.expanduser(path)
+    append_experiment(target, record)
+    if json_out:
+        _print_json(experiment_to_dict(record))
+        return
+    console.print(f"[green]Recorded experiment to {target}.[/green]")
+    console.print(
+        f"[white]run {record.run_id[:12]} | {record.market_count} markets | "
+        f"{record.opportunity_count} opportunities | stake {record.total_stake:.2f}[/white]"
+    )
+
+
 @app.command()
 def strategy(json_out: bool = JSON_OPTION) -> None:
     """List the named heuristic strategies and what each one assumes."""
