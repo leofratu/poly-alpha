@@ -28,6 +28,11 @@ class TestClassifyCategory:
         assert classify_category("Will there be new tariffs?") == "politics"
         assert classify_category("Will it be rainy?") == "weather"
 
+    def test_more_collision_prone_keywords_use_word_boundaries(self) -> None:
+        assert classify_category("Will Netflix add subscribers?") == "other"
+        assert classify_category("Will the Pentagon release new videos?") == "other"
+        assert classify_category("Will the company's computing revenue grow?") == "other"
+
     def test_sports_keywords(self) -> None:
         assert classify_category("Lakers vs. Warriors: O/U 220.5") == "sports"
         assert classify_category("Will Arsenal win on Saturday?") == "sports"

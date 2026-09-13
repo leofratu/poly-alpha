@@ -308,7 +308,30 @@ def acceleration_config() -> StrategyConfig:
 # ---------------------------------------------------------------------------
 
 
-_AMBIGUOUS_WORDS = frozenset({"eth", "sec", "defi", "rain", "snow", "lol", "strike", "kings"})
+_AMBIGUOUS_WORDS = frozenset(
+    {
+        "eth",
+        "sec",
+        "defi",
+        "rain",
+        "snow",
+        "lol",
+        "strike",
+        "kings",
+        "etf",
+        "ipo",
+        "putin",
+        "penta",
+        "quadra",
+        "btc",
+        "xrp",
+        "bnb",
+        "fdv",
+        "dota",
+        "csgo",
+        "bo3",
+    }
+)
 _KEYWORD_SUFFIX = r"(?:s|es|ed|ing|y|ment|ian|an|i|n|r|rs|ial|\d+)?"
 
 
