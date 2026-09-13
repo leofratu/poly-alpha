@@ -52,6 +52,7 @@ data are labeled and are not real. Not investment advice.</p>
 <h2>Portfolio risk (demo)</h2><div id="risk"></div>
 <h2>Allocation (demo)</h2><div id="allocation"></div>
 <h2>Uncertainty coverage (demo)</h2><div id="calibration"></div>
+<h2>Recorded experiments</h2><div id="experiments"></div>
 <script>
 async function load(){
   const h = await (await fetch('/health')).json();
@@ -83,8 +84,14 @@ async function load(){
     'deployed=' + ap.total_stake + ' cash=' + ap.cash + ' simulated=' + al.simulated +
     '<table><thead><tr><th>Market</th><th>Fraction</th><th>Stake</th></tr></thead><tbody>' +
     allocs + '</tbody></table>';
+  const ex = await (await fetch('/experiments')).json();
+  document.getElementById('experiments').textContent =
+    'recorded=' + ex.count + ' simulated=' + ex.simulated;
 }
-load();
+load().catch(e => {
+  document.body.insertAdjacentHTML('afterbegin',
+    '<p class="note">Some sections failed to load: ' + e + '</p>');
+});
 </script></body></html>"""
 
 
