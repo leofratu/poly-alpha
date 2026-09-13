@@ -90,3 +90,37 @@ def _run_strategy(
         trades += 1
         if not market.resolved_yes:
             wins += 1
+        equity_curve.append(bankroll)
+    total_pnl = bankroll - starting_bankroll
+    return StrategyMetrics(
+        name=name,
+        trades=trades,
+        hit_rate=wins / trades if trades else 0.0,
+        total_stake=total_stake,
+        total_pnl=total_pnl,
+        roi=total_pnl / total_stake if total_stake else 0.0,
+        max_drawdown=_max_drawdown(equity_curve),
+    )
+
+
+def compare_strategies(
+    markets: Sequence[ResolvedMarket],
+    strategies: Mapping[str, Strategy],
+    *,
+    starting_bankroll: float = 1000.0,
+    stake_fraction: float = 0.02,
+    min_edge: float = MIN_EDGE,
+) -> list[StrategyMetrics]:
+    """Run every strategy over resolved markets and rank them by total PnL.
+
+    A strategy receives each snapshot and returns its fair YES probability, or
+    None to skip the market. A No side is bought only when the quoted No price is
+    below the strategy's fair No value minus ``min_edge``. Each stake is
+    ``stake_fraction`` of the running bankroll and settles at 1.0 on a No
+    resolution, otherwise 0.0. Results are sorted best total PnL first.
+    """
+    results = [
+        _run_strategy(name, strategy, markets, starting_bankroll, stake_fraction, min_edge)
+        for name, strategy in strategies.items()
+    ]
+    return sorted(results, key=lambda metrics: metrics.total_pnl, reverse=True)
