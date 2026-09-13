@@ -13,6 +13,8 @@ from poly_alpha.contracts import (
 )
 from poly_alpha.data.kalshi import KALSHI_API_BASE, KalshiClient
 
+_MAX_PAGE_SIZE = 1000
+
 
 def _to_float(value: Any) -> float | None:
     """Convert a numeric payload to float, or None when it is not numeric."""
@@ -75,21 +77,27 @@ class KalshiAdapter:
         self._limit = limit
 
     def list_markets(self) -> list[MarketSnapshot]:
-        """Fetch open markets and map them into snapshots."""
+        """Fetch up to ``limit`` open markets, following the API cursor."""
         client = self._client if self._client is not None else KalshiClient()
-        payload = client.get_markets(limit=self._limit, status="open")
-        if not isinstance(payload, dict):
-            return []
-        raw_markets = payload.get("markets")
-        if not isinstance(raw_markets, list):
-            return []
         snapshots: list[MarketSnapshot] = []
-        for market in raw_markets:
-            if not isinstance(market, dict):
-                continue
-            snapshot = self._parse_market(market)
-            if snapshot is not None:
-                snapshots.append(snapshot)
+        cursor = ""
+        while len(snapshots) < self._limit:
+            page_size = min(_MAX_PAGE_SIZE, self._limit - len(snapshots))
+            payload = client.get_markets(limit=page_size, status="open", cursor=cursor)
+            if not isinstance(payload, dict):
+                break
+            raw_markets = payload.get("markets")
+            if not isinstance(raw_markets, list):
+                break
+            for market in raw_markets:
+                if isinstance(market, dict):
+                    snapshot = self._parse_market(market)
+                    if snapshot is not None:
+                        snapshots.append(snapshot)
+            next_cursor = payload.get("cursor")
+            if not isinstance(next_cursor, str) or not next_cursor:
+                break
+            cursor = next_cursor
         return snapshots
 
     def get_snapshot(self, market_id: str) -> MarketSnapshot | None:
