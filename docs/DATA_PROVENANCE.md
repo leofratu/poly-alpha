@@ -1,0 +1,46 @@
+# Data Provenance
+
+Reference for how `poly_alpha` records where data came from. The goal is simple: generated
+or fixture data must never be mistaken for a real observation.
+
+## `DataSourceKind` values
+
+Defined in `src/poly_alpha/contracts.py`.
+
+| Kind | Meaning |
+|------|---------|
+| `REAL` | Observed from a live external source. The only kind not derived from scratch. |
+| `FIXTURE` | Hand-authored, deterministic data for development and tests. Not market data. |
+| `SIMULATED` | Model-generated output, such as the research engine's heuristic adjustment. |
+| `SYNTHETIC` | Derived or generated series, such as probabilities from supplied price tails. |
+
+`DataSourceKind.is_real` is `True` only for `REAL`, so callers can gate on it directly.
+
+## The provenance rule
+
+Every `MarketSnapshot` carries a `Provenance` (`source`, `kind`, `retrieved_at`, `url`,
+`note`), and every `ResearchNote` carries the snapshot's `Provenance` plus per-claim
+`sources`. Model estimates also record `Uncertainty.simulated` so an interval can be
+labeled honestly even when the underlying data is real.
+
+Consequently there is no code path that produces a snapshot or a note without a
+`DataSourceKind`. Downstream consumers should treat a missing or `REAL`-less provenance as
+non-real data.
+
+## Which module produces which kind
+
+| Producer | Kind | Notes |
+|----------|------|-------|
+| `adapters/polymarket.py` | `REAL` | Polymarket Gamma API; `Provenance.url` set to the API base. |
+| `adapters/fixtures.py` | `FIXTURE` | Static `_SPECS`; fixed `FIXTURE_AS_OF` timestamp. |
+| `adapters/series.py` | `SYNTHETIC` | Probabilities derived from the last two points of a supplied series. |
+| `research/analyst.py` | `SIMULATED` | Heuristic adjustment provenance; model/edge `Uncertainty.simulated=True`. |
+| `research/notes.py` | (carries) | Re-exposes the snapshot's `Provenance`; `source_kinds()` lists all kinds cited. |
+| `portfolio/risk.py` | (carries) | Each `Position` carries a `Provenance`; the report summarizes positions. |
+| `backtesting/comparison.py` | (consumes) | Reads snapshot provenance; `StrategyMetrics` carries a fixed caveat string, not a `Provenance`. |
+| `api/server.py` | (exposes) | Serializes provenance as-is; `/research` includes a top-level `simulated` flag. |
+
+## Display guidance
+
+Any UI, report, or exported artifact that shows a snapshot, note, metric, or risk report
+must display its `kind` alongside the value. At minimum:
