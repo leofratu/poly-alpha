@@ -21,6 +21,7 @@ class _StubKalshiClient(KalshiClient):
     def __init__(self, payload: dict[str, Any]) -> None:
         super().__init__()
         self._payload = payload
+        self.market_calls: list[str] = []
 
     def get_markets(
         self,
@@ -30,6 +31,13 @@ class _StubKalshiClient(KalshiClient):
         cursor: str = "",
     ) -> dict[str, Any]:
         return self._payload
+
+    def get_market(self, ticker: str) -> dict[str, Any]:
+        self.market_calls.append(ticker)
+        for market in self._payload.get("markets", []):
+            if market.get("ticker") == ticker:
+                return {"market": market}
+        return {}
 
 
 def _valid_market() -> dict[str, Any]:
@@ -127,6 +135,14 @@ def test_kalshi_adapter_get_snapshot_round_trip() -> None:
     assert snapshot is not None
     assert _stable_fields(snapshot) == _stable_fields(adapter.list_markets()[0])
     assert adapter.get_snapshot("does-not-exist") is None
+
+
+def test_kalshi_get_snapshot_uses_single_market_endpoint() -> None:
+    client = _StubKalshiClient({"markets": [_valid_market()], "cursor": ""})
+    adapter = KalshiAdapter(client=client)
+    assert adapter.get_snapshot(TICKER) is not None
+    assert client.market_calls == [TICKER]
+    assert adapter.get_snapshot("missing") is None
 
 
 def test_kalshi_adapter_is_deterministic() -> None:

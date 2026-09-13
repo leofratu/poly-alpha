@@ -38,3 +38,12 @@ class KalshiClient:
         )
         resp.raise_for_status()
         return resp.json()  # type: ignore[no-any-return]
+
+    def get_market(self, ticker: str) -> dict[str, Any]:
+        """Fetch a single market by ticker from the Kalshi Trade API."""
+        resp = self.session.get(
+            f"{self.base_url}/markets/{ticker}",
+            timeout=self.timeout,
+        )
+        resp.raise_for_status()
+        return resp.json()  # type: ignore[no-any-return]

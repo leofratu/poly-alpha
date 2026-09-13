@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
+import requests
+
 from poly_alpha.contracts import (
     AssetRef,
     DataSourceKind,
@@ -101,11 +103,18 @@ class KalshiAdapter:
         return snapshots
 
     def get_snapshot(self, market_id: str) -> MarketSnapshot | None:
-        """Return the live snapshot for an id, or None when it is not found."""
-        for snapshot in self.list_markets():
-            if snapshot.market_id == market_id:
-                return snapshot
-        return None
+        """Return the live snapshot for a ticker via the single-market endpoint."""
+        client = self._client if self._client is not None else KalshiClient()
+        try:
+            payload = client.get_market(market_id)
+        except requests.RequestException:
+            return None
+        if not isinstance(payload, dict):
+            return None
+        market = payload.get("market")
+        if not isinstance(market, dict):
+            return None
+        return self._parse_market(market)
 
     def _parse_market(self, market: dict[str, Any]) -> MarketSnapshot | None:
         """Map one raw Kalshi market dict, skipping malformed payloads."""
