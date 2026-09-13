@@ -224,6 +224,7 @@ def report(
     from poly_alpha.backtesting.strategies import default_strategies
     from poly_alpha.portfolio.risk import analyze_portfolio
     from poly_alpha.research.analyst import research_markets
+    from poly_alpha.research.calibration import demo_calibration
     from poly_alpha.research.report import render_markdown, write_markdown
     from poly_alpha.research.screen import rank_opportunities
 
@@ -231,7 +232,13 @@ def report(
     opportunities = rank_opportunities(notes, min_edge_low=float("-inf"))
     metrics = compare_strategies(demo_resolved_markets(), default_strategies())
     risk = analyze_portfolio(demo_positions(), demo_returns())
-    content = render_markdown(notes, opportunities=opportunities, metrics=metrics, risk=risk)
+    content = render_markdown(
+        notes,
+        opportunities=opportunities,
+        metrics=metrics,
+        risk=risk,
+        calibration=demo_calibration(),
+    )
     if output:
         write_markdown(output, content)
         console.print(f"[green]Wrote dossier to {output}[/green]")

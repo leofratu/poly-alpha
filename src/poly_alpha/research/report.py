@@ -20,6 +20,7 @@ from poly_alpha.research.screen import Opportunity
 if TYPE_CHECKING:
     from poly_alpha.backtesting.comparison import StrategyMetrics
     from poly_alpha.portfolio.risk import RiskReport
+    from poly_alpha.research.calibration import CalibrationReport
 
 __all__ = ["Opportunity", "render_markdown", "write_markdown"]
 
@@ -145,12 +146,29 @@ def _risk_lines(risk: RiskReport) -> list[str]:
     ]
 
 
+def _calibration_lines(calibration: CalibrationReport) -> list[str]:
+    """Render the uncertainty-coverage section with its honesty notes."""
+    lines = [
+        "## Uncertainty coverage",
+        "",
+        f"- Markets scored: {calibration.n}",
+        f"- Coverage: {calibration.coverage:.1%}",
+        f"- Mean interval width: {calibration.mean_width:.3f}",
+        f"- Simulated: {_yes_no(calibration.simulated)}",
+    ]
+    for note in calibration.notes:
+        lines.append(f"- Note: {note}")
+    lines.append("")
+    return lines
+
+
 def render_markdown(
     notes: Sequence[ResearchNote],
     *,
     opportunities: Sequence[Opportunity] | None = None,
     metrics: Sequence[StrategyMetrics] | None = None,
     risk: RiskReport | None = None,
+    calibration: CalibrationReport | None = None,
     generated_at: datetime | None = None,
     title: str = "Poly-Alpha Research Dossier",
 ) -> str:
@@ -175,6 +193,8 @@ def render_markdown(
         lines.extend(_metrics_lines(metrics))
     if risk is not None:
         lines.extend(_risk_lines(risk))
+    if calibration is not None:
+        lines.extend(_calibration_lines(calibration))
     return "\n".join(lines).rstrip("\n") + "\n"
 
 

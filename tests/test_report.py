@@ -192,3 +192,11 @@ def test_empty_optional_sections_render_none_marker() -> None:
     assert "## Screened opportunities" in output
     assert "## Strategy comparison" in output
     assert output.count("(none)") >= 2
+
+
+def test_calibration_section_renders_when_supplied() -> None:
+    from poly_alpha.research.calibration import demo_calibration
+
+    output = render_markdown(make_notes(), calibration=demo_calibration())
+    assert "## Uncertainty coverage" in output
+    assert "Coverage:" in output
