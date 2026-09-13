@@ -45,7 +45,7 @@ def test_positions_have_positive_total_and_valid_probabilities() -> None:
     positions = demo_positions()
     assert positions
     assert sum(position.stake for position in positions) > 0.0
-    assert all(0.0 < position.yes_probability < 1.0 for position in positions)
+    assert all(0.0 < position.entry_price < 1.0 for position in positions)
 
 
 def test_resolve_uses_the_devigged_probability() -> None:

@@ -31,7 +31,7 @@ def make_position(
         market_id=market_id,
         asset_class="sports",
         stake=stake,
-        yes_probability=yes_probability,
+        entry_price=yes_probability,
         provenance=PROVENANCE,
     )
 

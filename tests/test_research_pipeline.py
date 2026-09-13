@@ -62,7 +62,7 @@ def test_pipeline_position_uses_market_entry_price_not_model_estimate() -> None:
     assert note.market_implied_yes is not None
     allocation = Allocation(market_id=note.market_id, fraction=0.05, stake=50.0, rationale="test")
     position = _position_for(allocation, note, snapshot.asset.asset_class)
-    assert position.yes_probability == note.market_implied_yes
+    assert position.entry_price == note.market_implied_yes
 
 
 @pytest.mark.parametrize(

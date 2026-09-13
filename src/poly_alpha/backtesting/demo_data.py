@@ -61,7 +61,7 @@ def demo_resolved_markets() -> list[ResolvedMarket]:
 def demo_positions() -> list[Position]:
     """Build one simulated demo position per fixture market.
 
-    Each stake is ``round(liquidity * 0.02, 2)`` and each ``yes_probability`` is the
+    Each stake is ``round(liquidity * 0.02, 2)`` and each ``entry_price`` is the
     de-vigged ``implied_yes()``, falling back to 0.5 when unavailable. Provenance is
     copied from the fixture snapshot.
     """
@@ -73,7 +73,7 @@ def demo_positions() -> list[Position]:
                 market_id=snapshot.market_id,
                 asset_class=snapshot.asset.asset_class,
                 stake=round(snapshot.liquidity * _DEMO_STAKE_FRACTION, 2),
-                yes_probability=implied if implied is not None else _FALLBACK_YES,
+                entry_price=implied if implied is not None else _FALLBACK_YES,
                 provenance=snapshot.provenance,
             )
         )
