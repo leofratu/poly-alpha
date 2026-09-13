@@ -136,3 +136,37 @@ def risk(json_out: bool = JSON_OPTION) -> None:
     from poly_alpha.api.server import _to_jsonable
     from poly_alpha.backtesting.demo_data import demo_positions, demo_returns
     from poly_alpha.portfolio.risk import analyze_portfolio
+
+    report = analyze_portfolio(demo_positions(), demo_returns())
+    if json_out:
+        _print_json(_to_jsonable(report))
+        return
+    table = Table(title="Demo portfolio risk (SIMULATED positions/returns)")
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", justify="right")
+    table.add_row("Positions", str(report.n_positions))
+    table.add_row("Total stake", f"{report.total_stake:,.2f}")
+    table.add_row("HHI", f"{report.hhi:.3f}")
+    table.add_row("Max position", f"{report.max_position_fraction:.0%}")
+    var = report.historical_var_95
+    table.add_row("Historical VaR 95", f"{var:.3f}" if var is not None else "n/a")
+    table.add_row("Max drawdown", f"{report.max_drawdown:.0%}")
+    console.print(table)
+    for note in report.notes:
+        console.print(f"[yellow]{note}[/yellow]")
+
+
+@app.command()
+def serve(
+    host: str = typer.Option("127.0.0.1", help="Bind address (loopback only by default)."),
+    port: int = typer.Option(8000, help="TCP port."),
+) -> None:
+    """Serve the read-only research JSON API (loopback)."""
+    from poly_alpha.api.server import create_server
+
+    server = create_server(host=host, port=port)
+    console.print(
+        f"[green]Serving read-only research API on "
+        f"http://{host}:{server.server_address[1]}[/green]"
+    )
+    server.serve_forever()
