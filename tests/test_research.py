@@ -90,3 +90,49 @@ def test_caveats_mention_non_real_data_and_advice() -> None:
     assert any("simulat" in caveat.lower() for caveat in note.caveats)
     assert any("not investment advice" in caveat.lower() for caveat in note.caveats)
 
+
+def test_model_vs_market_positive_for_yes_imbalance() -> None:
+    note = research_market(make_snapshot(), now=NOW)
+    edge = model_vs_market(note)
+    assert edge is not None
+    assert edge > 0.0
+    assert edge == note.model_yes.estimate - note.market_implied_yes
+
+
+def test_model_vs_market_negative_for_no_imbalance() -> None:
+    note = research_market(
+        make_snapshot(yes_price=0.40, no_price=0.60, orderbook=NO_BOOK), now=NOW
+    )
+    edge = model_vs_market(note)
+    assert edge is not None
+    assert edge < 0.0
+
+
+def test_model_vs_market_none_without_market_price() -> None:
+    note = research_market(make_snapshot(yes_price=None, no_price=None), now=NOW)
+    assert note.market_implied_yes is None
+    assert model_vs_market(note) is None
+
+
+def test_shin_debiasing_used_without_orderbook() -> None:
+    note = research_market(make_snapshot(orderbook=()), now=NOW)
+    assert "shin" in note.model_yes.basis.lower()
+    assert any("Shin" in claim.text for claim in note.claims)
+
+
+def test_research_markets_preserves_order() -> None:
+    notes = research_markets(
+        [make_snapshot(market_id="a"), make_snapshot(market_id="b")], now=NOW
+    )
+    assert [note.market_id for note in notes] == ["a", "b"]
+    assert all(isinstance(note, ResearchNote) for note in notes)
+
+
+def test_generated_at_falls_back_to_retrieved_at_then_fixed() -> None:
+    explicit = research_market(make_snapshot(), now=NOW)
+    assert explicit.generated_at == NOW
+    retrieved = research_market(make_snapshot())
+    assert retrieved.generated_at == NOW
+    no_time = replace(
+        make_snapshot(),
+        provenance=Provenance(source="test-fixture", kind=DataSourceKind.FIXTURE),
